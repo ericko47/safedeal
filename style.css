@@ -1,0 +1,103 @@
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f6fa;
+    margin: 0;
+    padding: 0;
+  }
+  header {
+    background-color: #2f3640;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+  }
+  nav {
+    background-color: #40739e;
+    padding: 1rem;
+    text-align: center;
+  }
+  nav a {
+    color: white;
+    margin: 0 15px;
+    text-decoration: none;
+  }
+  .hero {
+    padding: 3rem;
+    text-align: center;
+    background-color: #dcdde1;
+  }
+  .hero h1 {
+    font-size: 2.5rem;
+    color: #2f3640;
+  }
+  .hero p {
+    font-size: 1.2rem;
+    color: #353b48;
+  }
+  .section {
+    padding: 2rem;
+    text-align: center;
+  }
+  .section h2 {
+    color: #192a56;
+  }
+  .card {
+    background: white;
+    padding: 1.5rem;
+    margin: 1rem auto;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  footer {
+    background-color: #2f3640;
+    color: white;
+    text-align: center;
+    padding: 1rem;
+    margin-top: 2rem;
+  }
+
+
+  /* General layout for login page */
+
+  /* Form styles */
+  input{
+    width: 100%;
+    padding: 0.75rem;
+    margin-top: 0.25rem;
+    border: 1px solid #dcdde1;
+    border-radius: 5px;
+    box-sizing: border-box;
+  }
+  
+  button {
+    background-color: #44bd32;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 1rem;
+    width: 100%;
+  }
+  
+  button:hover {
+    background-color: #4cd137;
+  }
+
+  select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #dcdde1;
+    border-radius: 5px;
+    box-sizing: border-box;
+  }
+  input[type="file"] {
+    border: none;
+    padding: 0.5rem 0;
+  }
+  
+  
+  

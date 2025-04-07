@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Dashboard - SafeDeal</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body>
+  <header>
+    <h1>SafeDeal</h1>
+    <p>Your Trusted Transaction Hub</p>
+  </header>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="profile.html">Profile</a>
+    <a href="post-item.html">Post Item</a>
+    <a href="logout.html">Logout</a>
+  </nav>
+
+  <section class="section">
+    <h2>Welcome, <span id="user-name">[Username]</span></h2>
+    <div class="card">
+      <h3>Your Account Information</h3>
+      <ul>
+        <li><strong>Email:</strong> <span id="user-email">user@example.com</span></li>
+        <li><strong>Phone:</strong> <span id="user-phone">+1234567890</span></li>
+        <li><strong>Location:</strong> <span id="user-location">Nairobi</span></li>
+        <li><strong>Account Type:</strong> <span id="user-type">Buyer</span></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Your Transactions</h3>
+      <p>Track the status of your transactions below:</p>
+      <ul>
+        <li>Transaction ID: #12345 - <strong>Item: Laptop</strong> - Status: Pending</li>
+        <li>Transaction ID: #12346 - <strong>Item: Phone</strong> - Status: Completed</li>
+      </ul>
+    </div>
+
+    <div class="card" id="post-section">
+      <h3>Post an Item (Seller Only)</h3>
+      <p>If you are a seller, you can post items for sale.</p>
+      <button onclick="window.location.href='post-item.html'">Post a New Item</button>
+    </div>
+  </section>
+
+  <footer>
+    &copy; 2025 SafeDeal. All rights reserved.
+  </footer>
+  <script>
+    // Simulate user role for the demo
+    const userType = "seller"; // Replace with dynamic value based on logged-in user
+  
+    if (userType === "seller") {
+      document.getElementById('post-section').style.display = "block";
+    }
+  </script>
+  
+    <script src="script.js"></script>
+</body>
+</html>
