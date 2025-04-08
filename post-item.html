@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Post Item - SafeDeal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>SafeDeal Marketplace</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="browse.html">Browse</a>
+      <a href="login.html">Login</a>
+    </nav>
+  </header>
+
+  <main class="form-container">
+    <h2>Post a New Item</h2>
+    <form action="#" method="post" enctype="multipart/form-data">
+      <label for="title">Item Title:</label>
+      <input type="text" id="title" name="title" required />
+
+      <label for="category">Category:</label>
+      <select id="category" name="category" required>
+        <option value="">-- Select Category --</option>
+        <option value="electronics">Electronics</option>
+        <option value="clothing">Clothing</option>
+        <option value="books">Books</option>
+        <option value="home">Home & Kitchen</option>
+        <option value="other">Other</option>
+      </select>
+
+      <label for="price">Price (KES):</label>
+      <input type="number" id="price" name="price" required />
+
+      <label for="location">Location:</label>
+      <input type="text" id="location" name="location" required />
+
+      <label for="delivery">Delivery Method:</label>
+      <select id="delivery" name="delivery" required>
+        <option value="delivery">Delivery</option>
+        <option value="pickup">Pickup</option>
+        <option value="both">Both</option>
+      </select>
+
+      <label for="description">Description:</label>
+      <textarea id="description" name="description" rows="5" required></textarea>
+
+      <label for="image">Upload Item Image:</label>
+      <input type="file" id="image" name="image" accept="image/*" required />
+
+      <button type="submit" class="btn-primary">Post Item</button>
+    </form>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 SafeDeal. All rights reserved.</p>
+  </footer>
+</body>
+</html>
