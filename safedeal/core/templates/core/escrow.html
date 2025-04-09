@@ -1,18 +1,19 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Escrow Payment - SafeDeal</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
 </head>
 <body>
   <header>
     <h1>SafeDeal Escrow</h1>
     <nav>
-      <a href="index.html">Home</a>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="browse.html">Browse</a>
+      <a href="{% url 'index'%}">Home</a>
+      <a href="{% url 'dashboard'%}">Dashboard</a>
+      <a href="{% url 'browse'%}">Browse</a>
     </nav>
   </header>
 

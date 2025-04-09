@@ -1,19 +1,21 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>User Profile - SafeDeal</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
 </head>
 <body>
   <header>
     <h1>My Profile</h1>
     <nav>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="post-item.html">Post Item</a>
-      <a href="browse.html">Browse</a>
-      <a href="logout.html">Logout</a>
+      <a href="{% url 'dashboard'%}">Dashboard</a>
+      <a href="{% url 'post_item'%}">Post Item</a>
+      <a href="{% url 'browse'%}">Browse</a>
+      <a href="{% url 'logout'%}">Logout</a>
+      <a href="{% url 'update_profile'%}"><button class="btn-secondary">Update profile</button></a>
     </nav>
   </header>
 

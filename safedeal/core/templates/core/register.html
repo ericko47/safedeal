@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register - SafeDeal</title>
+  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+</head>
+<body>
+  <header>
+    <h1>SafeDeal</h1>
+    <p>Secure Local Transactions</p>
+  </header>
+
+  <nav>
+    <a href="{% url 'index'%}">Home</a>
+    <a href="{% url 'browse'%}">Browse Items</a>
+    <a href="{% url 'post_item'%}">Post Item</a>
+    <a href="{% url 'login'%}">Login</a>
+    <a href="{% url 'register'%}">Register</a>
+  </nav>
+
+  <section class="section">
+    <h2>Create Your SafeDeal Account</h2>
+    <div class="card">
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <label>
+          <input type="checkbox" required />
+          I agree to the <a href="terms.html">terms and conditions</a>
+        </label><br /><br />
+        <button type="submit">Register</button>
+      </form>           
+      <p style="margin-top: 1rem;">Already have an account? <a href="login.html">Login here</a>.</p>
+    </div>
+  </section>
+
+  <footer>
+    &copy; 2025 SafeDeal. All rights reserved.
+  </footer>
+</body>
+</html>

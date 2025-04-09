@@ -1,10 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - SafeDeal</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
 </head>
 <body>
   <header>
@@ -13,11 +14,11 @@
   </header>
 
   <nav>
-    <a href="index.html">Home</a>
-    <a href="#">Browse Items</a>
-    <a href="#">Post Item</a>
-    <a href="login.html">Login</a>
-    <a href="#">Register</a>
+    <a href="{% url 'index'%}">Home</a>
+    <a href="{% url 'browse'%}">Browse Items</a>
+    <a href="{% url 'post_item'%}">Post Item</a>
+    <a href="{% url 'login'%}">Login</a>
+    <a href="{% url 'register'%}">Register</a>
   </nav>
 
   <section class="section">
