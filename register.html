@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,3 +83,89 @@
   </footer>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register - SafeDeal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>SafeDeal</h1>
+    <p>Secure Local Transactions</p>
+  </header>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#">Browse Items</a>
+    <a href="#">Post Item</a>
+    <a href="login.html">Login</a>
+    <a href="register.html">Register</a>
+  </nav>
+
+  <section class="section">
+    <h2>Create Your SafeDeal Account</h2>
+    <div class="card">
+      <form action="#" method="POST">
+        <label for="fullname">Full Name:</label><br />
+        <input type="text" id="fullname" name="fullname" required /><br /><br />
+
+        <label for="email">Email:</label><br />
+        <input type="email" id="email" name="email" required /><br /><br />
+
+        <label for="phone">Phone Number:</label><br />
+        <input type="tel" id="phone" name="phone" required /><br /><br />
+
+        <!-- Add these new fields inside the form tag before the submit button -->
+        <label for="id_number">National ID Number:</label><br />
+        <input type="text" id="id_number" name="id_number" required /><br /><br />
+
+        <label for="profile_picture">Profile Picture:</label><br />
+        <input type="file" id="profile_picture" name="profile_picture" accept="image/*" required /><br /><br />
+
+        <label for="location">Your Location (City/Town):</label><br />
+        <input type="text" id="location" name="location" required /><br /><br />
+
+        <label for="business_name">Business Name (optional):</label><br />
+        <input type="text" id="business_name" name="business_name" /><br /><br />
+
+        <label for="business_license">Business License Number (optional):</label><br />
+        <input type="text" id="business_license" name="business_license" /><br /><br />
+
+        <label for="address">Delivery Address:</label><br />
+        <input type="text" id="address" name="address" required /><br /><br />
+
+        <label for="user_type">Account Type:</label><br />
+        <select id="user_type" name="user_type" required>
+          <option value="">--Select--</option>
+          <option value="buyer">Buyer</option>
+          <option value="seller">Seller</option>
+          <option value="both">Both</option>
+        </select><br /><br />
+
+        <label for="password">Password:</label><br />
+        <input type="password" id="password" name="password" required /><br /><br />
+
+        <label for="confirm_password">Confirm Password:</label><br />
+        <input type="password" id="confirm_password" name="confirm_password" required /><br /><br />
+
+        <label>
+            <input type="checkbox" required />
+            I agree to the <a href="terms.html">terms and conditions</a>
+            </label><br /><br />
+
+        <button type="submit">Register</button>
+      </form>
+      <p style="margin-top: 1rem;">Already have an account? <a href="login.html">Login here</a>.</p>
+    </div>
+  </section>
+
+  <footer>
+    &copy; 2025 SafeDeal. All rights reserved.
+  </footer>
+</body>
+</html>
+>>>>>>> 18d0dca8d08397cf8504c8dcf462c34c2a6baee9
