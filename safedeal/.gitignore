@@ -40,6 +40,9 @@ venv/
 env/
 ENV/
 .venv/
+.venve/
+*.venve/
+venve/
 
 # Render deployment files (optional)
 build/
