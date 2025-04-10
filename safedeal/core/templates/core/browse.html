@@ -2,58 +2,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Browse Items - SafeDeal</title>
   <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" />
 </head>
 <body>
   <header>
-    <h1>SafeDeal Marketplace</h1>
+    <h1>Browse Items</h1>
     <nav>
-      <a href="{% url 'index'%}">Home</a>
-      <a href="{% url 'browse' %}"class="active">Browse Items</a>
-      <a href="{% url 'dashboard'%}">Dashboard</a>
-      <a href="{% url 'login'%}">Login</a>
-
+      {%if user.is_authenticated %}
+        <a href="{% url 'index' %}">Home</a>
+        <a href="{% url 'browse' %}" class="active">Browse Items</a>
+        <a href="{% url 'my_listings' %}">My Listings</a>
+        <a href="{% url 'profile' %}">My Profile</a>
+      {% else %}
+        <a href="{% url 'index' %}">Home</a>
+        <a href="{% url 'browse' %}" class="active">Browse Items</a>
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+      {% if user.is_authenticated %}
+        <a href="{% url 'logout' %}">Logout</a>
+      {% else %}
+        <a href="{% url 'register' %}">Register</a>
+      {% endif %}
+      {% if user.is_authenticated and user.account_type == 'admin' %}
+        <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+      {% endif %}
+      {% if request.user.account_type == "seller" or request.user.account_type == "both" %}
+        <a href="{% url 'my_listings' %}">My Listings</a>
+      {% endif %}
     </nav>
   </header>
 
   <main class="browse-container">
-    <div class="search-filter">
-      <input type="text" placeholder="Search items..." />
-      <select>
-        <option>All Categories</option>
-        <option>Electronics</option>
-        <option>Clothing</option>
-        <option>Books</option>
-        <option>Others</option>
-      </select>
+    {% for item in items %}
+    <div class="item-card">
+      {% if item.image %}
+        <img src="{{ item.image.url }}" alt="{{ item.title }}">
+      {% else %}
+        <img src="{% static 'core/images/default-item.png' %}" alt="Default image">
+      {% endif %}
+      <h2>{{ item.title }}</h2>
+      <p><strong>Price:</strong> KES {{ item.price }}</p>
+      <p><strong>Condition:</strong> {{ item.get_condition_display }}</p>
+      <p><strong>Category:</strong> {{ item.get_category_display }}</p>
+      <p><strong>Seller:</strong> {{ item.seller.username }}</p>
+      <p>{{ item.description|truncatewords:20 }}</p>
+      <a href="{% url 'item_detail' item.id %}" class="btn-primary">View</a>
+      {% if user.is_authenticated and user.account_type == 'buyer' %}
+        <a href="{% url 'add_to_cart' item.id %}" class="btn-secondary">Add to Cart</a>
+      {% endif %}
+      {% if user.is_authenticated and user.account_type == 'seller' %}
+        <a href="{% url 'edit_item' item.id %}" class="btn-secondary">Edit</a>
+        <a href="{% url 'delete_item' item.id %}" class="btn-danger">Delete</a>
+      {% endif %}
+      {% if user.is_authenticated and user.account_type == 'admin' %}
+        <a href="{% url 'approve_item' item.id %}" class="btn-secondary">Approve</a>
+      {% endif %}
+      {% if user.is_authenticated and user.account_type == 'buyer' and item.is_approved == False %}
+        <p class="warning">This item is not approved yet.</p>
+      {% endif %}
+      {% if user.is_authenticated and user.account_type == 'seller' and item.is_approved == False %}
+        <p class="warning">Your item is pending approval.</p>
+      {% endif %}
+      {% if user.is_authenticated and user.account_type == 'admin' and item.is_approved == True %}
+        <p class="success">This item is approved.</p>
+      {% endif %}
+      {% if user.is_authenticated and user.account_type == 'admin' and item.is_approved == False %}
+        <p class="warning">This item is not approved yet.</p>
+      {% endif %}
+      {% if user.is_authenticated and user.account_type == 'buyer' and item.is_approved == True %}
+        <p class="success">This item is approved.</p>
+      {% endif %}
+      {% if user.is_authenticated and user.account_type == 'buyer' and item.is_approved == False %}
+        <p class="warning">This item is not approved yet.</p>
+      {% endif %}
+      <a href="#" class="btn-primary">Buy Now</a>
     </div>
-
-    <section class="item-grid">
-      <!-- Example Item -->
-      <div class="item-card">
-        <img src="assets/iphonex.png" alt="Item image" />
-        <h3>Smartphone - Samsung A14</h3>
-        <p>Almost new, great condition, comes with charger.</p>
-        <p class="price">KES 15,000</p>
-        <p class="seller">by: Jane Doe</p>
-        <a href="viewitem.html" class="btn">View Item</a>
-      </div>
-
-      <div class="item-card">
-        <img src="assets/shoe.jpg" alt="Item image" />
-        <h3>Men's Sneakers - Size 42</h3>
-        <p>Brand new, imported, white color.</p>
-        <p class="price">KES 3,200</p>
-        <p class="seller">by: Mike Sellers</p>
-        <a href="viewitem.html" class="btn">View Item</a>
-      </div>
-
-      <!-- Add more items dynamically or manually for now -->
-    </section>
+    {% empty %}
+      <p>No items available right now. Please check back later.</p>
+    {% endfor %}
   </main>
 
   <footer>

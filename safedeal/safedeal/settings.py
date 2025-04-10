@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-=80&rtwkul0-i*_dj6k466*u3-8hfkd(=8bobokiqyu20ta=7g
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['safedeal.onrender.com']
 
 
 # Application definition
@@ -134,6 +134,9 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
+LOGIN_REDIRECT_URL = '/dashboard/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/login/'
+ACCOUNT_EMAIL_REQUIRED = True
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

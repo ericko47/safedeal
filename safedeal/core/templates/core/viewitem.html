@@ -2,57 +2,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>View Item - SafeDeal</title>
+  <meta charset="UTF-8">
+  <title>{{ item.title }} - SafeDeal</title>
   <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
 </head>
 <body>
   <header>
-    <h1>SafeDeal Marketplace</h1>
+    <h1>{{ item.title }}</h1>
     <nav>
-      <a href="{% url 'index'%}">Home</a>
-      <a href="{% url 'dashboard'%}">Dashboard</a>
-      <a href="{% url 'browse'%}">Browse</a>
-      <a href="{% url 'login'%}">Login</a>
+      <a href="{% url 'browse' %}">← Back to Browse</a>
+      <a href="{% url 'dashboard' %}">Dashboard</a>
     </nav>
   </header>
 
-  <main class="item-view-container">
-    <div class="item-image">
-      <img src="assets/iphonex.jpg" alt="Product image" />
-    </div>
-
-    <div class="item-details">
-      <h2>Samsung Galaxy A14 - 64GB</h2>
-      <p class="price">KES 15,000</p>
-      <p class="description">
-        Slightly used Samsung Galaxy A14, in perfect condition, comes with box and charger.
-        Available for delivery countrywide. Buy through SafeDeal to avoid fraud.
-      </p>
-
-      <div class="seller-info">
-        <h4>Seller Info:</h4>
-        <p><strong>Name:</strong> Jane Doe</p>
-        <p><strong>Location:</strong> Nairobi, Kenya</p>
-        <p><strong>Verified Seller:</strong> ✅</p>
-      </div>
-
-      <div class="delivery-info">
-        <h4>Delivery & Payment:</h4>
-        <ul>
-          <li>Cash on Delivery through SafeDeal</li>
-          <li>Pickup available in Nairobi</li>
-          <li>Escrow payment supported</li>
-        </ul>
-      </div>
-
-      <div class="action-buttons">
-        <a href="escrow.html" class="btn-primary">Proceed with Escrow</a>
-        <a href="browse.html" class="btn-secondary">Back to Browse</a>
-      </div>
-    </div>
+  <main class="item-detail">
+    {% if item.image %}
+      <img src="{{ item.image.url }}" alt="{{ item.title }}" class="detail-image">
+    {% endif %}
+    <h2>{{ item.title }}</h2>
+    <p><strong>Price:</strong> KES {{ item.price }}</p>
+    <p><strong>Condition:</strong> {{ item.get_condition_display }}</p>
+    <p><strong>Category:</strong> {{ item.get_category_display }}</p>
+    <p><strong>Posted by:</strong> {{ item.seller.username }}</p>
+    <p><strong>Email:</strong> {{ item.seller.email }}</p>
+    <p><strong>Phone:</strong> {{ item.seller.phone_number|default:"Not Provided" }}</p>
+    <p><strong>Location:</strong> {{ item.seller.current_location|default:"Not Provided" }}</p>
+    <p><strong>Description:</strong> {{ item.description }}</p>
+    <p><strong>Posted on:</strong> {{ item.created_at }}</p>
+    <button class="btn-secondary">Contact Seller</button>
+    <button class="btn-primary">Buy Now</button>
   </main>
+  
 
   <footer>
     <p>&copy; 2025 SafeDeal. All rights reserved.</p>

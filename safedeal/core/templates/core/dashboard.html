@@ -1,9 +1,4 @@
 {% load static %}
-{% if user.is_authenticated %}
-    <a href="{% url 'logout' %}">Logout</a>
-{% else %}
-    <a href="{% url 'login' %}">Login</a>
-{% endif %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -16,61 +11,90 @@
 </head>
 <body>
   <header>
-    <h1>SafeDeal</h1>
-    <p>Your Trusted Transaction Hub</p>
-    <a href="profile.html">👤 My Profile</a>
+    <div class="container">
+      <h1>SafeDeal</h1>
+      <p>Your Trusted Transaction Hub</p>
+      <nav>
+        <a href="{% url 'index' %}">Home</a>
+        <a href="{% url 'browse' %}">Browse</a>
+        <a href="{% url 'post_item' %}">Post Item</a>
+        <a href="{% url 'profile' %}">My Profile</a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'logout' %}">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}">Login</a>
+        {% endif %}
+            {% if user.is_authenticated %}
+          <a href="{% url 'dashboard' %}">Dashboard</a>
+        {% endif %}
+        {% if user.is_authenticated and user.account_type == 'admin' %}
+          <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+        {% endif %}
+        {% if request.user.account_type == "seller" or request.user.account_type == "both" %}
+          <a href="{% url 'my_listings' %}">My Listings</a>
+        {% endif %}
+        {% comment %} 
+        {% if user.is_authenticated and user.account_type == 'buyer' %}
+          <a href="{% url 'buyer_dashboard' %}">Buyer Dashboard</a>
+        {% endif %}
+         {% endcomment %}
+      </nav>
+    </div>
   </header>
 
-  <nav>
-    <a href="{% url 'index'%}">Home</a>
-    <a href="{% url 'browse'%}">Browse</a>
-    <a href="{% url 'post_item'%}">Post Item</a>
-    <a href="{% url 'profile'%}">My Profile</a>
-    <a href="{% url 'logout'%}">Logout</a>
-    
-  </nav>
+  <section class="dashboard">
+    <div class="container">
+      <h2>Welcome, <span id="user-name">{{ user.username }}</span></h2>
+      <p>Here you can manage your profile, view transactions, and more.</p>
+      {% if messages %}
+        <ul class="messages">
+          {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
 
-  <section class="section">
-    <h2>Welcome, <span id="user-name">[Username]</span></h2>
-    <div class="card">
-      <h3>Your Account Information</h3>
-      <ul>
-        <li><strong>Email:</strong> <span id="user-email">user@example.com</span></li>
-        <li><strong>Phone:</strong> <span id="user-phone">+1234567890</span></li>
-        <li><strong>Location:</strong> <span id="user-location">Nairobi</span></li>
-        <li><strong>Account Type:</strong> <span id="user-type">Buyer</span></li>
-      </ul>
-    </div>
+      <!-- Profile Information -->
+      <div class="card">
+        <h3>Your Profile Information</h3>
+        <ul>
+          <li><strong>Email:</strong> {{ user.email }}</li>
+          <li><strong>Phone:</strong> {{ user.phone_number }}</li>
+          <li><strong>Location:</strong> {{ user.current_location }}</li>
+          <li><strong>Account Type:</strong> {{ user.account_type|capfirst }}</li>
+        </ul>
+        <a href="{% url 'update_profile' %}" class="btn-primary">Update Profile</a>
+      </div>
 
-    <div class="card">
-      <h3>Your Transactions</h3>
-      <p>Track the status of your transactions below:</p>
-      <ul>
-        <li>Transaction ID: #12345 - <strong>Item: Laptop</strong> - Status: Pending</li>
-        <li>Transaction ID: #12346 - <strong>Item: Phone</strong> - Status: Completed</li>
-      </ul>
-    </div>
+      <!-- Transactions -->
+      <div class="card">
+        <h3>Your Transactions</h3>
+        <p>Track the status of your transactions below:</p>
+        <ul>
+          <li>Transaction ID: #12345 - <strong>Item: Laptop</strong> - Status: Pending</li>
+          <li>Transaction ID: #12346 - <strong>Item: Phone</strong> - Status: Completed</li>
+        </ul>
+      </div>
 
-    <div class="card" id="post-section">
-      <h3>Post an Item (Seller Only)</h3>
-      <p>If you are a seller, you can post items for sale.</p>
-      <button onclick="window.location.href='post-item.html'">Post a New Item</button>
+      <!-- Seller Only Section -->
+      {% if user.account_type == 'seller' %}
+        <div class="card">
+          <h3>Post an Item (Seller Only)</h3>
+          <p>If you are a seller, you can post items for sale.</p>
+          <button onclick="window.location.href='{% url 'post_item' %}'">Post a New Item</button>
+        </div>
+      {% endif %}
     </div>
   </section>
 
-  <a href="profile.html" class="btn-secondary">My Profile</a>
   <footer>
-    &copy; 2025 SafeDeal. All rights reserved.
+    <div class="container">
+      &copy; 2025 SafeDeal. All rights reserved.
+    </div>
   </footer>
+
   <script>
-    // Simulate user role for the demo
-    const userType = "seller"; // Replace with dynamic value based on logged-in user
-  
-    if (userType === "seller") {
-      document.getElementById('post-section').style.display = "block";
-    }
+    // Additional JavaScript if needed
   </script>
-  
-    <script src="script.js"></script>
 </body>
 </html>
