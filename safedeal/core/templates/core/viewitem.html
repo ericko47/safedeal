@@ -16,13 +16,15 @@
   </header>
 
   <main class="item-detail">
-    {% if item.image %}
-      <img src="{{ item.image.url }}" alt="{{ item.title }}" class="detail-image">
-    {% endif %}
+    <div class="item-images">
+      {% for image in item.images.all %}
+        <img src="{{ image.image.url }}" alt="Item Image" class="item-image">
+      {% endfor %}
+    </div>
     <h2>{{ item.title }}</h2>
     <p><strong>Price:</strong> KES {{ item.price }}</p>
-    <p><strong>Condition:</strong> {{ item.get_condition_display }}</p>
-    <p><strong>Category:</strong> {{ item.get_category_display }}</p>
+    <p><strong>Condition:</strong> {{ item.condition }}</p>
+    <p><strong>Category:</strong> {{ item.category }}</p>
     <p><strong>Posted by:</strong> {{ item.seller.username }}</p>
     <p><strong>Email:</strong> {{ item.seller.email }}</p>
     <p><strong>Phone:</strong> {{ item.seller.phone_number|default:"Not Provided" }}</p>

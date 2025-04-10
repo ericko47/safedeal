@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser, Item, Transaction
+from .models import CustomUser, Item, Transaction, ItemImage
 
 class CustomUserCreationForm(UserCreationForm):
     # national_id = forms.CharField(max_length=20)
@@ -27,25 +27,27 @@ class UserProfileForm(forms.ModelForm):
         fields = ['national_id', 'profile_picture', 'national_id_picture', 'current_location', 'phone_number', 'date_of_birth', 'permanent_address', 'business_name', 'business_address', 'business_license_number', 'account_type']
 
 
-# forms.py
 
-from django import forms
-from .models import Item
+
+
 
 class ItemForm(forms.ModelForm):
     class Meta:
         model = Item
-        fields = ['title', 'description', 'price', 'image', 'category', 'condition']
+        fields = ['title', 'description','location', 'price', 'category', 'condition']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
         }
+
+    # Additional field for multiple images
+    images = forms.FileField(widget=forms.ClearableFileInput(attrs={'multiple': True}), required=False)
 
     def clean_title(self):
         title = self.cleaned_data.get('title')
         if not title:
             raise forms.ValidationError('This field is required.')
-        if len(title) < 5:
-            raise forms.ValidationError('Title must be at least 5 characters long.')
+        if len(title) < 3:
+            raise forms.ValidationError('Title must be at least 3 characters long.')
         return title
 
     def clean_description(self):
@@ -55,21 +57,20 @@ class ItemForm(forms.ModelForm):
         if len(description) < 20:
             raise forms.ValidationError('Description must be at least 20 characters long.')
         return description
+    
+    def clean_location(self):
+        location = self.cleaned_data.get('location')
+        if len(location) < 3:
+            raise forms.ValidationError('Location must be at least 3 characters long be name of a place or town or City.')
+        return location
 
     def clean_price(self):
         price = self.cleaned_data.get('price')
         if price <= 0:
             raise forms.ValidationError('Price must be a positive number.')
         return price
-
-    def clean_image(self):
-        image = self.cleaned_data.get('image')
-        if image:
-            valid_image_extensions = ['.jpg', '.jpeg', '.png']
-            if not any(image.name.endswith(ext) for ext in valid_image_extensions):
-                raise forms.ValidationError('Only JPEG and PNG images are allowed.')
-        return image
-
+    
+    
     def clean_category(self):
         category = self.cleaned_data.get('category')
         if not category:
@@ -81,3 +82,12 @@ class ItemForm(forms.ModelForm):
         if not condition:
             raise forms.ValidationError('This field is required.')
         return condition
+
+    def save(self, commit=True):
+        item = super().save(commit)
+        # Save the images if provided
+        images = self.cleaned_data.get('images')
+        if images:
+            for image in images:
+                ItemImage.objects.create(item=item, image=image)
+        return item
