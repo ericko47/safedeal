@@ -29,11 +29,11 @@
         {{ form.as_p }}
         <label>
           <input type="checkbox" required />
-          I agree to the <a href="terms.html">terms and conditions</a>
+          I agree to the <a href="{% url 'terms'%}">terms and conditions</a>
         </label><br /><br />
         <button type="submit">Register</button>
       </form>           
-      <p style="margin-top: 1rem;">Already have an account? <a href="login.html">Login here</a>.</p>
+      <p style="margin-top: 1rem;">Already have an account? <a href="{% url 'login'%}">Login here</a>.</p>
     </div>
   </section>
 

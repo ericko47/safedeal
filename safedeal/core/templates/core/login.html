@@ -24,15 +24,10 @@
   <section class="section">
     <h2>Login to SafeDeal</h2>
     <div class="card">
-      <form action="#" method="POST">
-        <label for="email">Email:</label><br />
-        <input type="email" id="email" name="email" required /><br /><br />
-
-        <label for="password">Password:</label><br />
-        <input type="password" id="password" name="password" required /><br /><br />
-
+      <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
         <button type="submit">Login</button>
-        <a href="dashboard.html">dashboard</a>
       </form>
       <p style="margin-top: 1rem;">Don't have an account? <a href="register.html">Register here</a>.</p>
     </div>

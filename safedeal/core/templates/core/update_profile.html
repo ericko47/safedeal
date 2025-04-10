@@ -1,9 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Update Profile - SafeDeal</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
 </head>
 <body>
     <header>
@@ -17,13 +18,62 @@
 
     <main>
         <section class="form-section">
-            <h2>Update Your Profile</h2>
-            <form method="POST" enctype="multipart/form-data">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit">Update Profile</button>
-            </form>
+            <div class="card">
+                <div class="form-container">
+                    <h2>Update Your Profile</h2>
+                    {% if messages %}
+                    <ul class="messages">
+                        {% for message in messages %}
+                        <li class="{{ message.tags }}">{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data">
+                      {% csrf_token %}
+                      
+                      {{ form.email.label_tag }} {{ form.email }}
+                      {{ form.phone_number.label_tag }} {{ form.phone_number }}
+                      {{ form.national_id.label_tag }} {{ form.national_id }}
+                      {{ form.profile_picture.label_tag }} {{ form.profile_picture }}
+                      {{ form.national_id_picture.label_tag }} {{ form.national_id_picture }}
+                      {{ form.current_location.label_tag }} {{ form.current_location }}
+                      {{ form.date_of_birth.label_tag }} {{ form.date_of_birth }}
+                      {{ form.permanent_address.label_tag }} {{ form.permanent_address }}
+                  
+                      <label for="id_account_type">Account Type</label>
+                      {{ form.account_type }}
+                  
+                      <div id="business-fields">
+                        {{ form.business_name.label_tag }} {{ form.business_name }}
+                        {{ form.business_address.label_tag }} {{ form.business_address }}
+                        {{ form.business_license_number.label_tag }} {{ form.business_license_number }}
+                      </div>
+                  
+                      <button type="submit" class="btn-primary">Save Changes</button>
+                    </form>
+                  </div>
+            </div>
         </section>
+        <script>
+            const accountTypeField = document.getElementById("id_account_type");
+            const businessFieldsDiv = document.getElementById("business-fields");
+          
+            function toggleBusinessFields() {
+              const selected = accountTypeField.value;
+              if (selected === "seller" || selected === "both") {
+                businessFieldsDiv.style.display = "block";
+              } else {
+                businessFieldsDiv.style.display = "none";
+              }
+            }
+          
+            // Run on load
+            toggleBusinessFields();
+          
+            // Run every time the user changes the account type
+            accountTypeField.addEventListener("change", toggleBusinessFields);
+          </script>
     </main>
 
     <footer>

@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser
+from .models import CustomUser, Item, Transaction
 
 class CustomUserCreationForm(UserCreationForm):
     # national_id = forms.CharField(max_length=20)
@@ -17,7 +17,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email','phone_number', 'password1', 'password2')
+        fields = ('first_name','last_name','username', 'email','phone_number', 'password1', 'password2')
 
 # For users to update their profile after registration
 # This form can be used to update the user's profile after registration.
@@ -25,3 +25,59 @@ class UserProfileForm(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = ['national_id', 'profile_picture', 'national_id_picture', 'current_location', 'phone_number', 'date_of_birth', 'permanent_address', 'business_name', 'business_address', 'business_license_number', 'account_type']
+
+
+# forms.py
+
+from django import forms
+from .models import Item
+
+class ItemForm(forms.ModelForm):
+    class Meta:
+        model = Item
+        fields = ['title', 'description', 'price', 'image', 'category', 'condition']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}),
+        }
+
+    def clean_title(self):
+        title = self.cleaned_data.get('title')
+        if not title:
+            raise forms.ValidationError('This field is required.')
+        if len(title) < 5:
+            raise forms.ValidationError('Title must be at least 5 characters long.')
+        return title
+
+    def clean_description(self):
+        description = self.cleaned_data.get('description')
+        if not description:
+            raise forms.ValidationError('This field is required.')
+        if len(description) < 20:
+            raise forms.ValidationError('Description must be at least 20 characters long.')
+        return description
+
+    def clean_price(self):
+        price = self.cleaned_data.get('price')
+        if price <= 0:
+            raise forms.ValidationError('Price must be a positive number.')
+        return price
+
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if image:
+            valid_image_extensions = ['.jpg', '.jpeg', '.png']
+            if not any(image.name.endswith(ext) for ext in valid_image_extensions):
+                raise forms.ValidationError('Only JPEG and PNG images are allowed.')
+        return image
+
+    def clean_category(self):
+        category = self.cleaned_data.get('category')
+        if not category:
+            raise forms.ValidationError('This field is required.')
+        return category
+
+    def clean_condition(self):
+        condition = self.cleaned_data.get('condition')
+        if not condition:
+            raise forms.ValidationError('This field is required.')
+        return condition

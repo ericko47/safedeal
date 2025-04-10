@@ -378,3 +378,10 @@ body {
   text-decoration: underline;
   font-size: 0.9rem;
 }
+#business-fields {
+  margin-top: 1rem;
+}
+#business-fields label {
+  display: block;
+  margin: 0.5rem 0 0.2rem;
+}

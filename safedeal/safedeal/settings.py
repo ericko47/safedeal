@@ -134,6 +134,9 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
+LOGIN_REDIRECT_URL = '/dashboard/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/login/'
+ACCOUNT_EMAIL_REQUIRED = True
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
