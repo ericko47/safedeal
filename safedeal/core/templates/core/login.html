@@ -25,6 +25,13 @@
     <h2>Login to SafeDeal</h2>
     <div class="card">
       <form method="POST">
+        {% if messages %}
+          <ul class="messages">
+            {% for message in messages %}
+              <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit">Login</button>

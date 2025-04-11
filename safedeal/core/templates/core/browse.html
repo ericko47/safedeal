@@ -35,6 +35,13 @@
   </header>
 
   <main class="browse-container">
+    {% if messages %}
+        <ul class="messages">
+          {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
     {% for item in items %}
     <div class="item-card">
       {% if item.image %}
@@ -47,7 +54,7 @@
       <p><strong>Condition:</strong> {{ item.get_condition_display }}</p>
       <p><strong>Seller:</strong> {{ item.seller.username }}</p>
       <p>{{ item.description|truncatewords:20 }}</p>
-      <a href="{% url 'item_detail' item.id %}" class="btn-primary">View</a>
+      <a href="{% url 'item_detail' item.id %}" class="btn-primary">View</a> <br/>
       {% comment %} {% if user.is_authenticated and user.account_type == 'buyer' or  user.is_authenticated and user.account_type == 'buyer and seller' %}
         <a href="{% url 'add_to_cart' item.id %}" class="btn-secondary">Add to Cart</a>
       {% endif %}
@@ -76,7 +83,15 @@
       {% if user.is_authenticated and user.account_type == 'buyer' and item.is_approved == False %}
         <p class="warning">This item is not approved yet.</p>
       {% endif %}
-      <a href="#" class="btn-primary">Buy Now</a>
+      <form method="post" action="{% url 'place_order' item.id %}">
+        {% csrf_token %}
+        {% if user == item.seller %}
+          <a href="" class='btn-primary'>This is your item</a>
+        {% else %}
+          <button class="btn-primary">Contact the seller</button>
+        {% endif %}
+  
+      </form>
     </div>
     {% empty %}
       <p>No items available right now. Please check back later.</p>

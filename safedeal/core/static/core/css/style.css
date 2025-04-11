@@ -373,6 +373,7 @@ body {
   background: #ddd;
 }
 
+
 .change-password-link {
   color: #3366cc;
   text-decoration: underline;
@@ -384,4 +385,36 @@ body {
 #business-fields label {
   display: block;
   margin: 0.5rem 0 0.2rem;
+}
+
+/* Message Styles */
+.message {
+  padding: 1rem 1.5rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.success {
+  background-color: #d1e7dd;
+  color: #0f5132;
+  border: 1px solid #badbcc;
+}
+
+.warning {
+  background-color: #fff3cd;
+  color: #664d03;
+  border: 1px solid #ffecb5;
+}
+
+.error {
+  background-color: #f8d7da;
+  color: #842029;
+  border: 1px solid #f5c2c7;
+}
+.info {
+  background-color: #cff4fc;
+  color: #055160;
+  border: 1px solid #b6effb;
 }

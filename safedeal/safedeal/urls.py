@@ -23,4 +23,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')), path('auth/', include('dj_rest_auth.urls')),  # Handles login, logout, password reset, etc.
     path('auth/registration/', include('dj_rest_auth.registration.urls')), 
+    path('mpesa/', include('mpesa.urls')),
+    
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -4,53 +4,57 @@ from django.contrib.auth.forms import UserCreationForm
 from .forms import CustomUserCreationForm, UserProfileForm, ItemForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
-from allauth.account.auth_backends import AuthenticationBackend
 from django.contrib import messages
 from .models import Item , ItemImage, Transaction
 import uuid
 from django.http import HttpResponseForbidden
 from .models import Transaction
 from django.http import JsonResponse
-from core.mpesa_utils import lipa_na_mpesa
 
-from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
+from mpesa.utils import lipa_na_mpesa
 
 
-
-def initiate_payment(request):
-    if request.method == "POST":
-        phone = request.POST.get("phone")  # Format: 2547XXXXXXXX
-        amount = request.POST.get("amount")
-        response = lipa_na_mpesa(phone, amount)
-        return JsonResponse(response)
-    return JsonResponse({"error": "Invalid request"}, status=400)
-
-@csrf_exempt
-def mpesa_callback(request):
-    # You can log or store the transaction data here
-    return JsonResponse({"Result": "Success"})
 
 @login_required
 def place_order(request, item_id):
     item = get_object_or_404(Item, id=item_id)
-
     if item.seller == request.user:
-        # Prevent users from buying their own item
-        return render(request, 'core/error.html', {'message': "You cannot purchase your own item."})
+        messages.error(request, "You cannot buy your own item.")
+        return redirect('item_detail', item_id=item.id)
 
-    transaction = Transaction.objects.create(
-        buyer=request.user,
-        seller=item.seller,
-        item=item,
-        amount=item.price,
-        delivery_address=request.user.permanent_address or "To be provided",
-        transaction_reference=str(uuid.uuid4()),
-        status='pending'
-    )
+    if request.method == 'POST':
+        transaction_ref = str(uuid.uuid4()).replace('-', '')[:12]  # Unique 12-char ref
+        delivery_address = request.POST.get('delivery_address')
 
-    return redirect('transaction_detail', transaction_id=transaction.id)
+        # Create transaction with status 'pending'
+        transaction = Transaction.objects.create(
+            buyer=request.user,
+            seller=item.seller,
+            item=item,
+            amount=item.price,
+            status='pending',
+            delivery_address=delivery_address,
+            transaction_reference=transaction_ref
+        )
+
+        # Trigger STK Push
+        phone = request.user.phone_number  # Ensure this exists
+        response = lipa_na_mpesa(
+            phone_number=phone,
+            amount=item.price,
+            account_reference=transaction_ref,
+            transaction_desc=f"Purchase {item.title}"
+        )
+
+        if response.get("ResponseCode") == "0":
+            messages.success(request, "Payment request sent. Check your phone.")
+        else:
+            messages.error(request, "Failed to initiate payment. Try again.")
+
+        return redirect('transaction_detail', transaction.id)
+
+    return redirect('item_detail', item_id=item_id)
+
 
 
 @login_required

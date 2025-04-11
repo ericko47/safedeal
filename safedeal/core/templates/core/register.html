@@ -25,6 +25,22 @@
     <h2>Create Your SafeDeal Account</h2>
     <div class="card">
       <form method="POST" enctype="multipart/form-data">
+        {% if messages %}
+          <ul class="messages">
+            {% for message in messages %}
+              <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        {% if form.errors %}
+          <ul class="form-errors">
+            {% for field in form %}
+              {% for error in field.errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        {% endif %}
         {% csrf_token %}
         {{ form.as_p }}
         <label>

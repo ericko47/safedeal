@@ -126,10 +126,17 @@
     <p><strong>Posted on:</strong> {{ item.created_at|date:"M d, Y" }}</p>
 
     <button class="btn-secondary">Contact Seller</button>
-    <form action="{% url 'place_order' item.id %}" method="post">
+    <form method="post" action="{% url 'place_order' item.id %}">
       {% csrf_token %}
-      <button class="btn-primary">Buy Now</button>
+      <input type="text" name="delivery_address" placeholder="Your delivery address, Must be a verifiable place of a Town/City" required>
+      {% if user == item.seller %}
+        <button class="btn-primary" disabled>You cannot buy your own item</button>
+      {% else %}
+          <button class="btn-primary">Buy Now</button>
+      {% endif %}
+
     </form>
+    
     
   </main>
 
