@@ -149,6 +149,14 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Mpesa settings
+# https://developer.safaricom.co.ke/daraja/apis/postman
+MPESA_CONSUMER_KEY = 'ysp5vtmDJCZp0HptHJyUz3wPmDjcYzsqiFWQvGfmxutEqMAW'
+MPESA_CONSUMER_SECRET = 'xEu7OmeyzZ5z7NJwraGUctUask2lmpVCLpxIqUBrFZp8ilcxPMv1RFQjXPoSXAz1'
+MPESA_SHORTCODE = '174379'  
+MPESA_PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
+MPESA_CALLBACK_URL = 'https://yourdomain.com/api/mpesa/callback/'  # Will define this later
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

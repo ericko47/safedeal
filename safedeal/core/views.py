@@ -10,8 +10,27 @@ from .models import Item , ItemImage, Transaction
 import uuid
 from django.http import HttpResponseForbidden
 from .models import Transaction
+from django.http import JsonResponse
+from core.mpesa_utils import lipa_na_mpesa
+
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 
 
+
+def initiate_payment(request):
+    if request.method == "POST":
+        phone = request.POST.get("phone")  # Format: 2547XXXXXXXX
+        amount = request.POST.get("amount")
+        response = lipa_na_mpesa(phone, amount)
+        return JsonResponse(response)
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+@csrf_exempt
+def mpesa_callback(request):
+    # You can log or store the transaction data here
+    return JsonResponse({"Result": "Success"})
 
 @login_required
 def place_order(request, item_id):

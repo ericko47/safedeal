@@ -21,6 +21,8 @@ urlpatterns = [
     path('transaction/<int:transaction_id>/', views.transaction_detail, name='transaction_detail'),
     path('transaction/<int:transaction_id>/confirm/', views.confirm_delivery, name='confirm_delivery'),
     path('transaction/<int:transaction_id>/cancel/', views.cancel_transaction, name='cancel_transaction'),
+    
+    path('api/mpesa/callback/', views.mpesa_callback, name='mpesa_callback'),
 
 
 ]
