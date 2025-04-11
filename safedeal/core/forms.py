@@ -32,6 +32,8 @@ class UserProfileForm(forms.ModelForm):
 
 
 class ItemForm(forms.ModelForm):
+    # Additional field for multiple images
+    # images = forms.FileField(widget=forms.ClearableFileInput(attrs={'multiple': True}), required=False)
     class Meta:
         model = Item
         fields = ['title', 'description','location', 'price', 'category', 'condition']
@@ -39,9 +41,7 @@ class ItemForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 4}),
         }
 
-    # Additional field for multiple images
-    images = forms.FileField(widget=forms.ClearableFileInput(attrs={'multiple': True}), required=False)
-
+   
     def clean_title(self):
         title = self.cleaned_data.get('title')
         if not title:
@@ -83,11 +83,4 @@ class ItemForm(forms.ModelForm):
             raise forms.ValidationError('This field is required.')
         return condition
 
-    def save(self, commit=True):
-        item = super().save(commit)
-        # Save the images if provided
-        images = self.cleaned_data.get('images')
-        if images:
-            for image in images:
-                ItemImage.objects.create(item=item, image=image)
-        return item
+  

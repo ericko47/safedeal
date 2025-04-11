@@ -24,16 +24,14 @@
         {% else %}
             <a href="{% url 'login' %}">Login</a>
         {% endif %}
-            {% if user.is_authenticated %}
-          <a href="{% url 'dashboard' %}">Dashboard</a>
-        {% endif %}
-        {% if user.is_authenticated and user.account_type == 'admin' %}
+           
+       {% comment %} {% if user.is_authenticated and user.account_type == 'admin' %}
           <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
         {% endif %}
         {% if request.user.account_type == "seller" or request.user.account_type == "both" %}
           <a href="{% url 'my_listings' %}">My Listings</a>
         {% endif %}
-        {% comment %} 
+         
         {% if user.is_authenticated and user.account_type == 'buyer' %}
           <a href="{% url 'buyer_dashboard' %}">Buyer Dashboard</a>
         {% endif %}

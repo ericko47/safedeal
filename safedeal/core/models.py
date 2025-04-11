@@ -24,13 +24,13 @@ class Item(models.Model):
         ('refurbished', 'Refurbished'),
     ]
 
-    seller = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
     location = models.CharField(max_length=100, null=True, blank=True)  # Location of the item
-    condition = models.CharField(max_length=10, choices=CONDITION_CHOICES, default='used')
+    condition = models.CharField(max_length=20, choices=CONDITION_CHOICES, default='used')
     is_available = models.BooleanField(default=True)
     is_personal = models.BooleanField(default=True)  # True = personal item, False = business listing
     created_at = models.DateTimeField(default=timezone.now)
@@ -40,7 +40,7 @@ class Item(models.Model):
         return self.title
 
 class ItemImage(models.Model):
-    item = models.ForeignKey(Item, related_name='images', on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='item_images/')
     
     def __str__(self):

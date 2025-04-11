@@ -13,7 +13,7 @@
       {%if user.is_authenticated %}
         <a href="{% url 'index' %}">Home</a>
         <a href="{% url 'browse' %}" class="active">Browse Items</a>
-        <a href="{% url 'my_listings' %}">My Listings</a>
+        {% comment %} <a href="{% url 'my_listings' %}">My Listings</a> {% endcomment %}
         <a href="{% url 'profile' %}">My Profile</a>
       {% else %}
         <a href="{% url 'index' %}">Home</a>
@@ -28,9 +28,9 @@
       {% if user.is_authenticated and user.account_type == 'admin' %}
         <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
       {% endif %}
-      {% if request.user.account_type == "seller" or request.user.account_type == "both" %}
+      {% comment %} {% if request.user.account_type == "seller" or request.user.account_type == "both" %}
         <a href="{% url 'my_listings' %}">My Listings</a>
-      {% endif %}
+      {% endif %} {% endcomment %}
     </nav>
   </header>
 
@@ -45,11 +45,10 @@
       <h2>{{ item.title }}</h2>
       <p><strong>Price:</strong> KES {{ item.price }}</p>
       <p><strong>Condition:</strong> {{ item.get_condition_display }}</p>
-      <p><strong>Category:</strong> {{ item.get_category_display }}</p>
       <p><strong>Seller:</strong> {{ item.seller.username }}</p>
       <p>{{ item.description|truncatewords:20 }}</p>
       <a href="{% url 'item_detail' item.id %}" class="btn-primary">View</a>
-      {% if user.is_authenticated and user.account_type == 'buyer' %}
+      {% comment %} {% if user.is_authenticated and user.account_type == 'buyer' or  user.is_authenticated and user.account_type == 'buyer and seller' %}
         <a href="{% url 'add_to_cart' item.id %}" class="btn-secondary">Add to Cart</a>
       {% endif %}
       {% if user.is_authenticated and user.account_type == 'seller' %}
@@ -58,7 +57,7 @@
       {% endif %}
       {% if user.is_authenticated and user.account_type == 'admin' %}
         <a href="{% url 'approve_item' item.id %}" class="btn-secondary">Approve</a>
-      {% endif %}
+      {% endif %} {% endcomment %}
       {% if user.is_authenticated and user.account_type == 'buyer' and item.is_approved == False %}
         <p class="warning">This item is not approved yet.</p>
       {% endif %}

@@ -29,41 +29,9 @@
         </ul>
       {% endif %}
       
-      <div>
-        <label for="id_title">Title</label>
-        {{ form.title }}
-      </div>
-      
-      <div>
-        <label for="id_description">Description</label>
-        {{ form.description }}
-      </div>
-
-      <div>
-        <label for="id_location">Location</label>
-        {{ form.location }}
-      </div>
-      
-      <div>
-        <label for="id_price">Price</label>
-        {{ form.price }}
-      </div>
-      
-      <div>
-        <label for="id_category">Category</label>
-        {{ form.category }}
-      </div>
-      
-      <div>
-        <label for="id_condition">Condition</label>
-        {{ form.condition }}
-      </div>
-      
-      <!-- Multiple images input field -->
-      <div>
-        <label for="id_images">Images</label>
-        {{ form.images }}
-      </div>
+      {{ form.as_p }}
+      <label for="id_images">Upload Images:</label>
+      <input type="file" name="images" id="id_images" multiple>
       
       <button type="submit" class="btn-primary">Post Item</button>
     </form>

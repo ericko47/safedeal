@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Transaction #{{ transaction.id }} - SafeDeal</title>
+  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+</head>
+<body>
+  <header>
+    <h1>Transaction Details</h1>
+    <nav>
+      <a href="{% url 'dashboard' %}">Dashboard</a>
+      <a href="{% url 'browse' %}">Browse</a>
+    </nav>
+  </header>
+
+  <main class="transaction-detail">
+    <div class="card">
+        <section class="transaction-summary">
+            <h2>{{ transaction.item.title }}</h2>
+            <p><strong>Amount:</strong> KES {{ transaction.amount }}</p>
+            <p><strong>Status:</strong> {{ transaction.status|capfirst }}</p>
+            <p><strong>Transaction ID:</strong> {{ transaction.transaction_reference }}</p>
+            <p><strong>Date:</strong> {{ transaction.created_at|date:"M d, Y H:i" }}</p>
+          </section>
+      
+          <section class="parties-info">
+            <h3>Buyer Info</h3>
+            <p>{{ transaction.buyer.username }}</p>
+            <p>Email: {{ transaction.buyer.email }}</p>
+            <p>Phone: {{ transaction.buyer.phone_number|default:"Not provided" }}</p>
+      
+            <h3>Seller Info</h3>
+            <p>{{ transaction.seller.username }}</p>
+            <p>Email: {{ transaction.seller.email }}</p>
+            <p>Phone: {{ transaction.seller.phone_number|default:"Not provided" }}</p>
+          </section>
+      
+          <section class="delivery-info">
+            <h3>Delivery Details</h3>
+            <p><strong>Address:</strong> {{ transaction.delivery_address }}</p>
+            <p><strong>Method:</strong> {{ transaction.delivery_method|default:"To be updated" }}</p>
+          </section>
+      
+          {% if transaction.proof_of_delivery %}
+          <section class="proof-section">
+            <h3>Proof of Delivery</h3>
+            <img src="{{ transaction.proof_of_delivery.url }}" alt="Proof of Delivery" style="max-width: 400px;">
+          </section>
+          {% endif %}
+      
+          <section class="actions">
+            {% if transaction.status == 'shipped' and request.user == transaction.buyer %}
+              <form method="post" action="{% url 'confirm_delivery' transaction.id %}">
+                {% csrf_token %}
+                <button class="btn-primary">Confirm Delivery</button>
+              </form>
+            {% endif %}
+      
+            {% if transaction.status == 'pending' and request.user == transaction.buyer %}
+              <form method="post" action="{% url 'cancel_transaction' transaction.id %}">
+                {% csrf_token %}
+                <button class="btn-secondary">Cancel Order</button>
+              </form>
+            {% endif %}
+          </section>
+    </div>
+   
+  </main>
+
+  <footer>
+    <p>&copy; 2025 SafeDeal. All rights reserved.</p>
+  </footer>
+</body>
+</html>
