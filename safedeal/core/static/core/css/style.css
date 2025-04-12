@@ -418,3 +418,51 @@ body {
   color: #055160;
   border: 1px solid #b6effb;
 }
+.badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  color: white;
+}
+
+.badge-warning { background-color: #f0ad4e; }
+.badge-success { background-color: #5cb85c; }
+.badge-danger { background-color: #d9534f; }
+.badge-info { background-color: #5bc0de; }
+.badge-primary { background-color: #337ab7; }
+.badge-secondary { background-color: #6c757d; }
+
+.btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  margin-right: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-success {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-warning {
+  background-color: #ffc107;
+  color: black;
+}
+.btn-info {
+  background-color: #17a2b8;
+  color: white;
+}
+.card.warning {
+  background-color: #fff8e1;
+  border-left: 6px solid #ff9800;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+}

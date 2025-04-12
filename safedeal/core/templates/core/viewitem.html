@@ -1,148 +1,77 @@
+{% extends 'core/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>{{ item.title }} - SafeDeal</title>
-  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f9f9f9;
-    }
 
-    header {
-      background-color: #0d6efd;
-      color: white;
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+{% block title %}{{ item.title }} - SafeDeal{% endblock %}
 
-    header h1 {
-      margin: 0;
-      font-size: 1.5rem;
-    }
+{% block content %}
+<div class="max-w-5xl mx-auto bg-white mt-6 p-6 rounded-lg shadow">
 
-    nav a {
-      color: white;
-      margin-left: 15px;
-      text-decoration: none;
-      font-weight: bold;
-    }
+  <!-- Item Images -->
+  <div class="flex space-x-4 overflow-x-auto mb-6">
+    {% for image in item.images.all %}
+      <img src="{{ image.image.url }}" alt="Item Image"
+           class="w-48 h-48 object-cover rounded border border-gray-300" />
+    {% empty %}
+      <p class="text-gray-500">No images available.</p>
+    {% endfor %}
+  </div>
 
-    main.item-detail {
-      max-width: 900px;
-      margin: 2rem auto;
-      padding: 2rem;
-      background-color: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    }
+  <!-- Item Details -->
+  <h2 class="text-2xl font-semibold text-gray-800">{{ item.title }}</h2>
+  <p class="mt-2 text-lg text-green-600 font-bold">KES {{ item.price }}</p>
 
-    .item-images {
-      display: flex;
-      gap: 15px;
-      overflow-x: auto;
-      margin-bottom: 20px;
-    }
-
-    .item-image {
-      width: 200px;
-      height: 200px;
-      object-fit: cover;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-
-    h2 {
-      margin-top: 0;
-      font-size: 1.8rem;
-      color: #333;
-    }
-
-    p {
-      margin: 0.5rem 0;
-      color: #555;
-    }
-
-    button.btn-secondary, button.btn-primary {
-      padding: 10px 20px;
-      margin: 10px 10px 0 0;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    button.btn-secondary {
-      background-color: #6c757d;
-      color: white;
-    }
-
-    button.btn-primary {
-      background-color: #0d6efd;
-      color: white;
-    }
-
-    footer {
-      margin-top: 50px;
-      padding: 1rem;
-      text-align: center;
-      background-color: #f0f0f0;
-      color: #777;
-    }
-  </style>
-</head>
-<body>
-
-  <header>
-    <h1>{{ item.title }}</h1>
-    <nav>
-      <a href="{% url 'browse' %}">← Back</a>
-      <a href="{% url 'dashboard' %}">Dashboard</a>
-    </nav>
-  </header>
-
-  <main class="item-detail">
-    <div class="item-images">
-      {% for image in item.images.all %}
-        <img src="{{ image.image.url }}" alt="Item Image" class="item-image">
-      {% empty %}
-        <p>No images available.</p>
-      {% endfor %}
-    </div>
-
-    <h2>{{ item.title }}</h2>
-    <p><strong>Price:</strong> KES {{ item.price }}</p>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-gray-700">
     <p><strong>Condition:</strong> {{ item.condition }}</p>
-    <p><strong>Posted by:</strong> {{ item.seller.username }}</p>
+    <p><strong>Seller:</strong> {{ item.seller.username }}</p>
     <p><strong>Email:</strong> {{ item.seller.email }}</p>
     <p><strong>Phone:</strong> {{ item.seller.phone_number|default:"Not Provided" }}</p>
     <p><strong>Location:</strong> {{ item.seller.current_location|default:"Not Provided" }}</p>
-    <p><strong>Description:</strong> {{ item.description }}</p>
     <p><strong>Posted on:</strong> {{ item.created_at|date:"M d, Y" }}</p>
+  </div>
 
-    <button class="btn-secondary">Contact Seller</button>
-    <form method="post" action="{% url 'place_order' item.id %}">
+  <div class="mt-4">
+    <p><strong>Description:</strong></p>
+    <p class="text-gray-600 mt-1">{{ item.description }}</p>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="mt-6 flex flex-col sm:flex-row flex-wrap gap-4">
+    <button class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded w-full sm:w-auto">
+      Contact Seller
+    </button>
+
+    <form method="post" action="{% url 'place_order' item.id %}" class="flex flex-col sm:flex-row gap-4 items-center w-full">
       {% csrf_token %}
-      <input type="text" name="delivery_address" placeholder="Your delivery address, Must be a verifiable place of a Town/City" required>
+      <input type="text" name="delivery_address"
+             placeholder="Your delivery address"
+             class="flex-grow border border-gray-300 rounded px-4 py-2"
+             required />
       {% if user == item.seller %}
-        <button class="btn-primary" disabled>You cannot buy your own item</button>
+        <button class="bg-blue-500 text-white px-4 py-2 rounded opacity-60 cursor-not-allowed" disabled>
+          You cannot buy your own item
+        </button>
       {% else %}
-          <button class="btn-primary">Buy Now</button>
+        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+          Buy Now
+        </button>
       {% endif %}
-
     </form>
-    
-    
-  </main>
 
-  <footer>
-    <p>&copy; 2025 SafeDeal. All rights reserved.</p>
-  </footer>
+    <!-- Extra Buttons -->
+    <form method="post" action="#">
+      {% csrf_token %}
+      <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded w-full sm:w-auto">
+        Report Item
+      </button>
+    </form>
 
-</body>
-</html>
+    <form method="post" action="#">
+      {% csrf_token %}
+      <button class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded w-full sm:w-auto">
+        Add to Wishlist
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

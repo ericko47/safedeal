@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generate Transaction - SafeDeal</title>
+  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+</head>
+<body>
+  <header>
+    <h1>Generate Transaction for External Seller</h1>
+    <nav>
+      <a href="{% url 'dashboard' %}">Dashboard</a>
+      <a href="{% url 'logout' %}">Logout</a>
+    </nav>
+  </header>
+
+  <main class="form-container">
+    <h2>Create a New Transaction</h2>
+    <form method="POST">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn-primary">Generate Transaction</button>
+    </form>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 SafeDeal. All rights reserved.</p>
+  </footer>
+</body>
+</html>

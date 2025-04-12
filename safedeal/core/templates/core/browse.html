@@ -1,105 +1,53 @@
+
+{% extends 'core/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Browse Items - SafeDeal</title>
-  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
-</head>
-<body>
-  <header>
-    <h1>Browse Items</h1>
-    <nav>
-      {%if user.is_authenticated %}
-        <a href="{% url 'index' %}">Home</a>
-        <a href="{% url 'browse' %}" class="active">Browse Items</a>
-        {% comment %} <a href="{% url 'my_listings' %}">My Listings</a> {% endcomment %}
-        <a href="{% url 'profile' %}">My Profile</a>
-      {% else %}
-        <a href="{% url 'index' %}">Home</a>
-        <a href="{% url 'browse' %}" class="active">Browse Items</a>
-        <a href="{% url 'login' %}">Login</a>
-      {% endif %}
-      {% if user.is_authenticated %}
-        <a href="{% url 'logout' %}">Logout</a>
-      {% else %}
-        <a href="{% url 'register' %}">Register</a>
-      {% endif %}
-      {% if user.is_authenticated and user.account_type == 'admin' %}
-        <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
-      {% endif %}
-      {% comment %} {% if request.user.account_type == "seller" or request.user.account_type == "both" %}
-        <a href="{% url 'my_listings' %}">My Listings</a>
-      {% endif %} {% endcomment %}
-    </nav>
-  </header>
 
-  <main class="browse-container">
-    {% if messages %}
-        <ul class="messages">
-          {% for message in messages %}
-            <li class="{{ message.tags }}">{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% for item in items %}
-    <div class="item-card">
-      {% if item.image %}
-        <img src="{{ item.image.url }}" alt="{{ item.title }}">
-      {% else %}
-        <img src="{% static 'core/images/default-item.png' %}" alt="Default image">
-      {% endif %}
-      <h2>{{ item.title }}</h2>
-      <p><strong>Price:</strong> KES {{ item.price }}</p>
-      <p><strong>Condition:</strong> {{ item.get_condition_display }}</p>
-      <p><strong>Seller:</strong> {{ item.seller.username }}</p>
-      <p>{{ item.description|truncatewords:20 }}</p>
-      <a href="{% url 'item_detail' item.id %}" class="btn-primary">View</a> <br/>
-      {% comment %} {% if user.is_authenticated and user.account_type == 'buyer' or  user.is_authenticated and user.account_type == 'buyer and seller' %}
-        <a href="{% url 'add_to_cart' item.id %}" class="btn-secondary">Add to Cart</a>
-      {% endif %}
-      {% if user.is_authenticated and user.account_type == 'seller' %}
-        <a href="{% url 'edit_item' item.id %}" class="btn-secondary">Edit</a>
-        <a href="{% url 'delete_item' item.id %}" class="btn-danger">Delete</a>
-      {% endif %}
-      {% if user.is_authenticated and user.account_type == 'admin' %}
-        <a href="{% url 'approve_item' item.id %}" class="btn-secondary">Approve</a>
-      {% endif %} {% endcomment %}
-      {% if user.is_authenticated and user.account_type == 'buyer' and item.is_approved == False %}
-        <p class="warning">This item is not approved yet.</p>
-      {% endif %}
-      {% if user.is_authenticated and user.account_type == 'seller' and item.is_approved == False %}
-        <p class="warning">Your item is pending approval.</p>
-      {% endif %}
-      {% if user.is_authenticated and user.account_type == 'admin' and item.is_approved == True %}
-        <p class="success">This item is approved.</p>
-      {% endif %}
-      {% if user.is_authenticated and user.account_type == 'admin' and item.is_approved == False %}
-        <p class="warning">This item is not approved yet.</p>
-      {% endif %}
-      {% if user.is_authenticated and user.account_type == 'buyer' and item.is_approved == True %}
-        <p class="success">This item is approved.</p>
-      {% endif %}
-      {% if user.is_authenticated and user.account_type == 'buyer' and item.is_approved == False %}
-        <p class="warning">This item is not approved yet.</p>
-      {% endif %}
-      <form method="post" action="{% url 'place_order' item.id %}">
-        {% csrf_token %}
-        {% if user == item.seller %}
-          <a href="" class='btn-primary'>This is your item</a>
-        {% else %}
-          <button class="btn-primary">Contact the seller</button>
-        {% endif %}
+{% block content %}
+
+<div class="max-w-7xl mx-auto px-4 py-10">
+  <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Available Items</h2>
+  <form method="get" class="flex flex-wrap items-center gap-2 mb-4">
+    <select name="category" class="border px-2 py-1 rounded text-sm">
+      <option value="">All Categories</option>
+      {% for code, label in categories %}
+        <option value="{{ code }}" {% if selected_category == code %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
   
-      </form>
+    <input 
+      type="text" 
+      name="q" 
+      value="{{ search_query }}" 
+      placeholder="Search items..." 
+      class="border px-3 py-1 rounded text-sm flex-1"
+    />
+  
+    <button type="submit" class="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600 text-sm">
+      Search
+    </button>
+  </form>
+  
+  {% if items %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {% for item in items %}
+        <div class="bg-white rounded-2xl shadow p-4 hover:shadow-lg transition">
+          <a href="{% url 'item_detail' item.id %}">
+            {% if item.images.first %}
+              <img src="{{ item.images.first.image.url }}" alt="{{ item.title }}" class="w-full h-48 object-cover rounded-xl mb-3">
+            {% else %}
+              <div class="w-full h-48 bg-gray-200 flex items-center justify-center rounded-xl mb-3 text-gray-500">
+                No Image
+              </div>
+            {% endif %}
+            <h3 class="text-xl font-semibold text-gray-800">{{ item.title }}</h3>
+            <p class="text-green-600 font-bold text-lg">Ksh {{ item.price }}</p>
+            <p class="text-sm text-gray-500 mt-1">Seller: {{ item.seller.username }}</p>
+          </a>
+        </div>
+      {% endfor %}
     </div>
-    {% empty %}
-      <p>No items available right now. Please check back later.</p>
-    {% endfor %}
-  </main>
-
-  <footer>
-    <p>&copy; 2025 SafeDeal. All rights reserved.</p>
-  </footer>
-</body>
-</html>
+  {% else %}
+    <p class="text-center text-gray-500 text-lg">No items found at the moment. Please check back later.</p>
+  {% endif %}
+</div>
+{% endblock %}

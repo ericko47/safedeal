@@ -1,79 +1,80 @@
+{% extends 'core/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Privacy Policy - SafeDeal</title>
-  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
-</head>
-<body>
-  <header>
-    <h1>SafeDeal</h1>
-    <p>Secure Local Transactions</p>
-  </header>
 
-  <nav>
-    <a href="{% url 'index'%}">Home</a>
-    <a href="{% url 'login'%}">Login</a>
-    <a href="{% url 'register'%}">Register</a>
-  </nav>
+{% block title %}Privacy Policy - SafeDeal{% endblock %}
 
-  <section class="section">
-    <h2>Privacy Policy</h2>
-    <div class="card" style="text-align: left; line-height: 1.6;">
-      <p>Effective Date: April 5, 2025</p>
+{% block content %}
+<section class="max-w-4xl mx-auto py-10 px-4">
+  <h1 class="text-3xl font-bold text-gray-800 mb-6">Privacy Policy</h1>
+  
+  <p class="text-gray-700 mb-4">
+    Effective Date: April 2025
+  </p>
+  
+  <h2 class="text-2xl font-semibold text-gray-800 mt-6 mb-2">1. Introduction</h2>
+  <p class="text-gray-700 mb-4">
+    Welcome to SafeDeal, a secure escrow and delivery platform designed to protect buyers and sellers. Your privacy is important to us. This Privacy Policy explains how we collect, use, store, and share your personal information when you access or use our platform.
+  </p>
+  
+  <h2 class="text-2xl font-semibold text-gray-800 mt-6 mb-2">2. Information We Collect</h2>
+  <ul class="list-disc pl-6 text-gray-700 mb-4">
+    <li><strong>Personal Identification Information:</strong> such as your name, email address, phone number, national ID, and profile picture when you register or update your profile.</li>
+    <li><strong>Transaction Data:</strong> details about items bought or sold, transaction amounts, and associated payment and delivery information.</li>
+    <li><strong>Usage Data:</strong> data on how you interact with our site, including IP address, browser type, pages visited, and timestamps.</li>
+    <li><strong>Cookies and Tracking Data:</strong> we use cookies to enhance your experience and track usage patterns.</li>
+  </ul>
+  
+  <h2 class="text-2xl font-semibold text-gray-800 mt-6 mb-2">3. How We Use Your Information</h2>
+  <p class="text-gray-700 mb-4">
+    We use your personal information to:
+  </p>
+  <ul class="list-disc pl-6 text-gray-700 mb-4">
+    <li>Facilitate secure transactions via our escrow system.</li>
+    <li>Verify your identity and prevent fraud on our platform.</li>
+    <li>Communicate with you about your account or transactions.</li>
+    <li>Improve our services and customize your experience.</li>
+    <li>Send updates, newsletters, or notifications (if you opt in).</li>
+  </ul>
+  
+  <h2 class="text-2xl font-semibold text-gray-800 mt-6 mb-2">4. How We Protect Your Information</h2>
+  <p class="text-gray-700 mb-4">
+    We implement a variety of security measures to keep your personal information safe. These include:
+  </p>
+  <ul class="list-disc pl-6 text-gray-700 mb-4">
+    <li>Encryption of sensitive data (both in transit and at rest).</li>
+    <li>Regular security audits and monitoring.</li>
+    <li>Access controls to ensure only authorized personnel can access your data.</li>
+  </ul>
+  
+  <h2 class="text-2xl font-semibold text-gray-800 mt-6 mb-2">5. Data Sharing and Disclosure</h2>
+  <p class="text-gray-700 mb-4">
+    We do not sell or rent your personal information to third parties. We may share your data with trusted service providers who help us operate our platform, and with law enforcement if required by law.
+  </p>
 
-      <h3>1. Information We Collect</h3>
-      <ul>
-        <li>Personal Information: Name, email, phone number, national ID, and address.</li>
-        <li>Transaction Data: Payment confirmations, delivery status, and item details.</li>
-        <li>Device Info: IP address, browser type, and usage logs.</li>
-      </ul>
+  <h2 class="text-2xl font-semibold text-gray-800 mt-6 mb-2">6. Cookies and Tracking</h2>
+  <p class="text-gray-700 mb-4">
+    We use cookies to analyze site traffic and enhance your experience. You can control cookie settings through your browser, but note that disabling cookies may affect some functionality.
+  </p>
 
-      <h3>2. How We Use Your Information</h3>
-      <p>We use the data to:</p>
-      <ul>
-        <li>Create and manage your SafeDeal account</li>
-        <li>Securely process escrow payments</li>
-        <li>Verify user identity and prevent fraud</li>
-        <li>Improve platform safety and customer support</li>
-      </ul>
-
-      <h3>3. Data Storage and Protection</h3>
-      <p>
-        Your information is stored securely on encrypted servers. We implement strict security measures to prevent unauthorized access or data loss.
-      </p>
-
-      <h3>4. Sharing of Data</h3>
-      <p>
-        We do <strong>not sell or rent</strong> your personal information. We may share data only with law enforcement when legally required.
-      </p>
-
-      <h3>5. Cookies</h3>
-      <p>
-        We may use cookies for session tracking and user experience improvement. You can control this through your browser settings.
-      </p>
-
-      <h3>6. Your Rights</h3>
-      <p>You may request to:</p>
-      <ul>
-        <li>View or update your personal data</li>
-        <li>Delete your account</li>
-        <li>Opt out of communication</li>
-      </ul>
-
-      <h3>7. Updates to this Policy</h3>
-      <p>
-        SafeDeal may revise this policy from time to time. Significant changes will be communicated via your dashboard or email.
-      </p>
-
-      <p><strong>Questions?</strong> Contact us at <a href="mailto:support@safedeal.com">support@safedeal.com</a>.</p>
-    </div>
-  </section>
-
-  <footer>
-    &copy; 2025 SafeDeal. All rights reserved.
-  </footer>
-</body>
-</html>
+  <h2 class="text-2xl font-semibold text-gray-800 mt-6 mb-2">7. Your Rights</h2>
+  <p class="text-gray-700 mb-4">
+    You have the right to:
+  </p>
+  <ul class="list-disc pl-6 text-gray-700 mb-4">
+    <li>Access and update your personal information.</li>
+    <li>Request deletion or correction of your data.</li>
+    <li>Opt out of certain data uses or communications.</li>
+  </ul>
+  
+  <h2 class="text-2xl font-semibold text-gray-800 mt-6 mb-2">8. Changes to This Privacy Policy</h2>
+  <p class="text-gray-700 mb-4">
+    We may update this Privacy Policy periodically. When we make changes, we will update the effective date and notify you via our platform or through your registered email.
+  </p>
+  
+  <h2 class="text-2xl font-semibold text-gray-800 mt-6 mb-2">9. Contact Us</h2>
+  <p class="text-gray-700 mb-8">
+    If you have any questions or concerns about our Privacy Policy or your personal data, please contact us at <a href="mailto:support@safedeal.com" class="text-blue-600 hover:underline">support@safedeal.com</a>.
+  </p>
+  
+</section>
+{% endblock %}

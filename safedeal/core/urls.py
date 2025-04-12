@@ -16,10 +16,20 @@ urlpatterns = [
     path('terms/', views.terms_view, name='terms'),
     path('logout/', views.logout_view, name='logout'), 
     path('profile/update/',views.update_profile, name='update_profile'),
-    
+    path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
+
     path('order/<int:item_id>/', views.place_order, name='place_order'),
     path('transaction/<int:transaction_id>/', views.transaction_detail, name='transaction_detail'),
     path('transaction/<int:transaction_id>/confirm/', views.confirm_delivery, name='confirm_delivery'),
     path('transaction/<int:transaction_id>/cancel/', views.cancel_transaction, name='cancel_transaction'),
+    path('transaction/<int:transaction_id>/confirm/', views.confirm_delivery, name='confirm_delivery'),
+    path('transaction/<int:transaction_id>/dispute/', views.raise_dispute, name='raise_dispute'),
+    path('transaction/<int:transaction_id>/dispute/', views.dispute_transaction, name='dispute_transaction'),
+    path('transactions/<int:transaction_id>/close-dispute/', views.admin_close_dispute, name='admin_close_dispute'),
+    
+    path('generate_transaction_out/', views.generate_transaction_out, name='generate_transaction_out'),
+    path('transaction_out/<int:pk>/', views.transaction_out_detail, name='transaction_out_detail'),
+    path('t/<uuid:token>/', views.transaction_out_public_view, name='transaction_out_public'),
+
 
 ]

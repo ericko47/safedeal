@@ -1,60 +1,54 @@
+{% extends 'core/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Register - SafeDeal</title>
-  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
-</head>
-<body>
-  <header>
-    <h1>SafeDeal</h1>
-    <p>Secure Local Transactions</p>
-  </header>
+{% load widget_tweaks %}
 
-  <nav>
-    <a href="{% url 'index'%}">Home</a>
-    <a href="{% url 'browse'%}">Browse Items</a>
-    <a href="{% url 'post_item'%}">Post Item</a>
-    <a href="{% url 'login'%}">Login</a>
-    <a href="{% url 'register'%}">Register</a>
-  </nav>
+{% block title %}Register - SafeDeal{% endblock %}
 
-  <section class="section">
-    <h2>Create Your SafeDeal Account</h2>
-    <div class="card">
-      <form method="POST" enctype="multipart/form-data">
-        {% if messages %}
-          <ul class="messages">
-            {% for message in messages %}
-              <li class="{{ message.tags }}">{{ message }}</li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-        {% if form.errors %}
-          <ul class="form-errors">
-            {% for field in form %}
-              {% for error in field.errors %}
-                <li>{{ error }}</li>
-              {% endfor %}
-            {% endfor %}
-          </ul>
-        {% endif %}
-        {% csrf_token %}
-        {{ form.as_p }}
-        <label>
-          <input type="checkbox" required />
-          I agree to the <a href="{% url 'terms'%}">terms and conditions</a>
-        </label><br /><br />
-        <button type="submit">Register</button>
-      </form>           
-      <p style="margin-top: 1rem;">Already have an account? <a href="{% url 'login'%}">Login here</a>.</p>
+{% block content %}
+<section class="max-w-xl mx-auto mt-10 bg-white p-6 rounded-xl shadow-md">
+  <h2 class="text-2xl font-bold mb-4 text-center">Create Your SafeDeal Account</h2>
+
+  {% if messages %}
+    <ul class="mb-4">
+      {% for message in messages %}
+        <li class="text-sm text-{{ message.tags }}-600">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if form.errors %}
+    <ul class="mb-4 text-red-600 text-sm">
+      {% for field in form %}
+        {% for error in field.errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <form method="POST" enctype="multipart/form-data" class="space-y-4">
+    {% csrf_token %}
+
+    {% for field in form %}
+      <div>
+        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+        {{ field|add_class:"w-full input input-bordered" }}
+      </div>
+    {% endfor %}
+
+    <div class="mt-4">
+      <label class="inline-flex items-center text-sm">
+        <input type="checkbox" required class="mr-2">
+        I agree to the <a href="{% url 'terms' %}" class="text-blue-600 hover:underline">terms and conditions</a>
+      </label>
     </div>
-  </section>
 
-  <footer>
-    &copy; 2025 SafeDeal. All rights reserved.
-  </footer>
-</body>
-</html>
+    <button type="submit" class="btn btn-primary w-full mt-4">Register</button>
+  </form>
+
+  <p class="text-center text-sm mt-6">
+    Already have an account?
+    <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Login here</a>.
+  </p>
+</section>
+{% endblock %}

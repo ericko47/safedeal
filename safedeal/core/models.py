@@ -80,9 +80,26 @@ class Transaction(models.Model):
     payment_method = models.CharField(max_length=100, blank=True, null=True)
     transaction_reference = models.CharField(max_length=100, unique=True)
     proof_of_delivery = models.ImageField(upload_to='deliveries/', null=True, blank=True)
+    dispute_reason = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"Transaction #{self.id} - {self.item.title} ({self.status})"
+    
+# Dispute model to handle disputes raised by buyers or sellers
+
+class TransactionDispute(models.Model):
+    transaction = models.OneToOneField(Transaction, on_delete=models.CASCADE)
+    reason = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved = models.BooleanField(default=False)
+    seller_response = models.TextField(blank=True, null=True)
+    responded_at = models.DateTimeField(blank=True, null=True)
+        # New fields
+    status = models.CharField(max_length=20, choices=[('open', 'Open'), ('resolved', 'Resolved'), ('closed', 'Closed')], default='open')
+    admin_notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Dispute for Transaction #{self.transaction.id}"
 
 
 
@@ -127,3 +144,61 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
+from django.db import models
+from django.contrib.auth import get_user_model
+import uuid
+
+User = get_user_model()
+
+class SecureTransaction(models.Model):
+    TRANSACTION_STATUS = [
+        ('pending', 'Pending'),
+        ('paid', 'Paid'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+        ('disputed', 'Disputed'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='external_transactions')
+    buyer_email = models.EmailField(help_text="Used to notify buyer about the transaction link.")
+    item_name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_status = models.CharField(max_length=20, choices=TRANSACTION_STATUS, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def get_secure_link(self):
+        from django.urls import reverse
+        return reverse('external_transaction_detail', kwargs={'transaction_id': str(self.id)})
+
+    def __str__(self):
+        return f"{self.item_name} ({self.seller.username}) - {self.transaction_status}"
+
+
+#the transactions  that will store all necessary information for the transaction and escrow process.
+
+from django.urls import reverse
+
+
+class TransactionOut(models.Model):
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='transactions_sold')
+    buyer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='transactions_bought')
+    item = models.CharField(max_length=255)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_code = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('completed', 'Completed'), ('disputed', 'Disputed')], default='pending')
+    escrow_status = models.CharField(max_length=20, choices=[('open', 'Open'), ('closed', 'Closed')], default='open')
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    transaction_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+
+    def get_transaction_link(self):
+        return reverse('transaction_detail', kwargs={'transaction_code': self.transaction_code})
+
+    def __str__(self):
+        return f"Transaction {self.transaction_code} - {self.item}"

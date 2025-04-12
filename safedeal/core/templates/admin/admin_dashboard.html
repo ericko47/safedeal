@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>SafeDeal Admin Dashboard</h1>
+
+<h2>Open Disputes</h2>
+{% if open_disputes %}
+  <ul>
+    {% for dispute in open_disputes %}
+      <li>
+        Transaction #{{ dispute.transaction.id }} — 
+        Reason: {{ dispute.reason|truncatechars:50 }} —
+        <a href="{% url 'transaction_detail' dispute.transaction.id %}">View</a>
+        <a href="{% url 'admin_close_dispute' dispute.transaction.id %}" class="btn-warning">Close</a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No open disputes at the moment.</p>
+{% endif %}
+
+<h2>Closed Disputes</h2>
+{% if closed_disputes %}
+  <ul>
+    {% for dispute in closed_disputes %}
+      <li>
+        Transaction #{{ dispute.transaction.id }} —
+        Closed with notes: {{ dispute.admin_notes|default:"No notes" }}
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No closed disputes yet.</p>
+{% endif %}
+
+<h2>Recent Transactions</h2>
+<table>
+  <tr>
+    <th>ID</th>
+    <th>Item</th>
+    <th>Buyer</th>
+    <th>Seller</th>
+    <th>Status</th>
+    <th>Created</th>
+    <th>Details</th>
+  </tr>
+  {% for transaction in all_transactions|slice:":10" %}
+    <tr>
+      <td>#{{ transaction.id }}</td>
+      <td>{{ transaction.item.title }}</td>
+      <td>{{ transaction.buyer.username }}</td>
+      <td>{{ transaction.seller.username }}</td>
+      <td>{{ transaction.status }}</td>
+      <td>{{ transaction.created_at }}</td>
+      <td><a href="{% url 'transaction_detail' transaction.id %}">View</a></td>
+    </tr>
+  {% endfor %}
+</table>
+{% endblock %}

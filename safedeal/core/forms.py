@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser, Item, Transaction, ItemImage
+from .models import CustomUser, Item, Transaction, TransactionOut, TransactionDispute
 
 class CustomUserCreationForm(UserCreationForm):
     # national_id = forms.CharField(max_length=20)
@@ -84,3 +84,51 @@ class ItemForm(forms.ModelForm):
         return condition
 
   
+class DisputeForm(forms.Form):
+    dispute_reason = forms.CharField(
+        label="Reason for Dispute",
+        widget=forms.Textarea(attrs={'rows': 4, 'placeholder': 'Describe the issue...'}),
+        max_length=1000,
+        required=True
+        
+    )
+    def clean_dispute_reason(self):
+        dispute_reason = self.cleaned_data.get('dispute_reason')
+        if not dispute_reason:
+            raise forms.ValidationError('This field is required.')
+        return dispute_reason
+# DisputeResponseForm is used by the seller to respond to a dispute raised by the buyer.
+    
+class SellerResponseForm(forms.ModelForm):
+    class Meta:
+        model = TransactionDispute
+        fields = ['seller_response']
+        widgets = {
+            'seller_response': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Enter your response to the dispute...'}),
+        }
+    def clean_seller_response(self):
+        seller_response = self.cleaned_data.get('seller_response')
+        if not seller_response:
+            raise forms.ValidationError('This field is required.')
+        return seller_response  
+    
+    
+    
+    
+from django.contrib.auth import get_user_model
+
+
+class TransactionOutForm(forms.ModelForm):
+    class Meta:
+        model = TransactionOut
+        fields = ['external_seller', 'item', 'amount', 'description', 'transaction_status']  # removed transaction_reference
+
+    external_seller = forms.CharField(max_length=255, label="Seller Name")
+    item = forms.CharField(max_length=255, label="Item Name")
+    amount = forms.DecimalField(max_digits=10, decimal_places=2, label="Transaction Amount")
+    description = forms.CharField(widget=forms.Textarea, label="Description", required=False)
+    transaction_status = forms.ChoiceField(
+        choices=[('pending', 'Pending'), ('completed', 'Completed')],
+        label="Transaction Status"
+    )
+

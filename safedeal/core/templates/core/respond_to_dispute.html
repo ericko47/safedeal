@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Respond to Dispute - SafeDeal</title>
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+</head>
+<body>
+  <header>
+    <h1>Respond to Dispute</h1>
+    <nav>
+      <a href="{% url 'dashboard' %}">← Back to Dashboard</a>
+      <a href="{% url 'transaction_detail' transaction.id %}">Transaction #{{ transaction.id }}</a>
+    </nav>
+  </header>
+
+  <main class="form-container">
+    <section class="card">
+      <h2>Dispute Details</h2>
+      <p><strong>Item:</strong> {{ transaction.item.title }}</p>
+      <p><strong>Buyer:</strong> {{ transaction.buyer.username }}</p>
+      <p><strong>Reason:</strong> {{ dispute.reason }}</p>
+    </section>
+
+    <section class="card">
+      <h2>Your Response</h2>
+      <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn-primary">Submit Response</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 SafeDeal. All rights reserved.</p>
+  </footer>
+</body>
+</html>

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',  # Optional if you want social login
+    'widget_tweaks',
     
     'mpesa',
 ]
@@ -131,6 +132,7 @@ SIMPLE_JWT = {
 }
 SITE_ID = 1
 AUTH_USER_MODEL = 'core.CustomUser'
+LOGIN_URL = 'login'
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
