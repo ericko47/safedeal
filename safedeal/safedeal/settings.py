@@ -167,11 +167,13 @@ MPESA_CALLBACK_URL = 'https://safedeal.onrender.com//api/mpesa/callback/'  # Wil
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 import os
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # For dev
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')    # For prod
+
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # For production
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # For development
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
