@@ -1,58 +1,43 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>SafeDeal - Secure Payment</title>
-  <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
-  <script>
-    function confirmDelivery() {
-      alert("Thank you! The seller will now receive the payment.");
-      // You can later hook this up to a Django view via JS fetch/AJAX or form submission
-    }
-  </script>
-</head>
-<body class="bg-gray-100 text-gray-800">
-  <div class="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-xl border border-gray-200">
-    <h2 class="text-2xl font-bold text-blue-700 mb-4">Secure Transaction with SafeDeal</h2>
-    
-    <p class="mb-2"><strong>Item:</strong> {{ transaction.item }}</p>
-    <p class="mb-2"><strong>Seller:</strong> {{ transaction.external_seller }}</p>
-    <p class="mb-2"><strong>Amount:</strong> <span class="text-green-600 font-semibold">KSh {{ transaction.amount }}</span></p>
-    <p class="mb-4"><strong>Description:</strong> {{ transaction.description }}</p>
+{% extends "core/base.html" %}
 
-    <div class="bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded p-3 mb-6">
-      <strong>How it works:</strong> Your payment will be held securely by SafeDeal. It will only be released to the seller after you confirm delivery. If not delivered, you’ll get your money back.
+{% block content %}
+<div class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-lg mt-10">
+    <h2 class="text-2xl font-bold mb-4 text-center">Transaction Details</h2>
+
+    <div class="space-y-4">
+        <div>
+            <span class="font-semibold">Item:</span>
+            <span>{{ transaction.item }}</span>
+        </div>
+        <div>
+            <span class="font-semibold">Price:</span>
+            <span>KES {{ transaction.price }}</span>
+        </div>
+        <div>
+            <span class="font-semibold">Seller:</span>
+            <span>{{ transaction.seller.username }}</span>
+        </div>
+        <div>
+            <span class="font-semibold">Status:</span>
+            <span class="text-blue-600 font-medium">{{ transaction.status|title }}</span>
+        </div>
+        <div>
+            <span class="font-semibold">Escrow Status:</span>
+            <span>{{ transaction.escrow_status|title }}</span>
+        </div>
+        <div class="text-sm text-gray-500">
+            Transaction Code: {{ transaction.transaction_code }}
+        </div>
     </div>
-
-    <form method="POST" action="{% url 'stk_push_transaction_out' transaction.transaction_token %}" class="space-y-4">
-      {% csrf_token %}
-      <div>
-        <label class="block mb-1 font-medium text-gray-700">Your Phone Number (M-PESA):</label>
-        <input type="text" name="phone" required placeholder="e.g. 07XXXXXXXX" class="w-full px-4 py-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-400">
-      </div>
-      <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded">
-        Pay Now with M-PESA
-      </button>
-    </form>
 
     <div class="mt-6 text-center">
-      <button onclick="confirmDelivery()" class="inline-block bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded shadow">
-        Confirm Delivery
-      </button>
+        {% if transaction.status == "pending" %}
+            <a href="#" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                Pay Now
+            </a>
+        {% elif transaction.status == "completed" %}
+            <p class="text-green-600 font-semibold">Transaction Completed</p>
+        {% endif %}
     </div>
-
-    <hr class="my-6">
-
-    <div class="text-center text-sm text-gray-600">
-      <p>Want to post or receive payments easily in the future?</p>
-      <a href="{% url 'register' %}" class="text-blue-600 font-medium hover:underline">Join SafeDeal</a> or 
-      <a href="{% url 'login' %}" class="text-blue-600 font-medium hover:underline">Log in</a>
-    </div>
-  </div>
-
-  <footer class="text-center text-gray-500 mt-10 text-sm">
-    &copy; 2025 SafeDeal. Your security is our priority.
-  </footer>
-</body>
-</html>
+</div>
+{% endblock %}

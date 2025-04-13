@@ -29,7 +29,16 @@ urlpatterns = [
     
     path('generate_transaction_out/', views.generate_transaction_out, name='generate_transaction_out'),
     path('transaction_out/<int:pk>/', views.transaction_out_detail, name='transaction_out_detail'),
-    path('t/<uuid:token>/', views.transaction_out_public_view, name='transaction_out_public'),
+    
+    path('create-transaction/', views.create_secure_transaction, name='create_secure_transaction'),
+    path('transaction-success/<uuid:transaction_id>/', views.transaction_success, name='transaction_success'),
+    path('secure/<uuid:transaction_id>/', views.buyer_transaction_view, name='buyer_transaction_view'),
+    path('transaction/<uuid:token>/', views.transaction_out_public_view, name='transaction_out_public_view'),
+    path('secure-transaction/<uuid:transaction_id>/', views.external_transaction_detail, name='external_transaction_detail'),
+
+    path('secure-transaction/<uuid:transaction_id>/confirm/', views.initiate_payment, name='initiate_payment'),
+    
+    path('mpesa/callback/', views.mpesa_callback, name='mpesa_callback'),
 
 
 ]

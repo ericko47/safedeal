@@ -145,7 +145,8 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.username
 
-from django.db import models
+# Transaction model to handle the transactions between buyers and sellers
+# This model will include fields for the buyer, seller, item, amount, status, and other relevant details.
 from django.contrib.auth import get_user_model
 import uuid
 
@@ -165,12 +166,16 @@ class SecureTransaction(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='external_transactions')
     buyer_email = models.EmailField(help_text="Used to notify buyer about the transaction link.")
-    item_name = models.CharField(max_length=255)
+    buyer_phone = models.CharField(max_length=15,null=True, blank=True,validators=[RegexValidator(regex='^\+?1?\d{9,15}$', message='Invalid phone number')])
+    buyer_name = models.CharField(max_length=100, null=True, blank=True)
+    item_name = models.CharField(max_length=255, null=True, blank=True)
     description = models.TextField(blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     transaction_status = models.CharField(max_length=20, choices=TRANSACTION_STATUS, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    mpesa_reference = models.CharField(max_length=100, blank=True, null=True, unique=True)
+
 
     def get_secure_link(self):
         from django.urls import reverse
@@ -202,3 +207,16 @@ class TransactionOut(models.Model):
 
     def __str__(self):
         return f"Transaction {self.transaction_code} - {self.item}"
+
+class MpesaPaymentLog(models.Model):
+    merchant_request_id = models.CharField(max_length=100)
+    checkout_request_id = models.CharField(max_length=100)
+    result_code = models.IntegerField()
+    result_description = models.TextField()
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    phone = models.CharField(max_length=15, null=True, blank=True)
+    mpesa_receipt = models.CharField(max_length=100, null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.mpesa_receipt} - {self.amount}"

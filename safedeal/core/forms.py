@@ -131,4 +131,21 @@ class TransactionOutForm(forms.ModelForm):
         choices=[('pending', 'Pending'), ('completed', 'Completed')],
         label="Transaction Status"
     )
+    
+from .models import SecureTransaction
+
+class SecureTransactionForm(forms.ModelForm):
+    class Meta:
+        model = SecureTransaction
+        exclude = ['seller', 'transaction_status', 'created_at', 'updated_at']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+    def clean_buyer_phone(self):
+        phone = self.cleaned_data.get('buyer_phone')
+        if not phone.startswith('+') and not phone.isdigit():
+            raise forms.ValidationError("Phone number must be valid and include country code.")
+        return phone
+
 

@@ -104,14 +104,14 @@ def cancel_transaction(request, transaction_id):
 
 
 
-@login_required
-def confirm_delivery(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
-    if request.method == 'POST' and transaction.status == 'shipped':
-        transaction.status = 'delivered'
-        transaction.save()
-        messages.success(request, "Delivery confirmed successfully.")
-    return redirect('dashboard')
+# @login_required
+# def confirm_delivery(request, transaction_id):
+#     transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
+#     if request.method == 'POST' and transaction.status == 'shipped':
+#         transaction.status = 'delivered'
+#         transaction.save()
+#         messages.success(request, "Delivery confirmed successfully.")
+#     return redirect('dashboard')
 
 
 @login_required
@@ -345,11 +345,181 @@ def transaction_out_detail(request, pk):
     transaction_out = get_object_or_404(TransactionOut, pk=pk)
     return render(request, 'core/transaction_out_detail.html', {'transaction_out': transaction_out})
 
+
 def transaction_out_public_view(request, token):
     transaction = get_object_or_404(TransactionOut, transaction_token=token)
-    return render(request, 'core/transaction_out_public.html', {'transaction': transaction})
+    return render(request, 'core/transaction_out_public.html', {
+        'transaction': transaction,
+    })
+    
+    
+
+def external_transaction_detail(request, transaction_id):
+    transaction = get_object_or_404(SecureTransaction, id=transaction_id)
+    return render(request, 'core/external_transaction_detail.html', {
+        'transaction': transaction
+    })
 
 
+def initiate_payment(request, transaction_id):
+    transaction = get_object_or_404(SecureTransaction, id=transaction_id)
+
+    if request.method == "POST":
+        # Generate a unique reference
+        if not transaction.mpesa_reference:
+            transaction.mpesa_reference = f"SD-{uuid.uuid4().hex[:10]}"
+            transaction.save()
+
+        phone = transaction.buyer_phone
+        amount = transaction.amount
+
+        # Send to M-PESA with this reference
+        response = lipa_na_mpesa(
+            phone_number=phone,
+            amount=amount,
+            account_reference=transaction.mpesa_reference,  # Pass here
+            transaction_desc=f"Payment for {transaction.item}"
+        )
+
+        print("STK Push Response:", response)  # Optional debug
+
+        # Optionally set status here
+        transaction.transaction_status = 'pending'
+        transaction.save()
+
+        messages.success(request, 'Payment initiated. You will receive an M-PESA prompt shortly.')
+
+        return render(request, 'core/payment_initiated.html', {'transaction': transaction})
+
+
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import json
+from .models import SecureTransaction, MpesaPaymentLog
+
+@csrf_exempt
+def mpesa_callback(request):
+    data = json.loads(request.body)
+
+    # Extract relevant details from the callback
+    stk_callback = data.get("Body", {}).get("stkCallback", {})
+    merchant_request_id = stk_callback.get("MerchantRequestID")
+    checkout_request_id = stk_callback.get("CheckoutRequestID")
+    result_code = stk_callback.get("ResultCode")
+    result_desc = stk_callback.get("ResultDesc")
+
+    # Default values if payment failed
+    amount = phone = mpesa_receipt = None
+
+    if result_code == 0:
+        callback_metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
+        metadata_dict = {item['Name']: item['Value'] for item in callback_metadata if 'Value' in item}
+
+        amount = metadata_dict.get("Amount")
+        mpesa_receipt = metadata_dict.get("MpesaReceiptNumber")
+        phone = metadata_dict.get("PhoneNumber")
+
+        # Save or update the transaction
+        try:
+            transaction = SecureTransaction.objects.get(buyer_phone=phone, amount=amount)
+            transaction.transaction_status = 'paid'
+            transaction.save()
+        except SecureTransaction.DoesNotExist:
+            pass  # Optionally log unmatched payments
+
+    # Log all STK callback info
+    MpesaPaymentLog.objects.create(
+        merchant_request_id=merchant_request_id,
+        checkout_request_id=checkout_request_id,
+        result_code=result_code,
+        result_description=result_desc,
+        amount=amount,
+        phone=phone,
+        mpesa_receipt=mpesa_receipt
+    )
+
+    return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+
+
+# @csrf_exempt
+# def mpesa_callback(request):
+#     data = json.loads(request.body)
+
+#     # Navigate to the reference (structure varies slightly, so check this carefully)
+#     try:
+#         stk_callback = data['Body']['stkCallback']
+#         reference = stk_callback.get('MerchantRequestID')  # or CheckoutRequestID
+#         metadata_items = stk_callback.get('CallbackMetadata', {}).get('Item', [])
+#         mpesa_code = None
+#         amount = None
+#         phone = None
+
+#         for item in metadata_items:
+#             if item['Name'] == 'MpesaReceiptNumber':
+#                 mpesa_code = item['Value']
+#             elif item['Name'] == 'Amount':
+#                 amount = item['Value']
+#             elif item['Name'] == 'PhoneNumber':
+#                 phone = item['Value']
+
+#         # Match transaction using mpesa_reference
+#         transaction = SecureTransaction.objects.filter(mpesa_reference=reference).first()
+#         if transaction:
+#             transaction.transaction_status = 'paid'
+#             transaction.escrow_status = 'open'
+#             transaction.save()
+#             print(f"Payment success for transaction {transaction.id}")
+
+#     except Exception as e:
+#         print("Error processing callback:", e)
+        
+    
+
+#     return JsonResponse({"ResultCode": 0, "ResultDesc": "Callback received successfully"})
+
+
+
+from .forms import SecureTransactionForm
+
+@login_required
+def create_secure_transaction(request):
+    if request.method == 'POST':
+        form = SecureTransactionForm(request.POST)
+        if form.is_valid():
+            transaction = form.save(commit=False)
+            transaction.seller = request.user
+            transaction.save()
+            return redirect('transaction_success', transaction_id=transaction.id)
+    else:
+        form = SecureTransactionForm()
+    
+    return render(request, 'core/create_transaction.html', {'form': form})
+
+from .models import SecureTransaction
+import qrcode
+import io
+import base64
+@login_required
+def transaction_success(request, transaction_id):
+    transaction = SecureTransaction.objects.get(id=transaction_id, seller=request.user)
+    secure_link = request.build_absolute_uri(transaction.get_secure_link())
+
+    # Generate QR code image in memory
+    qr = qrcode.make(secure_link)
+    buffer = io.BytesIO()
+    qr.save(buffer, format='PNG')
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+    return render(request, 'core/transaction_success.html', {
+        'transaction': transaction,
+        'secure_link': secure_link,
+        'qr_code': qr_base64,
+    })
+    
+def buyer_transaction_view(request, transaction_id):
+    transaction = get_object_or_404(SecureTransaction, id=transaction_id)
+    return render(request, 'core/buyer_transaction_view.html', {'transaction': transaction})
 
 
 

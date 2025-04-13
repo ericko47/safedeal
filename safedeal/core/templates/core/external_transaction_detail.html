@@ -1,0 +1,33 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="max-w-xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-2xl">
+    <h2 class="text-3xl font-semibold text-center mb-6">Secure Purchase Through Safedeal</h2>
+
+    <div class="mb-4">
+        <p class="text-gray-700 text-lg"><span class="font-semibold">Item:</span> {{ transaction.item_name }}</p>
+        <p class="text-gray-700"><span class="font-semibold">Description:</span> {{ transaction.description }}</p>
+        <p class="text-gray-700"><span class="font-semibold">Price:</span> Ksh {{ transaction.amount }}</p>
+        <p class="text-gray-700"><span class="font-semibold">Seller:</span> {{ transaction.seller.username }}</p>
+        <p class="text-sm text-gray-500 mt-2">Transaction ID: {{ transaction.id }}</p>
+    </div>
+
+    <div class="mt-6">
+        {% if transaction.transaction_status == 'pending' %}
+            <form method="POST" action="{% url 'initiate_payment' transaction.id %}">
+                {% csrf_token %}
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl shadow">
+                    Buy Now
+                </button>
+            </form>
+        {% else %}
+            <div class="bg-yellow-100 text-yellow-700 p-3 rounded-md text-center">
+                This transaction is currently <strong>{{ transaction.transaction_status|title }}</strong>.
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="mt-8 text-center text-sm text-gray-400">
+        SafeDeal protects your money until the seller delivers.
+    </div>
+</div>
+{% endblock %}
