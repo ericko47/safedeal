@@ -51,6 +51,9 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',  # Optional if you want social login
     'widget_tweaks',
+    'cloudinary',    
+    'cloudinary_storage',
+
     
     'mpesa',
 ]
@@ -124,6 +127,15 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
 }
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'your-cloud-name',
+    'API_KEY': 'your-api-key',
+    'API_SECRET': 'your-api-secret',
+}
+
 
 # Simple JWT settings
 from datetime import timedelta
