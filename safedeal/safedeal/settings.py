@@ -131,9 +131,9 @@ REST_FRAMEWORK = {
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'your-cloud-name',
-    'API_KEY': 'your-api-key',
-    'API_SECRET': 'your-api-secret',
+    'CLOUD_NAME': 'dvsqbpgjs',
+    'API_KEY': '494462387153273',
+    'API_SECRET': 'iVnkekZTvvGISPt_Rct5PW7-Vy4',
 }
 
 
