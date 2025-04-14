@@ -47,7 +47,7 @@ def lipa_na_mpesa(phone_number, amount, account_reference="SafeDeal", transactio
         "Timestamp": timestamp,
         "TransactionType": "CustomerPayBillOnline",
         "Amount": 1,#int(float(amount)),  # ensures compatibility just in case,
-        "PartyA": '0748823384',#phone_number,
+        "PartyA": phone_number,
         "PartyB": business_short_code,
         "PhoneNumber": formatted_phone,
         "CallBackURL": settings.MPESA_CALLBACK_URL,

@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<div class="max-w-lg mx-auto mt-10 bg-white shadow-md rounded p-6">
+    <h2 class="text-xl font-semibold text-red-600 mb-4">Confirm Deletion</h2>
+    <p class="mb-4">Are you sure you want to delete <strong>{{ item.title }}</strong>?</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="flex space-x-4">
+            <form action="{% url 'delete_item' item.id %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-1 text-sm rounded">
+                    Yes, Delete
+                </button>
+            </form> 
+            <a href="{% url 'my_items' %}" class="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

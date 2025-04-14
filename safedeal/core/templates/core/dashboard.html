@@ -6,7 +6,7 @@
 
   <!-- Greeting -->
   <div>
-    <h2 class="text-2xl font-bold text-gray-800">Welcome, <span class="text-blue-600">{{ user.username }}</span></h2>
+    <h2 class="text-2xl font-bold text-gray-800">Welcome, <span class="text-blue-600">{{ user.first_name }} {{user.last_name}}</span></h2>
     <p class="text-gray-600">Manage your profile, transactions, and more.</p>
   </div>
 
@@ -21,6 +21,7 @@
       <li><strong>Account Type:</strong> {{ user.account_type|capfirst }}</li>
     </ul>
     <a href="{% url 'update_profile' %}" class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">Update Profile</a>
+    <a href="{% url 'profile' %}" class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">My Profile</a>
   </div>
 
   <!-- Transactions -->
@@ -75,6 +76,7 @@
     <h3 class="text-lg font-semibold mb-4">Post an Item</h3>
     <p class="text-gray-600">You're registered as a seller. Start listing your products now.</p>
     <a href="{% url 'post_item' %}" class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">Post New Item</a>
+    <a href="{% url 'my_items' %}" class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">View My Items</a>
   </div>
   {% endif %}
 

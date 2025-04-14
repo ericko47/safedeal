@@ -196,6 +196,21 @@ def profile_view(request):
     return render(request, 'core/profile.html')
 
 @login_required
+def my_items_view(request):
+    user_items = Item.objects.filter(seller=request.user).order_by('-created_at')
+    return render(request, 'core/my-items.html', {'items': user_items})
+
+
+@login_required
+def delete_item_view(request, item_id):
+    item = get_object_or_404(Item, id=item_id, seller=request.user)
+    if request.method == 'POST':
+        item.delete()
+        messages.success(request, "Item deleted successfully.")
+        return redirect('my_items')
+    return render(request, 'core/confirm_delete.html', {'item': item})
+
+@login_required
 def update_profile(request):
     if request.method == 'POST':
         form = UserProfileForm(request.POST, request.FILES, instance=request.user)
@@ -238,6 +253,22 @@ def escrow_view(request):
 @login_required
 
 def post_item_view(request):
+    
+    user = request.user
+
+    # Check for essential profile fields
+    required_fields = [
+        user.national_id,
+        user.phone_number,
+        user.current_location,
+        user.permanent_address,
+        user.account_type
+    ]
+
+    if not all(required_fields):
+        messages.warning(request, "Please complete your profile before posting an item.")
+        return redirect('update_profile') 
+
     if request.method == 'POST':
         form = ItemForm(request.POST, request.FILES)
         files = request.FILES.getlist('images')
