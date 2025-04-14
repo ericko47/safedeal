@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-import dj_database_url
+# import dj_database_url
 
 import os
 
@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-=80&rtwkul0-i*_dj6k466*u3-8hfkd(=8bobokiqyu20ta=7g'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['safedeal.onrender.com', '127.0.0.1', 'localhost',]
 
@@ -50,9 +50,9 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',  # Optional if you want social login
-    'widget_tweaks',
-    'cloudinary',    
-    'cloudinary_storage',
+    # 'widget_tweaks',
+    # 'cloudinary',    
+    # 'cloudinary_storage',
 
     
     'mpesa',
@@ -60,7 +60,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',    
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    # 'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -93,13 +93,12 @@ WSGI_APPLICATION = 'safedeal.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# DATABASES = {
-#     # 'default': {'ENGINE': 'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3',}
-#     'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
-# }
 DATABASES = {
-    'default': dj_database_url.config(conn_max_age=600)
+    'default': {'ENGINE': 'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3',}
 }
+# DATABASES = {
+#     'default': dj_database_url.config(conn_max_age=600)
+# }
 
 
 
@@ -128,13 +127,13 @@ REST_FRAMEWORK = {
     ],
 }
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'dvsqbpgjs',
-    'API_KEY': '494462387153273',
-    'API_SECRET': 'iVnkekZTvvGISPt_Rct5PW7-Vy4',
-}
+# CLOUDINARY_STORAGE = {
+#     'CLOUD_NAME': 'dvsqbpgjs',
+#     'API_KEY': '494462387153273',
+#     'API_SECRET': 'iVnkekZTvvGISPt_Rct5PW7-Vy4',
+# }
 
 
 # Simple JWT settings
