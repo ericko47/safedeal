@@ -54,12 +54,10 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',  # Optional if you want social login
     'widget_tweaks',
-    'cloudinary',    
-    'cloudinary_storage',
-
     
     'mpesa',
 ]
+INSTALLED_APPS += ['cloudinary', 'cloudinary_storage']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',    
@@ -188,8 +186,8 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # For dev
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')    # For prod
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# MEDIA_URL = '/media/'
+# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
