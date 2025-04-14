@@ -1,4 +1,3 @@
-
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -9,53 +8,44 @@
   <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f8f9fa;
-    }
-    header {
-      background-color: #00b894;
-      color: white;
-      padding: 3rem 0;
-      text-align: center;
-    }
-    .section {
-      padding: 4rem 0;
-    }
     .feature {
-      padding: 2rem;
+      padding: 1.25rem; /* equivalent to Tailwind's p-5 */
       border-radius: 12px;
       background: white;
       box-shadow: 0 0 15px rgba(0,0,0,0.05);
       height: 100%;
-    }
-    footer {
-      background-color: #222;
-      color: white;
-      padding: 2rem;
-      text-align: center;
-    }    
-    nav {
-      background-color: #40739e;
-      padding: 1rem;
       text-align: center;
     }
-    nav a {
-      color: white;
-      margin: 0 15px;
-      text-decoration: none;
+    .feature img {
+      max-height: 80px;
+      margin-bottom: 1rem;
+    }
+    .icon-feature {
+      font-size: 2.5rem;
+      color: #00b894;
+      margin-bottom: 1rem;
     }
   </style>
+
 </head>
 <body>
-  <header>
-    <div class="container">
-      <h1 class="display-4">Welcome to SafeDeal</h1>
-      <p class="lead">Empowering Safe Online Transactions for Small Businesses and Everyday Users</p>
-      <a href="{% url 'register' %}" class="btn btn-light btn-lg">Get Started</a>
+  <header class="bg-success text-white py-5">
+    <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between gap-4">
+      <div class="flex-shrink-0">
+        <img src="{% static 'core/logos/slogorect.png' %}" alt="SafeDeal Logo" class="img-fluid" style="max-height: 140px;">
+      </div>
+      <div class="text-md-end text-center">
+        <h1 class="display-5 fw-bold mb-2">Welcome to SafeDeal</h1>
+        <p class="lead mb-3">Empowering Safe Online Transactions for Small Businesses and Everyday Users</p>
+        <a href="{% url 'register' %}" class="btn btn-light btn-lg px-4 py-2 shadow rounded-pill">Get Started</a>
+      </div>
     </div>
   </header>
+  
+
   <nav>
     <a href="{% url 'index' %}" class="active">Home</a>
     <a href="{% url 'browse' %}">Browse Items</a>
@@ -65,38 +55,47 @@
     {% else %}
       <a href="{% url 'login' %}">Login</a>
     {% endif %}
-    {% if user.is_authenticated %}
-      <a href="#."></a>
-    {% else %}
+    {% if not user.is_authenticated %}
       <a href="{% url 'register' %}">Guest Seller! Register</a>
     {% endif %}
   </nav>
 
-  <section class="section text-center">
+  <section class="section text-center bg-white">
     <div class="container">
-      <h2 class="mb-4">Why SafeDeal?</h2>
-      <div class="row">
-        <div class="col-md-4">
-          <div class="feature">
-            <h5>Secure Payments</h5>
-            <p>Escrow system holds funds until buyer confirms delivery.</p>
-          </div>
+      <h2 class="mb-5 fw-bold text-success">Why SafeDeal?</h2>
+      <div class="row g-4">
+
+        <div class="col-md-4 gap-6">
+            <div class="bg-white rounded-2xl shadow p-4 hover:shadow-lg transition">
+              <div style="width: 100%; height: 100%; overflow: hidden; border-radius: 4px;">
+                <img src="{% static 'core/images/secure_payment.jpeg' %}" alt="..." style="width: 100%; height: 100%; object-fit: cover;" />
+              </div>                                
+              <h3 class="text-xl font-semibold text-gray-800">Secure Payments</h3>
+              <div class="w-full h-48 bg-gray-200 flex items-center justify-center rounded-xl mb-3 text-gray-500">
+                <p class="text-green-600 font-bold text-lg">Escrow system holds funds until buyer confirms delivery.</p>
+              </div>
+            </div>
         </div>
+
+
         <div class="col-md-4">
-          <div class="feature">
-            <h5>Verified Users</h5>
+          <div class="feature p-3 h-100">
+            <img src="{% static 'core/images/verified_user.jpeg' %}" alt="Verified Users" class="mb-3" style="max-height: 80px;">
+            <h5 class="fw-semibold mb-2">Verified Users</h5>
             <p>KYC for both buyers and sellers builds trust in every transaction.</p>
           </div>
         </div>
         <div class="col-md-4">
-          <div class="feature">
-            <h5>Dispute Resolution</h5>
+          <div class="feature p-3 h-100">
+            <img src="{% static 'core/images/dispute_resolution.jpeg' %}" alt="Dispute Resolution" class="mb-3" style="max-height: 80px;">
+            <h5 class="fw-semibold mb-2">Dispute Resolution</h5>
             <p>Buyers and sellers can raise disputes and get admin support.</p>
           </div>
         </div>
       </div>
     </div>
   </section>
+  
 
   <section class="section bg-light">
     <div class="container text-center">
@@ -104,24 +103,28 @@
       <div class="row">
         <div class="col-md-3">
           <div class="feature">
+            <i class="bi bi-bag-fill"></i>
             <h6>1. Agree on Product</h6>
             <p>Buyer and seller agree on price and product.</p>
           </div>
         </div>
         <div class="col-md-3">
           <div class="feature">
+            <i class="bi bi-cash-stack"></i>
             <h6>2. Buyer Sends Funds</h6>
             <p>Buyer pays via M-PESA, funds held securely in SafeDeal.</p>
           </div>
         </div>
         <div class="col-md-3">
           <div class="feature">
+            <i class="bi bi-box-seam-fill"></i>
             <h6>3. Seller Delivers</h6>
             <p>Item is delivered or shipped to the buyer.</p>
           </div>
         </div>
         <div class="col-md-3">
           <div class="feature">
+            <i class="bi bi-check-circle-fill"></i>
             <h6>4. Funds Released</h6>
             <p>Buyer confirms, SafeDeal releases funds to seller.</p>
           </div>
@@ -134,16 +137,16 @@
     <div class="container">
       <h2 class="mb-4">Start Selling or Buying Securely</h2>
       <p class="mb-4">SafeDeal protects you from online fraud and builds trust with every transaction.</p>
-      <div class="mt-6 flex flex-col sm:flex-row sm:justify-center gap-4">
-        <a href="{% url 'browse' %}" class="px-6 py-3 bg-green-500 text-white rounded-2xl shadow hover:bg-green-600 transition">Browse Items</a>
-        <a href="{% url 'post_item' %}" class="px-6 py-3 bg-white text-green-500 border border-green-500 rounded-2xl hover:bg-green-100 transition">Start Selling</a>
+      <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a href="{% url 'browse' %}" class="btn btn-outline-success btn-lg px-4">Browse Items</a>
+        <a href="{% url 'post_item' %}" class="btn btn-outline-success btn-lg px-4">Start Selling</a>
       </div>
-      
     </div>
   </section>
 
   <footer>
     &copy; 2025 SafeDeal. All rights reserved.
   </footer>
+
 </body>
 </html>
