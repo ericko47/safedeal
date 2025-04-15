@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     
     'mpesa',
+    'messaging',
 ]
 INSTALLED_APPS += ['cloudinary', 'cloudinary_storage']
 

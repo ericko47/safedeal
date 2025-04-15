@@ -111,6 +111,35 @@
   <footer class="bg-white border-t mt-10 py-6 text-center text-sm text-gray-500">
     <p>&copy; {{ now|date:"Y" }} SafeDeal. All rights reserved.</p>
   </footer>
+  <script>
+    const spinner = document.getElementById('loading-spinner');
+  
+    // Show spinner on full page load
+    window.addEventListener('beforeunload', () => {
+      spinner.classList.remove('hidden');
+    });
+  
+    // Show spinner on form submit
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll("form").forEach(form => {
+        form.addEventListener("submit", () => {
+          spinner.classList.remove('hidden');
+        });
+      });
+    });
+    </script>
+  <div id="loading-spinner" class="fixed inset-0 flex items-center justify-center bg-gray-100 z-50 hidden">
+    <svg class="animate-spin h-10 w-10 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4.93 4.93a10 10 0 0114.14 14.14L12 12l2.93-2.93a10 10 0 00-14.14-14.14z"></path>
+    </svg>
+  </div>  
+  <script>
+    setTimeout(() => {
+      const messages = document.querySelectorAll('[class*="border-"]');
+      messages.forEach(msg => msg.style.display = 'none');
+    }, 4000); // Hide after 4 seconds
+  </script>
 
 </body>
 </html>

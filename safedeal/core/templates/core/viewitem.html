@@ -36,9 +36,13 @@
 
   <!-- Action Buttons -->
   <div class="mt-6 flex flex-col sm:flex-row flex-wrap gap-4">
-    <button class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded w-full sm:w-auto">
+    {% comment %} <button class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded w-full sm:w-auto">
       Contact Seller
-    </button>
+    </button> {% endcomment %}
+    <a href="{% url 'start_conversation' item.id %}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded w-full sm:w-auto">
+      Contact Seller
+  </a>
+
 
     <form method="post" action="{% url 'place_order' item.id %}" class="flex flex-col sm:flex-row gap-4 items-center w-full">
       {% csrf_token %}

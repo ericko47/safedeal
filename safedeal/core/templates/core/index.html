@@ -66,32 +66,39 @@
       <div class="row g-4">
 
         <div class="col-md-4 gap-6">
-            <div class="bg-white rounded-2xl shadow p-4 hover:shadow-lg transition">
-              <div style="width: 100%; height: 100%; overflow: hidden; border-radius: 4px;">
-                <img src="{% static 'core/images/secure_payment.jpeg' %}" alt="..." style="width: 100%; height: 100%; object-fit: cover;" />
-              </div>                                
-              <h3 class="text-xl font-semibold text-gray-800">Secure Payments</h3>
-              <div class="w-full h-48 bg-gray-200 flex items-center justify-center rounded-xl mb-3 text-gray-500">
-                <p class="text-green-600 font-bold text-lg">Escrow system holds funds until buyer confirms delivery.</p>
-              </div>
+          <div class="bg-white rounded-2xl shadow p-4 hover:shadow-lg transition">
+            <div style="width: 100%; height: 200px; overflow: hidden; border-radius: 4px;">
+              <img src="{% static 'core/images/secure_payment.jpeg' %}" alt="..." style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>                                
+            <h3 class="text-xl font-semibold text-gray-800">Secure Payments</h3>
+            <div class="w-full h-48 bg-gray-200 flex items-center justify-center rounded-xl mb-3 text-gray-500">
+              <p class="text-green-600 font-bold text-lg">Escrow system holds funds until buyer confirms delivery.</p>
             </div>
-        </div>
-
-
-        <div class="col-md-4">
-          <div class="feature p-3 h-100">
-            <img src="{% static 'core/images/verified_user.jpeg' %}" alt="Verified Users" class="mb-3" style="max-height: 80px;">
-            <h5 class="fw-semibold mb-2">Verified Users</h5>
-            <p>KYC for both buyers and sellers builds trust in every transaction.</p>
           </div>
-        </div>
-        <div class="col-md-4">
-          <div class="feature p-3 h-100">
-            <img src="{% static 'core/images/dispute_resolution.jpeg' %}" alt="Dispute Resolution" class="mb-3" style="max-height: 80px;">
-            <h5 class="fw-semibold mb-2">Dispute Resolution</h5>
-            <p>Buyers and sellers can raise disputes and get admin support.</p>
+      </div>
+      <div class="col-md-4 gap-6">
+          <div class="bg-white rounded-2xl shadow p-4 hover:shadow-lg transition">
+            <div style="width: 100%; height: 200px; overflow: hidden; border-radius: 4px;">
+              <img src="{% static 'core/images/verified_user.jpeg' %}" alt="..." style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>                                
+            <h3 class="text-xl font-semibold text-gray-800">Verified Users</h3>
+            <div class="w-full h-48 bg-gray-200 flex items-center justify-center rounded-xl mb-3 text-gray-500">
+              <p class="text-green-600 font-bold text-lg">KYC for both buyers and sellers builds trust in every transaction.</p></p>
+            </div>
           </div>
-        </div>
+      </div>
+      <div class="col-md-4 gap-6">
+          <div class="bg-white rounded-2xl shadow p-4 hover:shadow-lg transition">
+            <div style="width: 100%; height: 200px; overflow: hidden; border-radius: 4px;">
+              <img src="{% static 'core/images/dispute_resolution.jpeg' %}" alt="..." style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>                                
+            <h3 class="text-xl font-semibold text-gray-800">Dispute Resolution</h3>
+            <div class="w-full h-48 bg-gray-200 flex items-center justify-center rounded-xl mb-3 text-gray-500">
+              <p class="text-green-600 font-bold text-lg">Buyers and sellers can raise disputes and get admin support.</p></p>
+            </div>
+          </div>
+      </div>
+
       </div>
     </div>
   </section>
@@ -147,6 +154,28 @@
   <footer>
     &copy; 2025 SafeDeal. All rights reserved.
   </footer>
-
+  <script>
+    const spinner = document.getElementById('loading-spinner');
+  
+    // Show spinner on full page load
+    window.addEventListener('beforeunload', () => {
+      spinner.classList.remove('hidden');
+    });
+  
+    // Show spinner on form submit
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll("form").forEach(form => {
+        form.addEventListener("submit", () => {
+          spinner.classList.remove('hidden');
+        });
+      });
+    });
+    form.addEventListener("submit", (e) => {
+      spinner.classList.remove('hidden');
+      e.preventDefault(); // prevent actual submit for test
+      setTimeout(() => form.submit(), 2000); // simulate 2-second delay
+    });
+  </script>
+  
 </body>
 </html>
