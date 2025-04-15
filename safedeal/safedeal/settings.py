@@ -11,12 +11,12 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-# import dj_database_url
+import dj_database_url
 
 import os
-# import cloudinary
-# import cloudinary.uploader
-# import cloudinary.api
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-=80&rtwkul0-i*_dj6k466*u3-8hfkd(=8bobokiqyu20ta=7g'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['safedeal.onrender.com', '127.0.0.1', 'localhost',]
 
@@ -62,7 +62,7 @@ INSTALLED_APPS += ['cloudinary', 'cloudinary_storage']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',    
-    # 'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -95,12 +95,12 @@ WSGI_APPLICATION = 'safedeal.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {'ENGINE': 'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3',}
-}
 # DATABASES = {
-#     'default': dj_database_url.config(conn_max_age=600)
+#     'default': {'ENGINE': 'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3',}
 # }
+DATABASES = {
+    'default': dj_database_url.config(conn_max_age=600)
+}
 
 
 
@@ -129,11 +129,11 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CLOUDINARY_STORAGE = {
-#     'CLOUD_NAME': 'dvsqbpgjs',
-#     'API_KEY': '494462387153273',
-#     'API_SECRET': 'iVnkekZTvvGISPt_Rct5PW7-Vy4',
-# }
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dvsqbpgjs',
+    'API_KEY': '494462387153273',
+    'API_SECRET': 'iVnkekZTvvGISPt_Rct5PW7-Vy4',
+}
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
@@ -186,8 +186,8 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # For dev
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')    # For prod
 
-# MEDIA_URL = '/media/'
-# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
