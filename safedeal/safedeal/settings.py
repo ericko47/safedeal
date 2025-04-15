@@ -14,6 +14,9 @@ from pathlib import Path
 # import dj_database_url
 
 import os
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -50,13 +53,11 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',  # Optional if you want social login
-    # 'widget_tweaks',
-    # 'cloudinary',    
-    # 'cloudinary_storage',
-
+    'widget_tweaks',
     
     'mpesa',
 ]
+INSTALLED_APPS += ['cloudinary', 'cloudinary_storage']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',    
@@ -127,14 +128,13 @@ REST_FRAMEWORK = {
     ],
 }
 
-# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-
 # CLOUDINARY_STORAGE = {
 #     'CLOUD_NAME': 'dvsqbpgjs',
 #     'API_KEY': '494462387153273',
 #     'API_SECRET': 'iVnkekZTvvGISPt_Rct5PW7-Vy4',
 # }
 
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Simple JWT settings
 from datetime import timedelta
@@ -185,8 +185,8 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # For dev
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')    # For prod
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# MEDIA_URL = '/media/'
+# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
