@@ -13,20 +13,18 @@ def initiate_stk_push(request):
     phone_number = request.GET.get('phone')  # or from form
     amount = request.GET.get('amount')
     account_ref = "SafeDealTXN001"
-    transaction_desc = "Payment for item"
+    transaction_desc = "Payment for SafeDeal services"
 
     response = lipa_na_mpesa(phone_number, amount, account_ref, transaction_desc)
     return JsonResponse(response)
 
 
 
-@csrf_exempt
-def mpesa_callback(request):
-    data = json.loads(request.body)
-    print("Callback received:", data)
-    return JsonResponse({"message": "Callback received successfully"})
-
-
+# @csrf_exempt
+# def mpesa_callback(request):
+#     data = json.loads(request.body)
+#     print("Callback received:", data)
+#     return JsonResponse({"message": "Callback received successfully"})
 
 @csrf_exempt
 def mpesa_callback(request):

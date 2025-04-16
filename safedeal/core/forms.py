@@ -3,17 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser, Item, Transaction, TransactionOut, TransactionDispute
 
 class CustomUserCreationForm(UserCreationForm):
-    # national_id = forms.CharField(max_length=20)
     phone_number = forms.CharField(max_length=15)
-    # date_of_birth = forms.DateField(required=False)
-    # permanent_address = forms.CharField(max_length=255, required=False)
-    # business_name = forms.CharField(max_length=255, required=False)
-    # business_address = forms.CharField(max_length=255, required=False)
-    # business_license_number = forms.CharField(max_length=50, required=False)
-    # profile_picture = forms.ImageField(required=False)
-    # national_id_picture = forms.ImageField(required=False)
-    # current_location = forms.CharField(max_length=100, required=False)
-    # account_type = forms.ChoiceField(choices=CustomUser.ACCOUNT_TYPE_CHOICES)
 
     class Meta:
         model = CustomUser

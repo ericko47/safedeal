@@ -80,10 +80,18 @@ def confirm_delivery(request, transaction_id):
         if transaction.status == 'shipped':
             transaction.status = 'delivered'
             transaction.save()
+
+            # Mark item as unavailable
+            item = transaction.item
+            item.is_available = False
+            item.save()
+
             messages.success(request, "Delivery confirmed. Funds will now be released to the seller.")
         else:
             messages.warning(request, "This transaction is not in a 'shipped' state.")
+
     return redirect('transaction_detail', transaction_id=transaction.id)
+
 
 
 @login_required
@@ -102,16 +110,6 @@ def cancel_transaction(request, transaction_id):
             messages.warning(request, "Only pending transactions can be cancelled.")
     return redirect('transaction_detail', transaction_id=transaction.id)
 
-
-
-# @login_required
-# def confirm_delivery(request, transaction_id):
-#     transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
-#     if request.method == 'POST' and transaction.status == 'shipped':
-#         transaction.status = 'delivered'
-#         transaction.save()
-#         messages.success(request, "Delivery confirmed successfully.")
-#     return redirect('dashboard')
 
 
 @login_required
@@ -196,8 +194,8 @@ def profile_view(request):
     return render(request, 'core/profile.html')
 
 @login_required
-def my_items_view(request):
-    user_items = Item.objects.filter(seller=request.user).order_by('-created_at')
+def my_items_view(request):    
+    user_items = Item.objects.filter(seller=request.user, is_available=True).order_by('-created_at')
     return render(request, 'core/my-items.html', {'items': user_items})
 
 
