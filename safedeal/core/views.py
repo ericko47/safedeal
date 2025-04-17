@@ -13,6 +13,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q
 from mpesa.utils import lipa_na_mpesa
+from core.utils import send_custom_email
 
 
 
@@ -85,8 +86,17 @@ def confirm_delivery(request, transaction_id):
             item = transaction.item
             item.is_available = False
             item.save()
-
+            
             messages.success(request, "Delivery confirmed. Funds will now be released to the seller.")
+            send_custom_email(
+                subject='Item Delivered Confirmation',
+                template_name='emails/delivery_confirmed.html',
+                context={
+                    'seller': transaction.seller,
+                    'item': transaction.item,
+                },
+                recipient_list=[transaction.seller.email],
+            )   
         else:
             messages.warning(request, "This transaction is not in a 'shipped' state.")
 
@@ -157,7 +167,13 @@ def register(request):
         form = CustomUserCreationForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
-            user.backend = 'allauth.account.auth_backends.AuthenticationBackend'
+            send_custom_email(
+                subject='Welcome to SafeDeal!',
+                template_name='emails/welcome_email.html',
+                context={'user': user},
+                recipient_list=[user.email],
+            )  
+            user.backend = 'allauth.account.auth_backends.AuthenticationBackend'                      
             login(request, user)            
             messages.success(request, 'Registration successful!')
             return redirect('dashboard')  # Redirect to dashboard after successful registration

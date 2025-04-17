@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-import dj_database_url
+# import dj_database_url
 
 import os
 import cloudinary
@@ -96,13 +96,23 @@ WSGI_APPLICATION = 'safedeal.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {'ENGINE': 'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3',}
-# }
 DATABASES = {
-    'default': dj_database_url.config(conn_max_age=600)
+    'default': {'ENGINE': 'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3',}
 }
+# DATABASES = {
+#     'default': dj_database_url.config(conn_max_age=600)
+# }
 
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'erickogutu47@omo@gmail.com'
+EMAIL_HOST_PASSWORD = 'fahyodmenufflggk'  # Not your Gmail password, but an app password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+SERVER_EMAIL = EMAIL_HOST_USER
+# https://docs.djangoproject.com/en/5.2/topics/email/#email-backends
 
 
 # Password validation
