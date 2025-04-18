@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-import dj_database_url
+# import dj_database_url
 
 import os
 import cloudinary
@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-=80&rtwkul0-i*_dj6k466*u3-8hfkd(=8bobokiqyu20ta=7g'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['safedeal.onrender.com', '127.0.0.1', 'localhost',]
 
@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',  # Optional if you want social login
     'widget_tweaks',
+    'django.contrib.humanize',
     
     'mpesa',
     'messaging',
@@ -95,13 +96,23 @@ WSGI_APPLICATION = 'safedeal.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {'ENGINE': 'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3',}
-# }
 DATABASES = {
-    'default': dj_database_url.config(conn_max_age=600)
+    'default': {'ENGINE': 'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3',}
 }
+# DATABASES = {
+#     'default': dj_database_url.config(conn_max_age=600)
+# }
 
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'erickogutu47@omo@gmail.com'
+EMAIL_HOST_PASSWORD = 'fahyodmenufflggk'  # Not your Gmail password, but an app password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+SERVER_EMAIL = EMAIL_HOST_USER
+# https://docs.djangoproject.com/en/5.2/topics/email/#email-backends
 
 
 # Password validation

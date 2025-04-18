@@ -13,6 +13,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q
 from mpesa.utils import lipa_na_mpesa
+from core.utils import send_custom_email
 
 
 
@@ -80,10 +81,27 @@ def confirm_delivery(request, transaction_id):
         if transaction.status == 'shipped':
             transaction.status = 'delivered'
             transaction.save()
+
+            # Mark item as unavailable
+            item = transaction.item
+            item.is_available = False
+            item.save()
+            
             messages.success(request, "Delivery confirmed. Funds will now be released to the seller.")
+            send_custom_email(
+                subject='Item Delivered Confirmation',
+                template_name='emails/delivery_confirmed.html',
+                context={
+                    'seller': transaction.seller,
+                    'item': transaction.item,
+                },
+                recipient_list=[transaction.seller.email],
+            )   
         else:
             messages.warning(request, "This transaction is not in a 'shipped' state.")
+
     return redirect('transaction_detail', transaction_id=transaction.id)
+
 
 
 @login_required
@@ -102,16 +120,6 @@ def cancel_transaction(request, transaction_id):
             messages.warning(request, "Only pending transactions can be cancelled.")
     return redirect('transaction_detail', transaction_id=transaction.id)
 
-
-
-# @login_required
-# def confirm_delivery(request, transaction_id):
-#     transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
-#     if request.method == 'POST' and transaction.status == 'shipped':
-#         transaction.status = 'delivered'
-#         transaction.save()
-#         messages.success(request, "Delivery confirmed successfully.")
-#     return redirect('dashboard')
 
 
 @login_required
@@ -159,7 +167,13 @@ def register(request):
         form = CustomUserCreationForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
-            user.backend = 'allauth.account.auth_backends.AuthenticationBackend'
+            send_custom_email(
+                subject='Welcome to SafeDeal!',
+                template_name='emails/welcome_email.html',
+                context={'user': user},
+                recipient_list=[user.email],
+            )  
+            user.backend = 'allauth.account.auth_backends.AuthenticationBackend'                      
             login(request, user)            
             messages.success(request, 'Registration successful!')
             return redirect('dashboard')  # Redirect to dashboard after successful registration
@@ -196,8 +210,8 @@ def profile_view(request):
     return render(request, 'core/profile.html')
 
 @login_required
-def my_items_view(request):
-    user_items = Item.objects.filter(seller=request.user).order_by('-created_at')
+def my_items_view(request):    
+    user_items = Item.objects.filter(seller=request.user, is_available=True).order_by('-created_at')
     return render(request, 'core/my-items.html', {'items': user_items})
 
 

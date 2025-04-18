@@ -1,0 +1,37 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-6 p-4 bg-white rounded shadow">
+    <h2 class="text-xl font-semibold mb-4">Inbox</h2>
+
+    {% if threads %}
+        <ul class="space-y-4">
+            {% for thread in threads %}
+                <li class="border-b pb-2">
+                    <a href="{% url 'conversation_detail' thread.id %}" class="flex items-center justify-between">
+                        <div>
+                        
+                            <p class="text-gray-800 font-medium">
+                                With 
+                                {% if thread.buyer == request.user %}
+                                    {{ thread.seller }}
+                                {% else %}
+                                    {{ thread.buyer }}
+                                {% endif %}
+                            </p>
+
+                            {% load humanize %}
+                            <p class="text-gray-500 text-sm">
+                                {{ thread.item.title }} • {{ thread.last_updated|naturaltime }}
+                            </p>
+                        </div>
+                        <span class="text-blue-500 hover:underline">View</span>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-gray-600">No messages yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

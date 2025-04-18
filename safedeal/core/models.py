@@ -107,7 +107,7 @@ class TransactionDispute(models.Model):
 
 class CustomUser(AbstractUser):
     # National ID with validation
-    national_id = models.CharField(max_length=20, unique=True,blank=True, null=True,
+    national_id = models.CharField(max_length=20, unique=True, null=True, blank=True, 
         validators=[RegexValidator(regex='^\d{6,10}$', message='Invalid National ID')]
     )
     # Profile picture
