@@ -95,12 +95,12 @@ WSGI_APPLICATION = 'safedeal.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {'ENGINE': 'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3',}
-}
 # DATABASES = {
-#     'default': dj_database_url.config(conn_max_age=600)
+#     'default': {'ENGINE': 'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3',}
 # }
+DATABASES = {
+    'default': dj_database_url.config(conn_max_age=600)
+}
 
 
 
@@ -177,7 +177,7 @@ MPESA_CONSUMER_KEY = 'ysp5vtmDJCZp0HptHJyUz3wPmDjcYzsqiFWQvGfmxutEqMAW'
 MPESA_CONSUMER_SECRET = 'xEu7OmeyzZ5z7NJwraGUctUask2lmpVCLpxIqUBrFZp8ilcxPMv1RFQjXPoSXAz1'
 MPESA_SHORTCODE = '174379'  
 MPESA_PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
-MPESA_CALLBACK_URL = 'https://safedeal.onrender.com//api/mpesa/callback/'  # Will define this later
+MPESA_CALLBACK_URL = 'https://safedeal.co.ke/api/mpesa/callback/'  # Will define this later
 
 
 # Static files (CSS, JavaScript, Images)
