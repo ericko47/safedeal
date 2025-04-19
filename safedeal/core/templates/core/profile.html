@@ -26,9 +26,9 @@
         </ul>
 
         <div class="mt-4 flex flex-col sm:flex-row gap-2">
-          <a href="{% url 'update_profile' %}" class="btn-primary">Update Profile</a>
-          <a href="#" class="btn-secondary">Change Picture</a>
-          <a href="#" class="text-blue-600 underline mt-2 sm:mt-0">Change Password</a>
+          {% comment %} <a href="{% url 'update_profile' %}" class="btn-primary">Update Profile</a>
+          <a href="#" class="btn-secondary">Change Picture</a> {% endcomment %}
+          <a href="{% url 'change_password' %}" class="text-blue-600 underline mt-2 sm:mt-0">Change Password</a>
         </div>
       </div>
     </div>
