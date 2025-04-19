@@ -122,14 +122,14 @@ def cancel_transaction(request, transaction_id):
 
 
 
-@login_required
-def cancel_transaction(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
-    if request.method == 'POST' and transaction.status == 'pending':
-        transaction.status = 'cancelled'
-        transaction.save()
-        messages.warning(request, "Transaction cancelled.")
-    return redirect('dashboard')
+# @login_required
+# def cancel_transaction(request, transaction_id):
+#     transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
+#     if request.method == 'POST' and transaction.status == 'pending':
+#         transaction.status = 'cancelled'
+#         transaction.save()
+#         messages.warning(request, "Transaction cancelled.")
+#     return redirect('dashboard')
 
 
 @login_required
