@@ -101,17 +101,18 @@ DATABASES = {
 }
 # DATABASES = {
 #     'default': dj_database_url.config(conn_max_age=600)
-# }
+# }KPWQPn8qqRko
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'erickogutu47@omo@gmail.com'
-EMAIL_HOST_PASSWORD = 'fahyodmenufflggk'  # Not your Gmail password, but an app password
+EMAIL_HOST = 'mail.safedeal.co.ke'  # or your provider's SMTP
+EMAIL_PORT = 465
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = 'info@safedeal.co.ke'
+EMAIL_HOST_PASSWORD = 'PLi6.4f7#8F5'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-SERVER_EMAIL = EMAIL_HOST_USER
+
 # https://docs.djangoproject.com/en/5.2/topics/email/#email-backends
 
 

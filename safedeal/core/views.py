@@ -15,8 +15,6 @@ from django.db.models import Q
 from mpesa.utils import lipa_na_mpesa
 from core.utils import send_custom_email
 
-
-
 @login_required
 def place_order(request, item_id):
     item = get_object_or_404(Item, id=item_id)
