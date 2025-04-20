@@ -2,10 +2,27 @@
 {% load static %}
 
 {% block content %}
-<h2>Create a Secure Transaction</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Generate Secure Link</button>
-</form>
+<div class="max-w-xl mx-auto bg-white shadow-md rounded-lg p-6 mt-8">
+    <h2 class="text-2xl font-semibold text-center mb-6 text-gray-800">Create a Secure Transaction</h2>
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ field.errors|striptags }}</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div class="pt-4">
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
+                Generate Secure Link
+            </button>
+        </div>
+    </form>
+</div>
 {% endblock %}
+

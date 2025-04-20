@@ -1,0 +1,40 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="p-6 max-w-3xl mx-auto bg-white rounded-xl shadow-md space-y-6">
+  <h2 class="text-xl font-bold text-center text-gray-800">User Identity Verification</h2>
+
+  <div class="space-y-4">
+    <p><strong>Username:</strong> {{ user_obj.username }}</p>
+    <p><strong>Email:</strong> {{ user_obj.email }}</p>
+    <p><strong>Phone Number:</strong> {{ user_obj.phone_number }}</p>
+    <p><strong>National ID:</strong> {{ user_obj.national_id }}</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <p class="font-semibold mb-1">Profile Picture</p>
+        {% if user_obj.profile_picture %}
+          <img src="{{ user_obj.profile_picture.url }}" class="w-full rounded shadow" alt="Profile Picture">
+        {% else %}
+          <p>No profile picture uploaded.</p>
+        {% endif %}
+      </div>
+
+      <div>
+        <p class="font-semibold mb-1">National ID Picture</p>
+        {% if user_obj.national_id_picture %}
+          <img src="{{ user_obj.national_id_picture.url }}" class="w-full rounded shadow" alt="National ID Picture">
+        {% else %}
+          <p>No ID picture uploaded.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="flex justify-between mt-6">
+      <a href="{% url 'admin_verify_user' user_obj.id %}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">✅ Verify User</a>
+      <a href="mailto:{{ user_obj.email }}?subject=SafeDeal Identity Issue&body=Hi {{ user_obj.username }},%0D%0A%0D%0AWe could not verify your identity based on the submitted ID. Kindly re-upload clearer images on your profile." class="text-red-600 hover:underline">📧 Message User</a>
+      <a href="{% url 'admindashboard' %}" class="text-gray-500 hover:underline">← Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

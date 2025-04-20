@@ -584,15 +584,93 @@ def admin_close_dispute(request, transaction_id):
 
     return render(request, 'transactions/admin_close_dispute.html', {'dispute': dispute})
 
+
+
+
+from django.contrib.auth import get_user_model
+User = get_user_model()
 @staff_member_required
 def admin_dashboard(request):
     disputes = TransactionDispute.objects.all().order_by('-created_at')
     open_disputes = disputes.filter(status='open')
     closed_disputes = disputes.filter(status='closed')
     all_transactions = Transaction.objects.all().order_by('-created_at')
+    unverified_users = User.objects.filter(is_active=True,
+    ).filter(
+        national_id__isnull=False,
+        national_id_picture__isnull=False,
+        profile_picture__isnull=False,
+        is_verified=False  # You might need to add this field
+    ).order_by('-date_joined')
+
+    query = request.GET.get('q')
+    if query:
+        users = User.objects.filter(
+            Q(username__icontains=query) | Q(email__icontains=query)
+        ).order_by('-date_joined')
+    else:
+        users = User.objects.all().order_by('-date_joined')[:3]  # Limit for performance
 
     return render(request, 'admin/admin_dashboard.html', {
         'open_disputes': open_disputes,
         'closed_disputes': closed_disputes,
         'all_transactions': all_transactions,
+        'users': users,
+        'unverified_users': unverified_users,
     })
+    
+    
+from django.contrib.auth.decorators import user_passes_test
+@user_passes_test(lambda u: u.is_superuser)
+def admin_toggle_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    
+    if user == request.user:
+        messages.error(request, "You cannot deactivate your own account.")
+        return redirect('admindashboard')
+
+    user.is_active = not user.is_active
+    user.save()
+    
+    status = "activated" if user.is_active else "deactivated"
+    messages.success(request, f"User '{user.username}' has been {status}.")
+    return redirect('admindashboard')
+
+@staff_member_required
+def admin_user_list(request):
+    query = request.GET.get('q')
+    if query:
+        users = User.objects.filter(
+            Q(username__icontains=query) | Q(email__icontains=query)
+        ).order_by('-date_joined')
+    else:
+        users = User.objects.all().order_by('-date_joined')
+        
+    return render(request, 'admin/admin_user_list.html', {'users': users})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def admin_delete_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+
+    if user == request.user:
+        messages.error(request, "You cannot delete your own account.")
+        return redirect('admin_user_list')
+
+    user.delete()
+    messages.success(request, f"User '{user.username}' has been deleted.")
+    return redirect('admin_user_list')
+
+@user_passes_test(lambda u: u.is_staff)
+def admin_verify_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    user.is_verified = True
+    user.save()
+    messages.success(request, f"{user.username}'s account has been verified successfully.")
+    return redirect('admindashboard')
+
+@user_passes_test(lambda u: u.is_staff)
+def admin_user_verification_view(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    return render(request, 'admin/admin_user_verification.html', {'user_obj': user})

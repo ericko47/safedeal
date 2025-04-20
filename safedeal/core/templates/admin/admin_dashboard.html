@@ -1,58 +1,185 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
+{% load static %}
 {% block content %}
-<h1>SafeDeal Admin Dashboard</h1>
+<div class="max-w-7xl mx-auto p-4">
+  <h1 class="text-3xl font-bold mb-6 text-center">SafeDeal Admin Dashboard</h1>
 
-<h2>Open Disputes</h2>
-{% if open_disputes %}
-  <ul>
-    {% for dispute in open_disputes %}
-      <li>
-        Transaction #{{ dispute.transaction.id }} — 
-        Reason: {{ dispute.reason|truncatechars:50 }} —
-        <a href="{% url 'transaction_detail' dispute.transaction.id %}">View</a>
-        <a href="{% url 'admin_close_dispute' dispute.transaction.id %}" class="btn-warning">Close</a>
-      </li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <p>No open disputes at the moment.</p>
-{% endif %}
+  <!-- Disputes Section -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+    <!-- Open Disputes -->
+    <div class="bg-white p-4 shadow rounded-xl">
+      <h2 class="text-xl font-semibold mb-3">Open Disputes</h2>
+      {% if open_disputes %}
+        <ul class="space-y-3">
+          {% for dispute in open_disputes %}
+            <li class="border p-3 rounded-lg">
+              <div class="text-sm text-gray-700 mb-1">
+                Transaction #{{ dispute.transaction.id }}<br>
+                Reason: {{ dispute.reason|truncatechars:50 }}
+              </div>
+              <div class="flex gap-2">
+                <a href="{% url 'transaction_detail' dispute.transaction.id %}" class="text-blue-600 hover:underline">View</a>
+                <a href="{% url 'admin_close_dispute' dispute.transaction.id %}" class="text-yellow-600 hover:underline">Close</a>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-gray-500">No open disputes at the moment.</p>
+      {% endif %}
+    </div>
 
-<h2>Closed Disputes</h2>
-{% if closed_disputes %}
-  <ul>
-    {% for dispute in closed_disputes %}
-      <li>
-        Transaction #{{ dispute.transaction.id }} —
-        Closed with notes: {{ dispute.admin_notes|default:"No notes" }}
-      </li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <p>No closed disputes yet.</p>
-{% endif %}
+    <!-- Closed Disputes -->
+    <div class="bg-white p-4 shadow rounded-xl">
+      <h2 class="text-xl font-semibold mb-3">Closed Disputes</h2>
+      {% if closed_disputes %}
+        <ul class="space-y-3">
+          {% for dispute in closed_disputes %}
+            <li class="border p-3 rounded-lg">
+              Transaction #{{ dispute.transaction.id }}<br>
+              <span class="text-sm text-gray-600">Closed with notes: {{ dispute.admin_notes|default:"No notes" }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-gray-500">No closed disputes yet.</p>
+      {% endif %}
+    </div>
+  </div>
 
-<h2>Recent Transactions</h2>
-<table>
-  <tr>
-    <th>ID</th>
-    <th>Item</th>
-    <th>Buyer</th>
-    <th>Seller</th>
-    <th>Status</th>
-    <th>Created</th>
-    <th>Details</th>
-  </tr>
-  {% for transaction in all_transactions|slice:":10" %}
-    <tr>
-      <td>#{{ transaction.id }}</td>
-      <td>{{ transaction.item.title }}</td>
-      <td>{{ transaction.buyer.username }}</td>
-      <td>{{ transaction.seller.username }}</td>
-      <td>{{ transaction.status }}</td>
-      <td>{{ transaction.created_at }}</td>
-      <td><a href="{% url 'transaction_detail' transaction.id %}">View</a></td>
-    </tr>
-  {% endfor %}
-</table>
+  <!-- Recent Transactions -->
+  <div class="bg-white p-4 shadow rounded-xl mb-10">
+    <h2 class="text-xl font-semibold mb-4">Recent Transactions</h2>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm text-left text-gray-600">
+        <thead class="bg-gray-100 font-medium text-gray-700">
+          <tr>
+            <th class="px-4 py-2">ID</th>
+            <th class="px-4 py-2">Item</th>
+            <th class="px-4 py-2">Buyer</th>
+            <th class="px-4 py-2">Seller</th>
+            <th class="px-4 py-2">Status</th>
+            <th class="px-4 py-2">Created</th>
+            <th class="px-4 py-2">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for transaction in all_transactions|slice:":10" %}
+            <tr class="border-b hover:bg-gray-50">
+              <td class="px-4 py-2">#{{ transaction.id }}</td>
+              <td class="px-4 py-2">{{ transaction.item.title }}</td>
+              <td class="px-4 py-2">{{ transaction.buyer.username }}</td>
+              <td class="px-4 py-2">{{ transaction.seller.username }}</td>
+              <td class="px-4 py-2 capitalize">{{ transaction.status }}</td>
+              <td class="px-4 py-2">{{ transaction.created_at }}</td>
+              <td class="px-4 py-2">
+                <a href="{% url 'transaction_detail' transaction.id %}" class="text-blue-600 hover:underline">View</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% comment %} <!-- User Management Section --> {% endcomment %}
+  <div class="bg-white p-4 shadow rounded-xl mb-10">
+    <h2 class="text-xl font-semibold mb-4">User Management</h2>
+    <a href="{% url 'admin_user_list' %}" class="text-blue-600 hover:underline">View All Users</a>
+
+    <form method="get" action="{% url 'admindashboard' %}" class="mb-4 flex flex-col md:flex-row items-center gap-3">
+      <input type="text" name="q" placeholder="Search by username or email" class="w-full md:w-1/2 p-2 border rounded">
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Search</button>
+    </form>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm text-left text-gray-600">
+        <thead class="bg-gray-100 font-medium text-gray-700">
+          <tr>
+            <th class="px-4 py-2">Username</th>
+            <th class="px-4 py-2">Email</th>
+            <th class="px-4 py-2">Date Joined</th>
+            <th class="px-4 py-2">Status</th>
+            <th class="px-4 py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+            <tr class="border-b hover:bg-gray-50">
+              <td class="px-4 py-2">{{ user.username }}</td>
+              <td class="px-4 py-2">{{ user.email }}</td>
+              <td class="px-4 py-2">{{ user.date_joined }}</td>
+              <td class="px-4 py-2">
+                {% if user.is_active %}
+                  <span class="text-green-600 font-semibold">Active</span>
+                {% else %}
+                  <span class="text-red-600 font-semibold">Inactive</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if not user == request.user %}
+                  {% if user.is_active %}
+                    <a href="{% url 'admin_toggle_user' user.id %}" class="text-red-600 hover:underline">Deactivate</a>
+                  {% else %}
+                    <a href="{% url 'admin_toggle_user' user.id %}" class="text-green-600 hover:underline">Activate</a>
+                  {% endif %}
+                {% else %}
+                  <span class="text-gray-500 italic">You</span>
+                {% endif %}
+              </td>            
+              
+            </tr>
+          {% empty %}
+            <tr><td class="px-4 py-2" colspan="5">No users found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="bg-white p-4 shadow rounded-xl">
+    <h2 class="text-xl font-semibold mt-6 mb-2">Users Pending Verification</h2>
+    <table class="w-full table-auto border mt-2">
+      <thead>
+        <tr class="bg-gray-200">
+          <th class="p-2">Username</th>
+          <th class="p-2">Full Name</th>
+          <th class="p-2">Phone</th>
+          <th class="p-2">National ID</th>
+          <th class="p-2">Profile Picture</th>
+          <th class="p-2">ID Picture</th>
+          <th class="p-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in unverified_users %}
+        <tr class="border">
+          <td class="p-2">{{ user.username }}</td>
+          <td class="p-2">{{ user.get_full_name }}</td>
+          <td class="p-2">{{ user.profile.phone_number }}</td>
+          <td class="p-2">{{ user.profile.national_id }}</td>
+          <td class="p-2">
+            {% if user.profile.profile_picture %}
+              <img src="{{ user.profile.profile_picture.url }}" class="w-16 h-16 rounded-full" />
+            {% else %} N/A {% endif %}
+          </td>
+          <td class="p-2">
+            {% if user.profile.id_picture %}
+              <img src="{{ user.profile.id_picture.url }}" class="w-16 h-16 rounded" />
+            {% else %} N/A {% endif %}
+          </td>
+          {% comment %} {% url 'admin_verify_user' user.id %} {% endcomment %}
+          <td class="p-2 space-x-1">
+            <a href="{% url 'admin_user_verification' user.id %}" class="text-indigo-600 hover:underline font-semibold">Review & Verify</a>
+            {% comment %} <a href="mailto:{{ user.email }}" class="text-blue-600 font-bold">Message</a> {% endcomment %}
+            {% comment %} <a href="{% url 'admin_toggle_user' user.id %}" class="text-red-600 font-bold">Deactivate</a> {% endcomment %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="p-4 text-center text-gray-500">No users awaiting verification.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  </div>
+</div>
 {% endblock %}

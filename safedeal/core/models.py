@@ -130,6 +130,7 @@ class CustomUser(AbstractUser):
     business_address = models.CharField(max_length=255, null=True, blank=True)
     # Business license number
     business_license_number = models.CharField(max_length=50, null=True, blank=True) 
+    is_verified = models.BooleanField(default=False)
     # Account type: Buyer, Seller, or Both
     ACCOUNT_TYPE_CHOICES = [
         ('buyer', 'Buyer'),
