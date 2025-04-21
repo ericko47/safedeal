@@ -53,3 +53,37 @@ def inbox_view(request):
     threads = threads.distinct().order_by('-created_at')
 
     return render(request, 'messaging/inbox.html', {'threads': threads})
+
+
+from django.http import JsonResponse
+
+@login_required
+def send_message_ajax(request, conversation_id):
+    if request.method == 'POST':
+        conversation = get_object_or_404(Conversation, id=conversation_id)
+        content = request.POST.get('message')
+        if content:
+            msg = Message.objects.create(
+                conversation=conversation,
+                sender=request.user,
+                content=content
+            )
+            return JsonResponse({
+                'sender': msg.sender.username,
+                'content': msg.content,
+                'timestamp': msg.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+            })
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@login_required
+def fetch_messages(request, conversation_id):
+    conversation = get_object_or_404(Conversation, id=conversation_id)
+    messages = conversation.messages.order_by('timestamp')
+    messages_data = [{
+        'sender': msg.sender.username,
+        'content': msg.content,
+        'timestamp': msg.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+    } for msg in messages]
+
+    return JsonResponse({'messages': messages_data})

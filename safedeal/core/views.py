@@ -440,19 +440,27 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import json
 from .models import SecureTransaction, MpesaPaymentLog
+import logging
+from django.core.mail import send_mail
+
+mpesa_logger = logging.getLogger('mpesa')
 
 @csrf_exempt
 def mpesa_callback(request):
-    data = json.loads(request.body)
+    if request.method != 'POST':
+        return JsonResponse({"message": "Only POST requests are allowed"}, status=405)
 
-    # Extract relevant details from the callback
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid or empty JSON body"}, status=400)
+
     stk_callback = data.get("Body", {}).get("stkCallback", {})
     merchant_request_id = stk_callback.get("MerchantRequestID")
     checkout_request_id = stk_callback.get("CheckoutRequestID")
     result_code = stk_callback.get("ResultCode")
     result_desc = stk_callback.get("ResultDesc")
 
-    # Default values if payment failed
     amount = phone = mpesa_receipt = None
 
     if result_code == 0:
@@ -463,15 +471,32 @@ def mpesa_callback(request):
         mpesa_receipt = metadata_dict.get("MpesaReceiptNumber")
         phone = metadata_dict.get("PhoneNumber")
 
-        # Save or update the transaction
         try:
             transaction = SecureTransaction.objects.get(buyer_phone=phone, amount=amount)
             transaction.transaction_status = 'paid'
             transaction.save()
-        except SecureTransaction.DoesNotExist:
-            pass  # Optionally log unmatched payments
 
-    # Log all STK callback info
+            # ✅ Email on success
+            send_mail(
+                subject="✅ M-PESA Payment Received",
+                message=f"Payment of KES {amount} received from {phone}.\nReceipt: {mpesa_receipt}",
+                from_email=None,
+                recipient_list=['mpesa@safedeal.co.ke'],  # Replace with your email
+            )
+
+            mpesa_logger.info(f"✅ Payment logged for {phone}, amount: {amount}")
+        except SecureTransaction.DoesNotExist:
+            # ⚠️ Log and email unmatched transaction
+            message = f"⚠️ UNMATCHED PAYMENT:\nPhone: {phone}\nAmount: {amount}\nReceipt: {mpesa_receipt}"
+            send_mail(
+                subject="⚠️ Unmatched M-PESA Payment",
+                message=message,
+                from_email=None,
+                recipient_list=['mpesa@safedeal.co.ke'],
+            )
+            mpesa_logger.warning(message)
+
+    # Always log callback info
     MpesaPaymentLog.objects.create(
         merchant_request_id=merchant_request_id,
         checkout_request_id=checkout_request_id,
@@ -483,7 +508,7 @@ def mpesa_callback(request):
     )
 
     return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
-
+# Uncomment this if you want to handle the callback in a different way
 
 # @csrf_exempt
 # def mpesa_callback(request):

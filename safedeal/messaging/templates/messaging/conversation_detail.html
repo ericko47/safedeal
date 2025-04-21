@@ -5,20 +5,92 @@
   <div class="bg-white rounded-2xl shadow p-6">
     <h2 class="text-xl font-bold mb-4">Conversation</h2>
 
-    <div class="space-y-2 mb-4">
+    <div class="space-y-2 mb-4" id="messages-container">
       {% for msg in messages %}
         <div class="{% if msg.sender == request.user %}text-right{% endif %}">
+          <p class="text-sm text-gray-500">{{ msg.sender.username }}</p>
           <p class="inline-block bg-gray-200 rounded p-2">{{ msg.content }}</p>
           <p class="text-sm text-gray-500">{{ msg.timestamp }}</p>
         </div>
       {% endfor %}
     </div>
 
-    <form method="post">
+    <form method="post" id="message-form">
       {% csrf_token %}
-      <textarea name="message" class="w-full border rounded p-2 mb-2" rows="3" placeholder="Type your message..."></textarea>
+      <textarea id="message-input" name="message" class="w-full border rounded p-2 mb-2" rows="3" placeholder="Type your message..."></textarea>
       <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Send</button>
-    </form>
+    </form>   
+  
+  
+    <script>
+      const conversationId = "{{ conversation.id }}";
+      const fetchUrl = "{% url 'fetch_messages' conversation_id=conversation.id %}";
+      const sendUrl = "{% url 'send_message_ajax' conversation_id=conversation.id %}";
+  
+      const spinner = document.getElementById('loading-spinner');
+      const container = document.getElementById('messages-container');
+  
+      document.getElementById('message-form').addEventListener('submit', function(e) {
+          e.preventDefault();
+          const messageInput = document.getElementById('message-input');
+          const message = messageInput.value.trim();
+          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  
+          if (message === '') return;
+  
+          spinner.style.display = 'flex';
+  
+          fetch(sendUrl, {
+              method: 'POST',
+              headers: {
+                  'X-CSRFToken': csrfToken,
+                  'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              body: `message=${encodeURIComponent(message)}`
+          })
+          .then(response => response.json())
+          .then(data => {
+              messageInput.value = '';
+              fetchMessages();  // Reload messages immediately
+          })
+          .catch(error => console.error('Sending failed:', error))
+          .finally(() => {
+              spinner.style.display = 'none';
+          });
+      });
+  
+      function fetchMessages() {
+          spinner.style.display = 'flex';
+  
+          fetch(fetchUrl)
+          .then(response => response.json())
+          .then(data => {
+              container.innerHTML = '';
+              data.messages.forEach(msg => {
+                  const isUser = msg.sender_id === {{ request.user.id }};
+                  container.innerHTML += `
+                      <div class="${isUser ? 'text-left' : ''} space-y-2 mb-4">
+                          <p class="text-sm text-gray-500">${msg.sender}</p>
+                          <p class="inline-block bg-gray-200 rounded p-2">${msg.content}</p>
+                          <p class="text-sm text-gray-500">${msg.timestamp}</p>
+                      </div>
+                  `;
+              });
+          })
+          .catch(error => console.error('Fetching failed:', error))
+          .finally(() => {
+              spinner.style.display = 'none';
+          });
+      }
+  
+      // Initial fetch
+      fetchMessages();
+  
+      // Poll every 5 seconds
+      setInterval(fetchMessages, 5000);
+  </script>
+  
+    
     {% endblock %}
   </div>
 </div>

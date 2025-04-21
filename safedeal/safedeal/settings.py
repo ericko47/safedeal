@@ -170,7 +170,12 @@ AUTHENTICATION_BACKENDS = (
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
 LOGIN_REDIRECT_URL = '/dashboard/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/login/'
-ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_SIGNUP_FIELDS = {
+    'email': {'required': True},
+    # You can define other fields too like:
+    'username': {'required': True},
+}
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -189,7 +194,41 @@ MPESA_CONSUMER_KEY = 'ysp5vtmDJCZp0HptHJyUz3wPmDjcYzsqiFWQvGfmxutEqMAW'
 MPESA_CONSUMER_SECRET = 'xEu7OmeyzZ5z7NJwraGUctUask2lmpVCLpxIqUBrFZp8ilcxPMv1RFQjXPoSXAz1'
 MPESA_SHORTCODE = '174379'  
 MPESA_PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
-MPESA_CALLBACK_URL = 'https://safedeal.co.ke/api/mpesa/callback/'  # Will define this later
+MPESA_CALLBACK_URL = 'https://safedeal.co.ke/mpesa/callback/'  # Will define this later
+
+log_dir = os.path.join(BASE_DIR, 'logs')
+os.makedirs(log_dir, exist_ok=True)
+
+log_file_path = os.path.join(log_dir, 'mpesa.log')
+open(log_file_path, 'a').close()
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+
+    'handlers': {
+        'mpesa_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'mpesa.log'),
+            'formatter': 'verbose',
+        },
+    },
+
+    'formatters': {
+        'verbose': {
+            'format': '{asctime} [{levelname}] {name}: {message}',
+            'style': '{',
+        },
+    },
+
+    'loggers': {
+        'mpesa': {
+            'handlers': ['mpesa_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 
 
 # Static files (CSS, JavaScript, Images)
