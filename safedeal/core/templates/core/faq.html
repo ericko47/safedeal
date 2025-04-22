@@ -1,0 +1,159 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10 p-6 bg-white rounded-2xl shadow-md">
+  <h1 class="text-3xl font-bold mb-6 text-center">Frequently Asked Questions (FAQ)</h1>
+
+  <div class="space-y-4">
+    {% comment %} Question 1 {% endcomment %}
+    <div class="border rounded-lg">
+      <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+        Q1: How does SafeDeal work?
+      </button>
+      <div class="px-4 py-2 hidden">
+        A: SafeDeal acts as a secure middleman. Buyers send payment to SafeDeal, the seller ships the item, and payment is released once the buyer confirms receipt.
+      </div>
+    </div>
+
+    {% comment %} Question 2 {% endcomment %}
+    <div class="border rounded-lg">
+      <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+        Q2: How do I pay for an item?
+      </button>
+      <div class="px-4 py-2 hidden">
+        A: You pay using M-PESA via STK Push. Once paid, the money is held securely in escrow until the item is delivered and confirmed.
+      </div>
+    </div>
+
+    {% comment %} Add more questions below {% endcomment %}
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+          Q3: What if the seller doesn't deliver the item?
+        </button>
+        <div class="px-4 py-2 hidden">
+          A: If delivery fails or the item is not as described, SafeDeal will resolve the dispute and refund you based on evidence provided.
+        </div>
+    </div>
+
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+          Q4: How does SafeDeal protect me from online fraud?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: SafeDeal uses an escrow system. Your payment is held securely and only released to the seller once you've received and confirmed the item.
+        </div>
+    </div>
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+          Q5: What happens if the item I receive is not as described?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: You can raise a dispute before releasing payment. Our team will review the case and mediate to resolve the issue fairly.
+        </div>
+    </div>
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+          Q6: Can I cancel a transaction after paying?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: You can request a cancellation before the seller ships the item. After shipment, cancellation depends on the seller’s return policy and dispute resolution.
+        </div>
+    </div>
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+          Q7: Do I need an account to buy something?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: No, you can buy items without an account in a situation where you recieved an external link through other social media. However, creating an account allows you to track your orders and manage disputes more easily.
+        </div>
+    </div>
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+          Q8: How do I track my delivery?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: Sellers are required to update tracking details. You can view these in your dashboard under the transaction details. You will also receive notifications via email or SMS about the status of your order.
+        </div>
+    </div>
+
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+          Q9: How do I receive payments?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: Payments are released to your M-Pesa account once the buyer confirms the item has been received and is satisfied.
+        </div>
+    </div>
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+            Q10: What are the fees for selling on SafeDeal?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: SafeDeal charges a small escrow handling fee, which will be shown during transaction setup. There are no listing fees.
+        </div>
+    </div>
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+            Q11: Can I sell items from social media platforms like Facebook?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: Yes! You can generate a secure SafeDeal payment link and share it with your buyers for a secure transaction.
+        </div>
+    </div>
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+            Q12: What if the buyer doesn’t confirm delivery?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: If a buyer doesn't confirm within a specific time (e.g., 3–5 days), SafeDeal will auto-release payment after verifying delivery proof.
+        </div>
+    </div>
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+            Q13: Is SafeDeal available in my area?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: SafeDeal is available countrywide. Sellers can specify their delivery zones, and buyers can check before purchasing.
+        </div>
+    </div>
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+            Q14: How do I verify my SafeDeal account?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: During registration or profile update, you'll upload your national ID and profile photo. Our team reviews and verifies your details before activation.
+        </div>
+    </div>
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+            Q15: Can I report a user or item?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: Yes. Each profile and item page has a “Report” option. Our moderators will review reports and take appropriate action.
+        </div>
+    </div>
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+            Q16: How do disputes get resolved?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: Disputes are handled by our support team. You'll need to provide evidence (e.g., chat logs, photos) to support your claim.
+        </div>
+    </div>
+    <div class="border rounded-lg">
+        <button class="w-full text-left px-4 py-3 font-semibold text-lg focus:outline-none" onclick="toggleAnswer(this)">
+            Q17: What should I do if I forget my password?
+        </button>
+        <div class="px-4 py-2 hidden">
+            A: Click “Forgot Password” on the login page. A reset link will be sent to your registered email address.
+        </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleAnswer(button) {
+    const content = button.nextElementSibling;
+    content.classList.toggle('hidden');
+  }
+</script>
+{% endblock %}

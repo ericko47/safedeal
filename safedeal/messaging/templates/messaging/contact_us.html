@@ -1,0 +1,54 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto p-6 mt-10 bg-white rounded-2xl shadow-md">
+  <h1 class="text-3xl font-bold text-center mb-6">Contact Us</h1>
+  <p class="text-center mb-6 text-gray-600">Have a question, issue, or suggestion? Let us know below.</p>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="bg-green-100 text-green-800 px-4 py-2 rounded mb-4">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div>
+      {{ form.name.label_tag }}
+      {{ form.name|add_class:"w-full border p-2 rounded" }}
+    </div>
+
+    <div>
+      {{ form.email.label_tag }}
+      {{ form.email|add_class:"w-full border p-2 rounded" }}
+    </div>
+
+    <div>
+      {{ form.subject.label_tag }}
+      {{ form.subject|add_class:"w-full border p-2 rounded" }}
+    </div>
+
+    <div>
+      {{ form.message.label_tag }}
+      {{ form.message|add_class:"w-full border p-2 rounded" }}
+    </div>
+
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+      Send Message
+    </button>
+  </form>
+
+  <div class="mt-10 text-sm text-gray-600">
+    <p><strong>Email:</strong> support@safedeal.com</p>
+    <p><strong>Phone:</strong> +254 7</p>
+    <p><strong>Working Hours:</strong> Monday – Friday, 9:00 AM – 5:00 PM</p>
+  </div>
+</div>
+{% endblock %}

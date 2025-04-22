@@ -5,6 +5,9 @@ from django.contrib.auth.decorators import login_required
 
 from django.contrib import messages
 
+
+from .forms import ContactForm
+
 @login_required
 def start_conversation(request, item_id):
     item = get_object_or_404(Item, id=item_id)
@@ -87,3 +90,18 @@ def fetch_messages(request, conversation_id):
     } for msg in messages]
 
     return JsonResponse({'messages': messages_data})
+
+
+
+
+def contact_us(request):
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your message has been sent. We'll get back to you soon.")
+            return redirect('contact_us')
+    else:
+        form = ContactForm()
+    
+    return render(request, 'messaging/contact_us.html', {'form': form})

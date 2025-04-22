@@ -190,6 +190,9 @@ def logout_view(request):
 def index(request):
     return render(request, 'core/index.html')
 
+def faq(request):
+    return render(request, 'core/faq.html')
+
 def login_view(request):
     next_url = request.GET.get('next', '')
     if next_url:
