@@ -84,13 +84,14 @@
 
   {% comment %} <!-- User Management Section --> {% endcomment %}
   <div class="bg-white p-4 shadow rounded-xl mb-10">
-    <h2 class="text-xl font-semibold mb-4">User Management</h2>
+    <h2 class="text-xl font-bold mb-4">User Management</h2>
     <a href="{% url 'admin_user_list' %}" class="text-blue-600 hover:underline">View All Users</a>
 
     <form method="get" action="{% url 'admindashboard' %}" class="mb-4 flex flex-col md:flex-row items-center gap-3">
       <input type="text" name="q" placeholder="Search by username or email" class="w-full md:w-1/2 p-2 border rounded">
       <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Search</button>
     </form>
+    <h3 class="text-xl font-semibold mb-4">Pending Account Updates</h3>
     <div class="overflow-x-auto">
       <table class="min-w-full text-sm text-left text-gray-600">
         <thead class="bg-gray-100 font-medium text-gray-700">
@@ -99,7 +100,7 @@
             <th class="px-4 py-2">Email</th>
             <th class="px-4 py-2">Date Joined</th>
             <th class="px-4 py-2">Status</th>
-            <th class="px-4 py-2">Actions</th>
+            <th class="px-4 py-2">Contact</th>
           </tr>
         </thead>
         <tbody>
@@ -117,6 +118,56 @@
               </td>
               <td>
                 {% if not user == request.user %}
+                  <a href="mailto:{{ user.email }}" class="text-blue-600 hover:underline">Message</a>
+                {% else %}
+                  <span class="text-gray-500 italic">You</span>
+                {% endif %}
+              </td>
+              
+              
+            </tr>
+          {% empty %}
+            <tr><td class="px-4 py-2" colspan="5">No users found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>    <br> <br>
+    
+    <h3 class="text-xl font-semibold mb-4">Inactive Users/ Baned users</h3>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm text-left text-gray-600">
+        <thead class="bg-gray-100 font-medium text-gray-700">
+          <tr>
+            <th class="px-4 py-2">Username</th>
+            <th class="px-4 py-2">Email</th>
+            <th class="px-4 py-2">Date Joined</th>
+            <th class="px-4 py-2">Status</th>
+            <th class="px-4 py-2">Message</th>
+            <th class="px-4 py-2">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in inactive_users %}
+            <tr class="border-b hover:bg-gray-50">
+              <td class="px-4 py-2">{{ user.username }}</td>
+              <td class="px-4 py-2">{{ user.email }}</td>
+              <td class="px-4 py-2">{{ user.date_joined }}</td>
+              <td class="px-4 py-2">
+                {% if user.is_active %}
+                  <span class="text-green-600 font-semibold">Active</span>
+                {% else %}
+                  <span class="text-red-600 font-semibold">Inactive</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if not user == request.user %}
+                  <a href="mailto:{{ user.email }}" class="text-blue-600 hover:underline">Message</a>
+                {% else %}
+                  <span class="text-gray-500 italic">You</span>
+                {% endif %}
+              </td>  
+              <td>
+                {% if not user == request.user %}
                   {% if user.is_active %}
                     <a href="{% url 'admin_toggle_user' user.id %}" class="text-red-600 hover:underline">Deactivate</a>
                   {% else %}
@@ -125,8 +176,8 @@
                 {% else %}
                   <span class="text-gray-500 italic">You</span>
                 {% endif %}
-              </td>            
-              
+              </td>       
+                          
             </tr>
           {% empty %}
             <tr><td class="px-4 py-2" colspan="5">No users found.</td></tr>
@@ -151,6 +202,9 @@
         </tr>
       </thead>
       <tbody>
+        {% comment %} {% url 'admin_verify_user' user.id %} {% endcomment %}
+        {% comment %} {% url 'admin_toggle_user' user.id %} {% endcomment %}
+        {% comment %} <a href="mailto:{{ user.email }}" class="text-blue-600 font-bold">Message</a> {% endcomment %}
         {% for user in unverified_users %}
         <tr class="border">
           <td class="p-2">{{ user.username }}</td>

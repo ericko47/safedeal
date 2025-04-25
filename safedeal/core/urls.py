@@ -1,11 +1,14 @@
 from django.urls import path
 from . import views
 from django.contrib.auth import views as auth_views
-
+from django.contrib.auth.views import LoginView
+from .forms import CustomLoginForm
 
 urlpatterns = [
     path('', views.index, name='index'),    
-    path('login/', auth_views.LoginView.as_view(template_name='core/login.html'), name='login'),
+    # path('login/', auth_views.LoginView.as_view(template_name='core/login.html'), name='login'),
+    path('login/', LoginView.as_view(template_name='core/login.html',authentication_form=CustomLoginForm), name='login'),
+    
     path('register/', views.register, name='register'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('profile/', views.profile_view, name='profile'),
@@ -14,7 +17,8 @@ urlpatterns = [
     path('escrow/', views.escrow_view, name='escrow'),
     path('post_item/', views.post_item_view, name='post_item'),
     path('item/<int:item_id>/report/', views.report_item, name='report_item'),
-     path('wishlist/toggle/<int:item_id>/', views.toggle_wishlist, name='toggle_wishlist'),
+    path('wishlist/', views.view_wishlist, name='view_wishlist'),
+    path('wishlist/toggle/<int:item_id>/', views.toggle_wishlist, name='toggle_wishlist'),
     path('privacy/', views.privacy_view, name='privacy'),
     path('terms/', views.terms_view, name='terms'),
     path('faq/', views.faq, name='faq'),

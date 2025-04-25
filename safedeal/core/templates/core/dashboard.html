@@ -8,13 +8,14 @@
   <div>
     <h2 class="text-2xl font-bold text-gray-800">Welcome, <span class="text-blue-600">{{ user.first_name }} {{user.last_name}}</span></h2>
     <p class="text-gray-600">Manage your profile, transactions, and more.</p>
-    <a href="{% url 'inbox' %}" class="text-sm text-blue-600 hover:underline">My Inbox</a>
+    <a href="{% url 'inbox' %}" class="text-sm text-blue-600 hover:underline">My Inbox |</a>
     {% if user.is_superuser %}
-    <a href="{% url 'admin:index' %}" class="text-sm text-blue-600 hover:underline">Admin</a>
+    <a href="{% url 'admin:index' %}" class="text-sm text-blue-600 hover:underline">Senior Admin |</a>
     {% endif %}
     {% if user.is_staff %}
-    <a href="{% url 'admindashboard' %}" class="text-sm text-blue-600 hover:underline">admin</a>
+    <a href="{% url 'admindashboard' %}" class="text-sm text-blue-600 hover:underline"> Admin Control dashboard |</a>
     {% endif %}
+    <a href="{% url 'view_wishlist' %}" class="text-sm text-blue-600 hover:underline"> My Wishlist |</a>
   </div>
 
   <div style="color: royalblue; font-size: 20px;"><a href="{% url 'create_secure_transaction'%}">Generate External Link</a></div>

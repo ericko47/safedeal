@@ -364,7 +364,15 @@ def toggle_wishlist(request, item_id):
 
     return redirect('item_detail', item_id=item.id)
 
+@login_required
+def view_wishlist(request):
+    wishlist_items = Wishlist.objects.filter(user=request.user).select_related('item')
 
+    context = {
+        'wishlist_items': wishlist_items
+    }
+
+    return render(request, 'core/view_wishlist.html', context)
 
 @login_required
 def user_transactions_view(request):
@@ -667,8 +675,10 @@ def admin_dashboard(request):
     disputes = TransactionDispute.objects.all().order_by('-created_at')
     open_disputes = disputes.filter(status='open')
     closed_disputes = disputes.filter(status='closed')
-    all_transactions = Transaction.objects.all().order_by('-created_at')
-    unverified_users = User.objects.filter(is_active=True,
+    all_transactions = Transaction.objects.all().order_by('-created_at') 
+    unverified_users = User.objects.filter(is_verified=False).order_by('-date_joined')
+    inactive_users = User.objects.filter(is_active=False).order_by('-date_joined')
+    account_update_pending = User.objects.filter(is_active=True,
     ).filter(
         national_id__isnull=False,
         national_id_picture__isnull=False,
@@ -688,8 +698,9 @@ def admin_dashboard(request):
         'open_disputes': open_disputes,
         'closed_disputes': closed_disputes,
         'all_transactions': all_transactions,
-        'users': users,
+        'users': account_update_pending,
         'unverified_users': unverified_users,
+        'inactive_users': inactive_users,
     })
     
     

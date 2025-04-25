@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="max-w-5xl mx-auto bg-white mt-6 p-6 rounded-lg shadow">
-
+  <a href="{% url 'view_wishlist' %}" class="text-sm text-blue-600 hover:underline right">My Wishlist</a>
   <!-- Item Images -->
   <div class="flex space-x-4 overflow-x-auto mb-6">
     {% for image in item.images.all %}

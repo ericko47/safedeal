@@ -2,6 +2,21 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser, Item, Transaction, TransactionOut, TransactionDispute
 
+
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import authenticate
+from django.utils.translation import gettext_lazy as _
+
+class CustomLoginForm(AuthenticationForm):
+    def confirm_login_allowed(self, user):
+        if not user.is_active:
+            raise forms.ValidationError(
+                _("Your account has been deactivated due to a pending issue. Please contact support."),
+                code='inactive',
+            )
+
+
+
 class CustomUserCreationForm(UserCreationForm):
     phone_number = forms.CharField(max_length=15)
 
