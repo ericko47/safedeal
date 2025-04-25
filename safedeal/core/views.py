@@ -1,11 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
-from .forms import CustomUserCreationForm, UserProfileForm, ItemForm, DisputeForm, SellerResponseForm, TransactionOutForm
+from .forms import CustomUserCreationForm, UserProfileForm, ItemForm, DisputeForm, SellerResponseForm, TransactionOutForm, ItemReportForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.contrib import messages
-from .models import Item , ItemImage, Transaction, TransactionDispute, TransactionOut
+from .models import Item , ItemImage, Transaction, TransactionDispute, TransactionOut, ItemReport, Wishlist
 import uuid
 from django.http import HttpResponseForbidden
 from django.http import JsonResponse
@@ -318,7 +318,52 @@ def post_item_view(request):
 
 def item_detail(request, item_id):
     item = get_object_or_404(Item, id=item_id)
-    return render(request, 'core/viewitem.html', {'item': item})
+    in_wishlist = False
+
+    if request.user.is_authenticated:
+        in_wishlist = Wishlist.objects.filter(user=request.user, item=item).exists()
+
+    return render(request, 'core/viewitem.html', {
+        'item': item,
+        'in_wishlist': in_wishlist,
+    })
+
+
+
+
+@login_required
+def report_item(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+
+    if request.method == 'POST':
+        form = ItemReportForm(request.POST)
+        if form.is_valid():
+            reason = form.cleaned_data['reason']
+            report, created = ItemReport.objects.get_or_create(
+                item=item,
+                reported_by=request.user,
+                defaults={'reason': reason}
+            )
+            if created:
+                messages.success(request, 'Item reported successfully.')
+            else:
+                messages.info(request, 'You have already reported this item.')
+            return redirect('item_detail', item_id=item.id)
+    else:
+        form = ItemReportForm()
+
+    return render(request, 'core/report_item.html', {'form': form, 'item': item})
+
+@login_required
+def toggle_wishlist(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    wishlist_item, created = Wishlist.objects.get_or_create(user=request.user, item=item)
+
+    if not created:
+        wishlist_item.delete()
+
+    return redirect('item_detail', item_id=item.id)
+
 
 
 @login_required
@@ -702,3 +747,7 @@ def admin_verify_user(request, user_id):
 def admin_user_verification_view(request, user_id):
     user = get_object_or_404(User, id=user_id)
     return render(request, 'admin/admin_user_verification.html', {'user_obj': user})
+
+
+
+

@@ -221,3 +221,30 @@ class MpesaPaymentLog(models.Model):
 
     def __str__(self):
         return f"{self.mpesa_receipt} - {self.amount}"
+
+
+# Report model to handle item reports
+
+User = get_user_model()
+
+class ItemReport(models.Model):
+    item = models.ForeignKey('Item', on_delete=models.CASCADE)
+    reported_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    reason = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    reviewed = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('item', 'reported_by')  # Prevent multiple reports by same user
+        
+        
+class Wishlist(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wishlists')
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='wishlisted_by')
+    added_on = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'item')  # prevent duplicate wishlisting
+
+    def __str__(self):
+        return f"{self.user} -> {self.item}"

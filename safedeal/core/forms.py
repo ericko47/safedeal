@@ -139,3 +139,6 @@ class SecureTransactionForm(forms.ModelForm):
         return phone
 
 
+
+class ItemReportForm(forms.Form):
+    reason = forms.CharField(widget=forms.Textarea(attrs={'rows': 4}), label="Reason for Reporting")
