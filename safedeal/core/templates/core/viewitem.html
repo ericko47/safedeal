@@ -5,7 +5,16 @@
 
 {% block content %}
 <div class="max-w-5xl mx-auto bg-white mt-6 p-6 rounded-lg shadow">
+  <h1 class="text-3xl font-bold mb-4">Item Details</h1>
+  <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+    &larr; Go Back
+  </a>
+
+  <span class="mx-2 text-gray-400">|</span>
+  <a href="{% url 'my_items' %}" class="text-sm text-blue-600 hover:underline">My Items</a>
+  <span class="mx-2 text-gray-400">|</span>
   <a href="{% url 'view_wishlist' %}" class="text-sm text-blue-600 hover:underline right">My Wishlist</a>
+
   <!-- Item Images -->
   <div class="flex space-x-4 overflow-x-auto mb-6">
     {% for image in item.images.all %}

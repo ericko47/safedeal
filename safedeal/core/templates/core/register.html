@@ -7,7 +7,21 @@
 {% block content %}
 <section class="max-w-xl mx-auto mt-10 bg-white p-6 rounded-xl shadow-md">
   <h2 class="text-2xl font-bold mb-4 text-center">Create Your SafeDeal Account</h2>
-
+  <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+    &larr; Go Back
+  </a>
+  <p class="text-center text-gray-600 mb-4">
+    Please fill in the details below to create your account.
+  </p>
+  <p class="text-center text-gray-600 mb-4">
+    <strong>Note:</strong> Ensure all details are accurate to avoid any issues.
+  </p>
+  <p class="text-center text-gray-600 mb-4">
+    <strong>Disclaimer:</strong> By creating an account, you agree to our terms and conditions.
+  </p>
+  <p class="text-center text-gray-600 mb-4">
+    <strong>Warning:</strong> Ensure you have the right to use the email address provided and you can access it anytime
+  </p>
   {% if messages %}
     <ul class="mb-4">
       {% for message in messages %}

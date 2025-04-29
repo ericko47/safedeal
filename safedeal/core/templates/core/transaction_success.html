@@ -2,6 +2,13 @@
 {% block content %}
 <div class="max-w-xl mx-auto mt-10 p-6 bg-white rounded-2xl shadow-md text-center">
     <h2 class="text-2xl font-bold text-green-600 mb-4">Transaction Created Successfully!</h2>
+    <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+        &larr; Go Back
+    </a>
+    <p class="text-gray-600 mb-4">Your secure transaction link has been generated successfully. Please follow the instructions below to complete your transaction.</p>
+    <p class="text-gray-600 mb-4">Ensure to share the link with the buyer for a smooth transaction process.</p>
+    <p class="text-gray-600 mb-4">If you have any questions, feel free to contact our support team.</p>
+    <p class="text-gray-600 mb-4">Please note: This transaction is secured by our platform. Always verify the details before confirming.</p>
     <p class="text-gray-700">Share this secure transaction link with the buyer:</p>
     <div class="bg-gray-100 p-4 rounded-xl my-4 break-words">
         <a href="{{ secure_link }}" class="text-blue-600 underline break-words">{{ secure_link }}</a>

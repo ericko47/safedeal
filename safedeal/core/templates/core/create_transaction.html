@@ -4,6 +4,18 @@
 {% block content %}
 <div class="max-w-xl mx-auto bg-white shadow-md rounded-lg p-6 mt-8">
     <h2 class="text-2xl font-semibold text-center mb-6 text-gray-800">Create a Secure Transaction</h2>
+    <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+        &larr; Go Back
+    </a>
+    <p class="text-center text-gray-600 mb-4">
+        To create a secure transaction, please fill out the form below. Ensure all details are accurate to avoid any issues.
+    </p>
+    <p class="text-center text-gray-600 mb-4">
+        <strong>Note:</strong> This transaction will be secured by our platform. Please ensure to follow the instructions provided.
+    </p>
+    <p class="text-center text-gray-600 mb-4">
+        <strong>Disclaimer:</strong> By proceeding, you agree to our terms and conditions. Always verify the details before confirming.
+    </p>  
     <form method="post" class="space-y-4">
         {% csrf_token %}
         {% for field in form %}

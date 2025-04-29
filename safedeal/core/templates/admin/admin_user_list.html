@@ -2,7 +2,26 @@
 {% block content %}
 <div class="p-4">
   <h1 class="text-2xl font-semibold mb-4">Manage Users</h1>
-  <a href="{% url 'admindashboard' %}"class="text-blue-600 hover:underline">back to admin_dashboard</a>
+  <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+    &larr; Go Back
+</a>
+  <p class="mb-4">Here you can manage all users on the platform. You can activate, deactivate, or delete users.</p>
+  {% if messages %}
+    <div class="mb-4">
+      {% for message in messages %}
+        <div class="bg-green-100 text-green-700 p-2 rounded mb-2">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {% if users %}
+    <div class="mb-4">
+      <p class="text-gray-600">Total Users: {{ users.count }}</p>
+    </div>
+  {% else %}
+    <p class="text-gray-600">No users found.</p>
+  {% endif %}
 
   <form method="get" action="{% url 'admin_user_list' %}" class="mb-4 flex flex-col md:flex-row items-center gap-3">
     <input type="text" name="q" placeholder="Search by username or email" class="w-full md:w-1/2 p-2 border rounded">

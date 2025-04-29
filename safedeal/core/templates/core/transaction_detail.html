@@ -5,8 +5,16 @@
 
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold text-blue-600 mb-6">Transaction #{{ transaction.id }}</h1>
-
+  <h1 class="text-3xl font-bold text-blue-600 mb-6">Transaction {{ transaction.item.title}}</h1>
+  <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+    &larr; Go Back
+  </a>
+  <p class="text-gray-600 mb-4">
+    Transaction ID: <strong>{{ transaction.id }}</strong>
+  </p>
+  <p class="text-gray-600 mb-4">
+    <strong>Note:</strong> This transaction is secured by our platform. Please follow the instructions provided for a smooth transaction.
+  </p>
   <div class="bg-white rounded-lg shadow p-6 space-y-6">
 
     <!-- Item Summary -->

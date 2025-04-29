@@ -3,7 +3,32 @@
 {% block content %}
 <div class="max-w-7xl mx-auto p-4">
   <h1 class="text-3xl font-bold mb-6 text-center">SafeDeal Admin Dashboard</h1>
+  <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+    &larr; Go Back
+</a>
+  {% comment %} <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+    <!-- Total Users -->
+    <div class="bg-white p-4 shadow rounded-xl">
+      <h2 class="text-xl font-semibold mb-3">Total Users</h2>
+      <p class="text-3xl font-bold">{{ total_users }}</p>
+    </div>
 
+    <!-- Total Transactions -->
+    <div class="bg-white p-4 shadow rounded-xl">
+      <h2 class="text-xl font-semibold mb-3">Total Transactions</h2>
+      <p class="text-3xl font-bold">{{ total_transactions }}</p>
+    </div>
+    <!-- Total Items -->
+    <div class="bg-white p-4 shadow rounded-xl">
+      <h2 class="text-xl font-semibold mb-3">Total Items</h2>
+      <p class="text-3xl font-bold">{{ total_items }}</p>
+    </div>
+    <!-- Total Disputes -->
+    <div class="bg-white p-4 shadow rounded-xl">
+      <h2 class="text-xl font-semibold mb-3">Total Disputes</h2>
+      <p class="text-3xl font-bold">{{ total_disputes }}</p>
+    </div>
+  </div> {% endcomment %}
   <!-- Disputes Section -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
     <!-- Open Disputes -->
