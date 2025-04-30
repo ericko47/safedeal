@@ -14,9 +14,7 @@ def get_access_token():
     return access_token
 
 def format_phone(phone):
-    """
-    Converts 07XXXXXXXX to 2547XXXXXXXX
-    """
+ 
     if phone.startswith("07"):
         return "254" + phone[1:]
     elif phone.startswith("01"):
@@ -46,7 +44,7 @@ def lipa_na_mpesa(phone_number, amount, account_reference="SafeDeal", transactio
         "Password": password,
         "Timestamp": timestamp,
         "TransactionType": "CustomerPayBillOnline",
-        "Amount": int(float(amount)),  # ensures compatibility just in case,
+        "Amount": int(float(amount)),  
         "PartyA": phone_number,
         "PartyB": business_short_code,
         "PhoneNumber": formatted_phone,
