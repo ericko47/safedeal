@@ -41,7 +41,7 @@
       <div class="text-md-end text-center">
         <h1 class="display-5 fw-bold mb-2">Welcome to SafeDeal</h1>
         <p class="lead mb-3">Empowering Safe Online Transactions for Small Businesses and Everyday Users</p>
-        <a href="{% url 'register' %}" class="btn btn-light btn-lg px-4 py-2 shadow rounded-pill">Get Started</a>
+        <a href="{% url 'create_secure_transaction' %}" class="btn btn-light btn-lg px-4 py-2 shadow rounded-pill">Guest Seller!</a>
       </div>
     </div>
   </header>
@@ -57,7 +57,7 @@
       <a href="{% url 'login' %}">Login</a>
     {% endif %}
     {% if not user.is_authenticated %}
-      <a href="{% url 'register' %}">Guest Seller! Register</a>
+      <a href="{% url 'register' %}">Register</a>
     {% endif %}
 
     <a href="{% url 'faq' %}">FAQs</a>
