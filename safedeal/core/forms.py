@@ -142,7 +142,7 @@ from .models import SecureTransaction
 class SecureTransactionForm(forms.ModelForm):
     class Meta:
         model = SecureTransaction
-        exclude = ['seller', 'transaction_status', 'created_at', 'updated_at']
+        exclude = ['seller', 'transaction_status', 'created_at', 'updated_at', 'mpesa_reference']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
         }
@@ -152,6 +152,7 @@ class SecureTransactionForm(forms.ModelForm):
         if not phone.startswith('+') and not phone.isdigit():
             raise forms.ValidationError("Phone number must be valid and include country code.")
         return phone
+
 
 
 

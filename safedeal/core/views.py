@@ -12,59 +12,8 @@ from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q
-from mpesa.utils import lipa_na_mpesa
+from mpesa.utils import lipa_na_mpesa,format_phone
 from core.utils import send_custom_email
-
-@login_required
-def place_order(request, item_id):
-    item = get_object_or_404(Item, id=item_id)
-    if item.seller == request.user:
-        messages.error(request, "You cannot buy your own item.")
-        return redirect('item_detail', item_id=item.id)
-
-    if request.method == 'POST':
-        transaction_ref = str(uuid.uuid4()).replace('-', '')[:12]  # Unique 12-char ref
-        delivery_address = request.POST.get('delivery_address')
-
-        # Create transaction with status 'pending'
-        transaction = Transaction.objects.create(
-            buyer=request.user,
-            seller=item.seller,
-            item=item,
-            amount=item.price,
-            status='pending',
-            delivery_address=delivery_address,
-            transaction_reference=transaction_ref
-        )
-
-        # Trigger STK Push
-        phone = request.user.phone_number  # Ensure this exists
-        response = lipa_na_mpesa(
-            phone_number=phone,
-            amount=item.price,
-            account_reference=transaction_ref,
-            transaction_desc=f"Purchase {item.title}"
-        )
-
-        if response.get("ResponseCode") == "0":
-            messages.success(request, "Payment request sent. Check your phone.")
-        else:
-            messages.error(request, "Failed to initiate payment. Try again.")
-
-        return redirect('transaction_detail', transaction.id)
-
-    return redirect('item_detail', item_id=item_id)
-
-
-
-@login_required
-def transaction_detail(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id)
-
-    if request.user != transaction.buyer and request.user != transaction.seller:
-        return render(request, 'core/dashboard.html', {'message': "Access denied"})
-
-    return render(request, 'core/transaction_detail.html', {'transaction': transaction})
 
 
 
@@ -477,7 +426,7 @@ def initiate_payment(request, transaction_id):
             phone_number=phone,
             amount=amount,
             account_reference=transaction.mpesa_reference,  # Pass here
-            transaction_desc=f"Payment for {transaction.item}"
+            transaction_desc=f"Payment for {transaction.item_reference}"
         )
 
         print("STK Push Response:", response)  # Optional debug
@@ -489,6 +438,95 @@ def initiate_payment(request, transaction_id):
         messages.success(request, 'Payment initiated. You will receive an M-PESA prompt shortly.')
 
         return render(request, 'core/payment_initiated.html', {'transaction': transaction})
+    
+
+from .forms import SecureTransactionForm
+@login_required
+def create_secure_transaction(request):
+    if request.method == 'POST':
+        form = SecureTransactionForm(request.POST)
+        if form.is_valid():
+            transaction = form.save(commit=False)
+            transaction.seller = request.user
+
+            # If item_reference is provided, fill in item details
+            item_ref = form.cleaned_data.get('item_reference')
+            if item_ref:
+                try:
+                    item = Item.objects.get(item_reference=item_ref)
+                    transaction.item_name = item.title
+                    transaction.amount = item.price
+                    transaction.description = item.description
+                except Item.DoesNotExist:
+                    form.add_error('item_reference', 'Invalid item reference.')
+
+            transaction.save()
+            return redirect('transaction_success', transaction_id=transaction.id)
+    else:
+        # Allow passing ?item_reference=xxx in GET
+        initial_data = {}
+        item_ref = request.GET.get('item_reference')
+        if item_ref:
+            initial_data['item_reference'] = item_ref
+        form = SecureTransactionForm(initial=initial_data)
+    
+    return render(request, 'core/create_transaction.html', {'form': form})
+
+
+
+
+@login_required
+def place_order(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    if item.seller == request.user:
+        messages.error(request, "You cannot buy your own item.")
+        return redirect('item_detail', item_id=item.id)
+
+    if request.method == 'POST':
+        transaction_ref = str(uuid.uuid4()).replace('-', '')[:12]  # Unique 12-char ref
+        delivery_address = request.POST.get('delivery_address')
+
+        # Create transaction with status 'pending'
+        transaction = Transaction.objects.create(
+            buyer=request.user,
+            seller=item.seller,
+            item=item,
+            amount=item.price,
+            status='pending',
+            delivery_address=delivery_address,
+            transaction_reference=transaction_ref
+        )
+
+        # Trigger STK Push
+        phone = request.user.phone_number  # Ensure this exists
+        response = lipa_na_mpesa(
+            phone_number=phone,
+            amount=item.price,
+            account_reference=transaction_ref,
+            transaction_desc=f"Purchase {item.item_reference}"
+        )
+
+        if response.get("ResponseCode") == "0":
+            messages.success(request, "Payment request sent. Check your phone.")
+        else:
+            messages.error(request, "Failed to initiate payment. Try again.")
+
+        return redirect('transaction_detail', transaction.id)
+
+    return redirect('item_detail', item_id=item_id)
+
+
+@login_required
+def transaction_detail(request, transaction_id):
+    transaction = get_object_or_404(Transaction, id=transaction_id)
+
+    if request.user != transaction.buyer and request.user != transaction.seller:
+        return render(request, 'core/dashboard.html', {'message': "Access denied"})
+
+    return render(request, 'core/transaction_detail.html', {'transaction': transaction})
+
+
+
 
 
 
@@ -498,9 +536,7 @@ import json
 from .models import SecureTransaction, MpesaPaymentLog
 import logging
 from django.core.mail import send_mail
-
 mpesa_logger = logging.getLogger('mpesa')
-
 @csrf_exempt
 def mpesa_callback(request):
     if request.method != 'POST':
@@ -517,7 +553,8 @@ def mpesa_callback(request):
     result_code = stk_callback.get("ResultCode")
     result_desc = stk_callback.get("ResultDesc")
 
-    amount = phone = mpesa_receipt = None
+    amount = phone = mpesa_receipt = account_reference = None
+    transaction_found = False
 
     if result_code == 0:
         callback_metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
@@ -526,33 +563,48 @@ def mpesa_callback(request):
         amount = metadata_dict.get("Amount")
         mpesa_receipt = metadata_dict.get("MpesaReceiptNumber")
         phone = metadata_dict.get("PhoneNumber")
+        account_reference = metadata_dict.get("AccountReference")
 
+        # === 1. Match SecureTransaction ===
         try:
-            transaction = SecureTransaction.objects.get(buyer_phone=phone, amount=amount)
-            transaction.transaction_status = 'paid'
-            transaction.save()
-
-            # ✅ Email on success
-            send_mail(
-                subject="✅ M-PESA Payment Received",
-                message=f"Payment of KES {amount} received from {phone}.\nReceipt: {mpesa_receipt}",
-                from_email=None,
-                recipient_list=['mpesa@safedeal.co.ke'],  # Replace with your email
-            )
-
-            mpesa_logger.info(f"✅ Payment logged for {phone}, amount: {amount}")
+            st = SecureTransaction.objects.get(mpesa_reference=account_reference)
+            st.transaction_status = 'paid'
+            st.save()
+            transaction_found = True
+            mpesa_logger.info(f"[SECURE] Payment matched via reference {account_reference}")
         except SecureTransaction.DoesNotExist:
-            # ⚠️ Log and email unmatched transaction
-            message = f"⚠️ UNMATCHED PAYMENT:\nPhone: {phone}\nAmount: {amount}\nReceipt: {mpesa_receipt}"
+            pass
+
+        # === 2. Match Transaction ===
+        if not transaction_found:
+            try:
+                t = Transaction.objects.get(transaction_reference=account_reference)
+                t.status = 'paid'
+                t.save()
+                transaction_found = True
+                mpesa_logger.info(f"[INTERNAL] Payment matched via reference {account_reference}")
+            except Transaction.DoesNotExist:
+                pass
+
+        # === 3. Notify for unmatched payments ===
+        if not transaction_found:
+            message = f"⚠️ UNMATCHED PAYMENT:\nPhone: {phone}\nAmount: {amount}\nReference: {account_reference}\nReceipt: {mpesa_receipt}"
             send_mail(
-                subject="⚠️ Unmatched M-PESA Payment",
+                subject="Unmatched M-PESA Payment",
                 message=message,
                 from_email=None,
                 recipient_list=['mpesa@safedeal.co.ke'],
             )
             mpesa_logger.warning(message)
+        else:
+            send_mail(
+                subject="M-PESA Payment Received",
+                message=f"✅ Payment of KES {amount} received from {phone}.\nReceipt: {mpesa_receipt}",
+                from_email=None,
+                recipient_list=['mpesa@safedeal.co.ke'],
+            )
 
-    # Always log callback info
+    # === 4. Always log callback ===
     MpesaPaymentLog.objects.create(
         merchant_request_id=merchant_request_id,
         checkout_request_id=checkout_request_id,
@@ -560,67 +612,13 @@ def mpesa_callback(request):
         result_description=result_desc,
         amount=amount,
         phone=phone,
-        mpesa_receipt=mpesa_receipt
+        mpesa_receipt=mpesa_receipt,
+        transaction_reference=account_reference  # Add this field in your model if not present
     )
 
     return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
-# Uncomment this if you want to handle the callback in a different way
-
-# @csrf_exempt
-# def mpesa_callback(request):
-#     data = json.loads(request.body)
-
-#     # Navigate to the reference (structure varies slightly, so check this carefully)
-#     try:
-#         stk_callback = data['Body']['stkCallback']
-#         reference = stk_callback.get('MerchantRequestID')  # or CheckoutRequestID
-#         metadata_items = stk_callback.get('CallbackMetadata', {}).get('Item', [])
-#         mpesa_code = None
-#         amount = None
-#         phone = None
-
-#         for item in metadata_items:
-#             if item['Name'] == 'MpesaReceiptNumber':
-#                 mpesa_code = item['Value']
-#             elif item['Name'] == 'Amount':
-#                 amount = item['Value']
-#             elif item['Name'] == 'PhoneNumber':
-#                 phone = item['Value']
-
-#         # Match transaction using mpesa_reference
-#         transaction = SecureTransaction.objects.filter(mpesa_reference=reference).first()
-#         if transaction:
-#             transaction.transaction_status = 'paid'
-#             transaction.escrow_status = 'open'
-#             transaction.save()
-#             print(f"Payment success for transaction {transaction.id}")
-
-#     except Exception as e:
-#         print("Error processing callback:", e)
-        
-    
-
-#     return JsonResponse({"ResultCode": 0, "ResultDesc": "Callback received successfully"})
 
 
-
-from .forms import SecureTransactionForm
-
-@login_required
-def create_secure_transaction(request):
-    if request.method == 'POST':
-        form = SecureTransactionForm(request.POST)
-        if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.seller = request.user
-            transaction.save()
-            return redirect('transaction_success', transaction_id=transaction.id)
-    else:
-        form = SecureTransactionForm()
-    
-    return render(request, 'core/create_transaction.html', {'form': form})
-
-from .models import SecureTransaction
 import qrcode
 import io
 import base64
@@ -758,6 +756,7 @@ def admin_verify_user(request, user_id):
 def admin_user_verification_view(request, user_id):
     user = get_object_or_404(User, id=user_id)
     return render(request, 'admin/admin_user_verification.html', {'user_obj': user})
+
 
 
 

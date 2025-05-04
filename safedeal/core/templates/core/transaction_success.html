@@ -10,13 +10,27 @@
     <p class="text-gray-600 mb-4">If you have any questions, feel free to contact our support team.</p>
     <p class="text-gray-600 mb-4">Please note: This transaction is secured by our platform. Always verify the details before confirming.</p>
     <p class="text-gray-700">Share this secure transaction link with the buyer:</p>
-    <div class="bg-gray-100 p-4 rounded-xl my-4 break-words">
-        <a href="{{ secure_link }}" class="text-blue-600 underline break-words">{{ secure_link }}</a>
-    </div>
+    
+    <div class="bg-gray-100 p-4 rounded-xl my-4 flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0 sm:space-x-2">
+        <a id="item-code" href="{{ secure_link }}" class="text-blue-600 underline break-words">{{ secure_link }}</a>
+        <button onclick="copyurl()" aria-label="Copy URL to clipboard" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded">
+            Copy URL
+        </button>
+    </div> 
+    <script>
+        function copyurl() {
+        const code = document.getElementById("item-code").textContent;
+        navigator.clipboard.writeText(code).then(function () {
+            alert("The url copied to clipboard: " + code);
+        }, function () {
+            alert("Failed to copy url.");
+        });
+        }
+    </script>
 
     <div class="mt-6">
         <p class="text-gray-700 mb-2">Or share this QR code:</p>
-        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="mx-auto w-48 h-48 border rounded-lg shadow-sm">
+        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" onerror="this.style.display='none'" class="mx-auto w-48 h-48 border rounded-lg shadow-sm">
     </div>
 
     <a href="{% url 'create_secure_transaction' %}" class="inline-block mt-6 bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition">

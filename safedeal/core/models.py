@@ -8,6 +8,8 @@ from django.utils import timezone
 
 # Item model to handle the items listed for sale
 # This model will include fields for the seller, title, description, price, category, condition, image, and other relevant details.
+import uuid
+
 class Item(models.Model):
     CATEGORY_CHOICES = [
         ('electronics', 'Electronics'),
@@ -29,16 +31,25 @@ class Item(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
-    location = models.CharField(max_length=100, null=True, blank=True)  # Location of the item
+    location = models.CharField(max_length=100, null=True, blank=True)
     condition = models.CharField(max_length=20, choices=CONDITION_CHOICES, default='used')
     is_available = models.BooleanField(default=True)
-    is_personal = models.BooleanField(default=True)  # True = personal item, False = business listing
+    is_personal = models.BooleanField(default=True)
+    item_reference = models.CharField(max_length=15, unique=True, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.item_reference:
+            self.item_reference = f"SDI-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title
 
+        
+        
+        
 class ItemImage(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='item_images/')
@@ -165,25 +176,36 @@ class SecureTransaction(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='external_transactions')
+    
+    # Seller: same field used for both internal and external sellers
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='external_transactions')
+
+    # Buyer Details
     buyer_email = models.EmailField(help_text="Used to notify buyer about the transaction link.")
-    buyer_phone = models.CharField(max_length=15,null=True, blank=True,validators=[RegexValidator(regex='^\+?1?\d{9,15}$', message='Invalid phone number')])
+    buyer_phone = models.CharField(max_length=15, null=True, blank=True, validators=[RegexValidator(regex=r'^\+?1?\d{9,15}$', message='Invalid phone number')])
     buyer_name = models.CharField(max_length=100, null=True, blank=True)
+
+    # For both internal and external items
     item_name = models.CharField(max_length=255, null=True, blank=True)
     description = models.TextField(blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    # Link to internal item (optional)
+    item_reference = models.CharField(max_length=20, null=True, blank=True)
+    # This can later be used to do a lookup like: Item.objects.get(item_reference=transaction.item_reference)
+
+    # Transaction details
     transaction_status = models.CharField(max_length=20, choices=TRANSACTION_STATUS, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     mpesa_reference = models.CharField(max_length=100, blank=True, null=True, unique=True)
-
 
     def get_secure_link(self):
         from django.urls import reverse
         return reverse('external_transaction_detail', kwargs={'transaction_id': str(self.id)})
 
     def __str__(self):
-        return f"{self.item_name} ({self.seller.username}) - {self.transaction_status}"
+        return f"{self.item_name or self.item_reference} ({self.seller.username}) - {self.transaction_status}"
 
 
 #the transactions  that will store all necessary information for the transaction and escrow process.
@@ -218,6 +240,7 @@ class MpesaPaymentLog(models.Model):
     phone = models.CharField(max_length=15, null=True, blank=True)
     mpesa_receipt = models.CharField(max_length=100, null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    transaction_reference = models.CharField(max_length=64, null=True, blank=True)
 
     def __str__(self):
         return f"{self.mpesa_receipt} - {self.amount}"

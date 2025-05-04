@@ -33,7 +33,15 @@
 
     <form method="post" enctype="multipart/form-data" class="space-y-4">
       {% csrf_token %}
-      
+      {% if form.errors %}
+        <ul class="mb-4 text-red-600 text-sm">
+          {% for field in form %}
+            {% for error in field.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      {% endif %}
       <div>
         {{ form.email.label_tag }} 
         {{ form.email|add_class:"w-full input input-bordered" }}

@@ -50,15 +50,16 @@
       {% endfor %}
   </div>
   {% endif %}
-  {% if form.password.errors %}
-  <div class="bg-red-100 text-red-800 px-4 py-2 rounded mb-4 text-sm">
-      {% for error in form.password.errors %}
-          {{ error }}
-      {% endfor %}
-  </div>
-  {% endif %}
+
   <form method="POST" class="space-y-4">
     {% csrf_token %}
+        {% if form.password.errors %}
+    <div class="bg-red-100 text-red-800 px-4 py-2 rounded mb-4 text-sm">
+        {% for error in form.password.errors %}
+            {{ error }}
+        {% endfor %}
+    </div>
+    {% endif %}
     {% for field in form %}
       <div>
         <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>

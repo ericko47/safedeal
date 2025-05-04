@@ -28,6 +28,24 @@
   <!-- Item Details -->
   <h2 class="text-2xl font-semibold text-gray-800">{{ item.title }}</h2>
   <p class="mt-2 text-lg text-green-600 font-bold">KES {{ item.price }}</p>
+  <!-- Item Reference Code -->
+  <div class="mt-2 flex items-center space-x-2">
+    <p class="text-sm text-gray-700"><strong>Item Code:</strong> <span id="item-code">{{ item.item_reference }}</span></p>
+    <button onclick="copyItemCode()" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded">
+      Copy Code
+    </button>
+  </div>
+
+  <script>
+    function copyItemCode() {
+      const code = document.getElementById("item-code").textContent;
+      navigator.clipboard.writeText(code).then(function () {
+        alert("Item code copied to clipboard: " + code);
+      }, function () {
+        alert("Failed to copy item code.");
+      });
+    }
+  </script>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-gray-700">
     <p><strong>Condition:</strong> {{ item.condition }}</p>
