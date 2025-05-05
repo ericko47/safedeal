@@ -152,8 +152,26 @@ def login_view(request):
 
 @login_required
 def dashboard_view(request):
+    user = request.user
+    buyer_transactions = Transaction.objects.filter(buyer=user).order_by('-created_at')[:10]
+    seller_transactions = Transaction.objects.filter(seller=user).order_by('-created_at')[:10]
+    
+    return render(request, 'core/dashboard.html', {
+        'buyer_transactions': buyer_transactions,
+        'seller_transactions': seller_transactions,
+    })
+@login_required
+def all_purchases_view(request):
     transactions = Transaction.objects.filter(buyer=request.user).order_by('-created_at')
-    return render(request, 'core/dashboard.html', {'transactions': transactions})
+    return render(request, 'core/all_purchases.html', {'transactions': transactions})
+
+
+@login_required
+def all_sales_view(request):
+    transactions = Transaction.objects.filter(seller=request.user).order_by('-created_at')
+    return render(request, 'core/all_sales.html', {'transactions': transactions})
+
+
 
 @login_required
 def profile_view(request):

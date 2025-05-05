@@ -11,6 +11,8 @@ urlpatterns = [
     
     path('register/', views.register, name='register'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('transactions/purchases/', views.all_purchases_view, name='all_purchases'),
+    path('transactions/sales/', views.all_sales_view, name='all_sales'),
     path('profile/', views.profile_view, name='profile'),
     path('browse/', views.browse_view, name='browse'),
     path('item/<int:item_id>/', views.item_detail, name='item_detail'),
