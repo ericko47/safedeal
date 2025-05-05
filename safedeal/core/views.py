@@ -215,7 +215,6 @@ def escrow_view(request):
 
 
 @login_required
-
 def post_item_view(request):
     
     user = request.user
@@ -240,7 +239,11 @@ def post_item_view(request):
         if form.is_valid():
             item = form.save(commit=False)
             item.seller = request.user
-
+            
+            if item.is_bulk and not request.user.is_premium:
+                messages.error(request, "Bulk listings are only available to Premium sellers. Please uncheck 'bulk' or upgrade your account.")
+                return render(request, 'core/post-item.html', {'form': form})
+            
             # Validate each file before saving
             for f in files:
                 if f.size > 5 * 1024 * 1024:  # 5MB limit
@@ -526,6 +529,61 @@ def transaction_detail(request, transaction_id):
     return render(request, 'core/transaction_detail.html', {'transaction': transaction})
 
 
+@login_required
+def buy_bulk_view(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+
+    if not item.is_bulk or not item.bulk_price:
+        messages.error(request, "This item is not available for bulk purchase.")
+        return redirect('item_detail', item_id=item.id)
+
+    if item.seller == request.user:
+        messages.error(request, "You cannot buy your own item.")
+        return redirect('item_detail', item_id=item.id)
+
+    if request.method == 'POST':
+        try:
+            quantity = int(request.POST.get('quantity'))
+            if quantity <= 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            messages.error(request, "Invalid quantity selected.")
+            return redirect('buy_bulk', item_id=item.id)
+
+        total_price = item.bulk_price * quantity
+        delivery_address = request.POST.get('delivery_address')
+
+        transaction_ref = str(uuid.uuid4()).replace('-', '')[:12]
+
+        transaction = Transaction.objects.create(
+            buyer=request.user,
+            seller=item.seller,
+            item=item,
+            amount=total_price,
+            status='pending',
+            delivery_address=delivery_address,
+            transaction_reference=transaction_ref,
+            is_bulk=True,  # Add this if your Transaction model has it
+            quantity=quantity  # Same here
+        )
+
+        phone = request.user.phone_number
+        response = lipa_na_mpesa(
+            phone_number=phone,
+            amount=total_price,
+            account_reference=transaction_ref,
+            transaction_desc=f"Bulk Purchase {item.item_reference}"
+        )
+
+        if response.get("ResponseCode") == "0":
+            messages.success(request, "Payment request sent. Check your phone.")
+        else:
+            messages.error(request, "Failed to initiate payment. Try again.")
+
+        return redirect('transaction_detail', transaction.id)
+
+    return render(request, 'core/buy_bulk.html', {'item': item})
+
 
 
 
@@ -588,7 +646,7 @@ def mpesa_callback(request):
 
         # === 3. Notify for unmatched payments ===
         if not transaction_found:
-            message = f"⚠️ UNMATCHED PAYMENT:\nPhone: {phone}\nAmount: {amount}\nReference: {account_reference}\nReceipt: {mpesa_receipt}"
+            message = f"UNMATCHED PAYMENT:\nPhone: {phone}\nAmount: {amount}\nReference: {account_reference}\nReceipt: {mpesa_receipt}"
             send_mail(
                 subject="Unmatched M-PESA Payment",
                 message=message,
@@ -599,7 +657,7 @@ def mpesa_callback(request):
         else:
             send_mail(
                 subject="M-PESA Payment Received",
-                message=f"✅ Payment of KES {amount} received from {phone}.\nReceipt: {mpesa_receipt}",
+                message=f"Payment of KES {amount} received from {phone}.\nReceipt: {mpesa_receipt}",
                 from_email=None,
                 recipient_list=['mpesa@safedeal.co.ke'],
             )

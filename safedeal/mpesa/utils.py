@@ -39,7 +39,6 @@ def lipa_na_mpesa(phone_number, amount, account_reference="SafeDeal", transactio
 
     headers = {"Authorization": f"Bearer {access_token}"}
     payload = {
-        "AccountReference": account_reference,
         "BusinessShortCode": business_short_code,
         "Password": password,
         "Timestamp": timestamp,

@@ -35,6 +35,7 @@ urlpatterns = [
 
 
     path('order/<int:item_id>/', views.place_order, name='place_order'),
+    path('buy-bulk/<int:item_id>/', views.buy_bulk_view, name='buy_bulk'),
     path('transaction/<int:transaction_id>/', views.transaction_detail, name='transaction_detail'),
     path('transaction/<int:transaction_id>/confirm/', views.confirm_delivery, name='confirm_delivery'),
     path('transaction/<int:transaction_id>/cancel/', views.cancel_transaction, name='cancel_transaction'),

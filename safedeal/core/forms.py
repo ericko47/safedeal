@@ -41,7 +41,7 @@ class ItemForm(forms.ModelForm):
     # images = forms.FileField(widget=forms.ClearableFileInput(attrs={'multiple': True}), required=False)
     class Meta:
         model = Item
-        fields = ['title', 'description','location', 'price', 'category', 'condition']
+        fields = ['title', 'description','location', 'price', 'category', 'condition', 'is_bulk', 'bulk_price']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
         }
@@ -87,6 +87,14 @@ class ItemForm(forms.ModelForm):
         if not condition:
             raise forms.ValidationError('This field is required.')
         return condition
+    
+    def clean_bulk_price(self):
+        bulk_price = self.cleaned_data.get('bulk_price')
+        is_bulk = self.cleaned_data.get('is_bulk')
+        
+        if is_bulk and not bulk_price:
+            raise forms.ValidationError('Bulk price is required if bulk purchase is enabled.')
+        return bulk_price
 
   
 class DisputeForm(forms.Form):

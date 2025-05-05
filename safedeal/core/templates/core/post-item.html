@@ -49,19 +49,49 @@
 
   <form method="POST" enctype="multipart/form-data" class="space-y-5">
     {% csrf_token %}
+    <div class="mt-4 flex items-center space-x-3">
+      <label for="id_is_bulk" class="inline-flex items-center space-x-2">
+        {% if user.is_premium %}
+          {{ form.is_bulk }}
+        {% else %}
+          {{ form.is_bulk|attr:"disabled:true" }}
+        {% endif %}
+        <span class="text-sm text-gray-700">
+          Enable bulk purchase for this item
+        </span>
+      </label>
+    
+      {% if not user.is_premium %}
+        <span class="text-xs text-red-600 italic">(Premium sellers only)</span>
+      {% endif %}
+    </div>
+ 
     
     {% for field in form %}
-      <div>
-        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
-          {{ field.label }}
-        </label>
-        {{ field|add_class:"w-full input input-bordered mt-1" }}
-        {% if field.help_text %}
-          <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
-        {% endif %}
-      </div>
+      {% if field.name == 'bulk_price' %}
+        <div id="bulk-price-field" style="display: none;">
+          <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+            {{ field.label }}
+          </label>
+          {{ field|add_class:"w-full input input-bordered mt-1" }}
+          {% if field.help_text %}
+            <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+          {% endif %}
+        </div>
+      {% elif field.name != 'is_bulk' %}
+        <div>
+          <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+            {{ field.label }}
+          </label>
+          {{ field|add_class:"w-full input input-bordered mt-1" }}
+          {% if field.help_text %}
+            <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+          {% endif %}
+        </div>
+      {% endif %}
     {% endfor %}
 
+    
     <div>
       <label for="id_images" class="block text-sm font-medium text-gray-700">Upload Images</label>
       <input type="file" name="images" id="id_images" multiple class="file-input file-input-bordered w-full mt-1" />
@@ -70,5 +100,26 @@
 
     <button type="submit" class="btn btn-primary w-full">Post Item</button>
   </form>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const bulkCheckbox = document.getElementById("id_is_bulk");
+      const bulkPriceField = document.getElementById("bulk-price-field");
+  
+      function toggleBulkPrice() {
+        if (bulkCheckbox.checked) {
+          bulkPriceField.style.display = "block";
+        } else {
+          bulkPriceField.style.display = "none";
+        }
+      }
+  
+      if (!bulkCheckbox.disabled) {
+        bulkCheckbox.addEventListener("change", toggleBulkPrice);
+        toggleBulkPrice();
+      }
+    });
+  </script>
+ 
+  
 </section>
 {% endblock %}

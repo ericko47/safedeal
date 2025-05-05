@@ -37,7 +37,9 @@ class Item(models.Model):
     is_personal = models.BooleanField(default=True)
     item_reference = models.CharField(max_length=15, unique=True, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True)# models.py
+    is_bulk = models.BooleanField(default=False)
+    bulk_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.item_reference:
@@ -92,6 +94,8 @@ class Transaction(models.Model):
     transaction_reference = models.CharField(max_length=100, unique=True)
     proof_of_delivery = models.ImageField(upload_to='deliveries/', null=True, blank=True)
     dispute_reason = models.TextField(null=True, blank=True)
+    is_bulk = models.BooleanField(default=False)    
+    quantity = models.PositiveIntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"Transaction #{self.id} - {self.item.title} ({self.status})"
@@ -142,6 +146,7 @@ class CustomUser(AbstractUser):
     # Business license number
     business_license_number = models.CharField(max_length=50, null=True, blank=True) 
     is_verified = models.BooleanField(default=False)
+    is_premium = models.BooleanField(default=False)
     # Account type: Buyer, Seller, or Both
     ACCOUNT_TYPE_CHOICES = [
         ('buyer', 'Buyer'),
