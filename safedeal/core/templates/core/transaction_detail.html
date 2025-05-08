@@ -75,6 +75,29 @@
         <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Cancel Order</button>
       </form>
     {% endif %}
+    {% if transaction.status in "paid shipped" and request.user == transaction.buyer %}
+      <form method="post" action="{% url 'raise_dispute' transaction.id %}">
+        {% csrf_token %}
+        <button class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Raise Dispute</button>
+      </form>
+    {% endif %}
+    {% if transaction.status in "paid" and request.user == transaction.seller %}
+      <a href="{% url 'ship_item' 'transaction.id' %}"class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Ship the Item</a>
+       
+    {% endif %}
+    {% if transaction.status == 'disputed' and request.user == transaction.buyer %}
+      <form method="post" action="{% url 'respond_to_dispute' transaction.id %}">
+        {% csrf_token %}
+        <button class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Respond to Dispute</button>
+      </form>
+    {% endif %}
+  
+    {% if transaction.status == 'disputed' and request.user == transaction.buyer %}
+      <form method="post" action="{% url 'close_dispute' transaction.id %}">
+        {% csrf_token %}
+        <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Close Dispute</button>
+      </form>
+    {% endif %}
 
     <!-- Dispute Section -->
     {% if transaction.status == 'disputed' and request.user == transaction.seller %}
@@ -84,19 +107,11 @@
         <p><strong>Raised by:</strong> {{ transaction.buyer.username }}</p>
         <p><strong>Raised on:</strong> {{ transaction.dispute.created_at }}</p>
 
-        {% if transaction.dispute.response %}
-          <div class="mt-3 border-t pt-3">
-            <h3 class="font-semibold text-gray-700">Seller's Response</h3>
-            <p>{{ transaction.dispute.response }}</p>
-            <p><strong>Responded on:</strong> {{ transaction.dispute.responded_at }}</p>
-          </div>
-        {% else %}
           {% if user == transaction.seller %}
-            <a href="{% url 'respond_to_dispute' transaction.id %}" class="btn btn-primary mt-2">Respond to Dispute</a>
-          {% else %}
-            <p class="italic text-sm text-gray-500">Waiting for seller response...</p>
+          <a href="{% url 'start_conversation' item.id %}" class="inline-block mt-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded">
+            Engage in Conversation
+          </a>
           {% endif %}
-        {% endif %}
       </div>
     {% endif %}
 

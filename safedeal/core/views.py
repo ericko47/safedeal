@@ -1,11 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
-from .forms import CustomUserCreationForm, UserProfileForm, ItemForm, DisputeForm, SellerResponseForm, TransactionOutForm, ItemReportForm
+from .forms import CustomUserCreationForm, UserProfileForm, ItemForm, DisputeForm, TransactionOutForm, ItemReportForm, ShippingForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.contrib import messages
-from .models import Item , ItemImage, Transaction, TransactionDispute, TransactionOut, ItemReport, Wishlist
+from .models import Item , ItemImage, Transaction, TransactionDispute, TransactionOut, ItemReport, Wishlist, DisputeEvidence
 import uuid
 from django.http import HttpResponseForbidden
 from django.http import JsonResponse
@@ -68,44 +68,98 @@ def cancel_transaction(request, transaction_id):
     return redirect('transaction_detail', transaction_id=transaction.id)
 
 
-
-# @login_required
-# def cancel_transaction(request, transaction_id):
-#     transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
-#     if request.method == 'POST' and transaction.status == 'pending':
-#         transaction.status = 'cancelled'
-#         transaction.save()
-#         messages.warning(request, "Transaction cancelled.")
-#     return redirect('dashboard')
-
-
 @login_required
 def raise_dispute(request, transaction_id):
     transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
-    if request.method == 'POST' and transaction.status in ['paid', 'shipped']:
-        transaction.status = 'disputed'
-        transaction.save()
-        messages.error(request, "Dispute raised. Our team will review it.")
-    return redirect('dashboard')
 
+    if transaction.status not in ['paid', 'shipped']:
+        messages.warning(request, "You can only raise a dispute for paid or shipped transactions.")
+        return redirect('dashboard')
 
-@login_required
-def respond_to_dispute(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id, seller=request.user)
-    dispute = get_object_or_404(TransactionDispute, transaction=transaction)
+    # Prevent duplicate disputes
+    if hasattr(transaction, 'transactiondispute'):
+        messages.info(request, "A dispute has already been raised for this transaction.")
+        return redirect('dashboard')
 
     if request.method == 'POST':
-        form = SellerResponseForm(request.POST, instance=dispute)
+        form = DisputeForm(request.POST)
         if form.is_valid():
-            dispute = form.save(commit=False)
-            dispute.responded_at = timezone.now()
-            dispute.save()
-            messages.success(request, 'Your response has been submitted.')
-            return redirect('transaction_detail', transaction_id=transaction.id)
-    else:
-        form = SellerResponseForm(instance=dispute)
+            # Update transaction status
+            transaction.status = 'disputed'
+            transaction.save()
 
-    return render(request, 'core/respond_to_dispute.html', {'form': form, 'dispute': dispute, 'transaction': transaction})
+            # Create the dispute record
+            dispute = TransactionDispute.objects.create(
+                transaction=transaction,
+                reason=form.cleaned_data['reason'],
+                additional_details=form.cleaned_data['additional_details'],
+                created_at=timezone.now()
+            )
+            files = request.FILES.getlist('evidence_files')
+            if files:
+                for file in files:
+                    if file.size > 5 * 1024 * 1024:  # 5MB limit
+                        messages.error(request, f"{file.name} is too large (max 5MB).")
+                        return render(request, 'core/raise_dispute.html', {'form': form, 'transaction': transaction})
+                    else:
+                        if not file.content_type.startswith('image/'):
+                            messages.error(request, f"{file.name} is not a valid image.")
+                            return render(request, 'core/raise_dispute.html', {'form': form, 'transaction': transaction})                    
+
+                        DisputeEvidence.objects.create(dispute=dispute, file=file)
+                
+            send_custom_email(
+                subject='Dispute Raised',
+                template_name='emails/dispute_raised.html',
+                context={
+                    'buyer': transaction.buyer,
+                    'item': transaction.item,
+                    'reason': form.cleaned_data['reason'],
+                    'additional_details': form.cleaned_data['additional_details'],
+                },
+                recipient_list=[transaction.seller.email],
+            )
+            messages.success(request, "Dispute raised successfully. Our team will review it.")
+            return redirect('dashboard')
+    else:
+        form = DisputeForm()
+
+    return render(request, 'core/raise_dispute.html', {
+        'form': form,
+        'transaction': transaction
+    })
+
+@login_required
+def ship_item(request, transaction_id):
+    transaction = get_object_or_404(Transaction, id=transaction_id, seller=request.user)
+
+    if transaction.status != 'paid':
+        messages.error(request, "Item cannot be shipped in its current state.")
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = ShippingForm(request.POST, request.FILES, instance=transaction)
+        if form.is_valid():
+            transaction = form.save(commit=False)
+            transaction.status = 'shipped'
+            transaction.save()
+            # Send email to buyer
+            send_custom_email(  
+                subject='Item Shipped',
+                template_name='emails/item_shipped.html',
+                context={
+                    'buyer': transaction.buyer,
+                    'item': transaction.item,
+                    'shipping_evidence': form.cleaned_data['shipping_evidence'],
+                },
+                recipient_list=[transaction.buyer.email],
+            )
+            messages.success(request, "Item marked as shipped.")
+            return redirect('dashboard')
+    else:
+        form = ShippingForm(instance=transaction)
+
+    return render(request, 'core/ship_item.html', {'form': form, 'transaction': transaction})
 
 
 
@@ -383,32 +437,6 @@ def view_wishlist(request):
 def user_transactions_view(request):
     transactions = Transaction.objects.filter(buyer=request.user).order_by('-created_at')
     return render(request, 'core/my_transactions.html', {'transactions': transactions})
-
-
-
-@login_required
-def dispute_transaction(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
-
-    if transaction.status not in ['paid', 'shipped']:
-        messages.warning(request, "You can only dispute transactions that are paid or shipped.")
-        return redirect('dashboard')
-
-    if request.method == 'POST':
-        form = DisputeForm(request.POST)
-        if form.is_valid():
-            transaction.status = 'disputed'
-            transaction.dispute_reason = form.cleaned_data['dispute_reason']
-            transaction.save()
-            messages.success(request, "Dispute submitted successfully.")
-            return redirect('transaction_detail', transaction_id=transaction.id)
-    else:
-        form = DisputeForm()
-
-    return render(request, 'core/dispute_transaction.html', {
-        'form': form,
-        'transaction': transaction
-    })
 
 
 def privacy_view(request): 

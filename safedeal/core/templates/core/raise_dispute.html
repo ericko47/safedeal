@@ -1,0 +1,53 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% load widget_tweaks %}
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
+  <h2 class="text-2xl font-bold text-gray-800 mb-4">Raise a Dispute</h2>
+  <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+    &larr; Go Back
+  </a>
+  <div class="mb-6">
+    <p class="text-sm text-gray-600">You’re raising a dispute for:</p>
+    <p class="text-lg font-semibold text-gray-900">{{ transaction.item.title }}</p>
+    <p class="text-sm text-gray-500">Transaction ID: <span class="font-mono">{{ transaction.transaction_reference }}</span></p>
+    <p class="text-sm text-gray-500">Item Id: {{ transaction.item.item_reference }}</p>
+
+  </div>
+
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+    <div>
+      <label for="{{ form.reason.id_for_label }}" class="block text-sm font-medium text-gray-700">Dispute Reason</label>
+      {{ form.reason }}
+      {% if form.reason.errors %}
+        <p class="text-red-500 text-sm mt-1">{{ form.reason.errors.0 }}</p>
+      {% endif %}
+    </div>
+    
+    <div>
+      <label for="{{ form.additional_details.id_for_label }}" class="block text-sm font-medium text-gray-700">Additional Details</label>
+      {{ form.additional_details }}
+      {% if form.additional_details.errors %}
+        <p class="text-red-500 text-sm mt-1">{{ form.additional_details.errors.0 }}</p>
+      {% endif %}
+    </div>
+    
+    <div>
+      <label for="evidence_files" class="block text-sm font-semibold text-gray-700">Attach Evidence</label>
+      <input type="file" name="evidence_files" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+      <p class="text-gray-500 text-sm mt-1">You can attach multiple files (images, documents) to support your dispute.</p>
+      {% if form.evidence_files.errors %}
+        <p class="text-red-500 text-sm mt-1">{{ form.evidence_files.errors.0 }}</p>
+      {% endif %}
+    </div>
+
+    <div class="flex justify-end">
+      <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold shadow">
+        Submit Dispute
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

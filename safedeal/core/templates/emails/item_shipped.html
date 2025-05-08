@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Item Shipped</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 20px; color: #111827;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 8px; border: 1px solid #e5e7eb;">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <img src="{{ logo_url }}" alt="SafeDeal Logo" style="height: 60px;">
+    </div>
+    <h2 style="font-size: 20px; font-weight: 600; color: #1f2937;">Your item has been shipped!</h2>
+    <p style="margin-top: 16px; line-height: 1.6;">
+      Hello {{ buyer_name }},
+    </p>
+    <p style="line-height: 1.6;">
+      The seller has marked your transaction <strong>#{{ transaction_id }}</strong> for <strong>{{ item_title }}</strong> as shipped.
+    </p>
+    <p style="line-height: 1.6;">
+      Delivery Method: <strong>{{ delivery_mode_display }}</strong><br>
+      {% if delivery_agent %}
+      Assigned Agent: <strong>{{ delivery_agent }}</strong><br>
+      {% endif %}
+    </p>
+    <p style="margin-top: 20px; line-height: 1.6;">
+      You can track this transaction by logging into your dashboard.
+    </p>
+    <div style="margin-top: 30px; text-align: center;">
+      <a href="{{ dashboard_url }}" style="background-color: #2563eb; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+        View in Dashboard
+      </a>
+    </div>
+    <p style="margin-top: 40px; font-size: 14px; color: #6b7280;">
+      Thanks for using SafeDeal.
+    </p>
+  </div>
+</body>
+</html>

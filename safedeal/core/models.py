@@ -96,26 +96,65 @@ class Transaction(models.Model):
     dispute_reason = models.TextField(null=True, blank=True)
     is_bulk = models.BooleanField(default=False)    
     quantity = models.PositiveIntegerField(null=True, blank=True)
+    shipping_evidence = models.FileField(upload_to='shipping_evidence/', null=True, blank=True)
+    delivery_mode = models.CharField(
+        max_length=100,
+        choices=[
+            ('self_delivery', 'Self Delivery'),
+            ('courier', 'Courier Service'),
+            ('agent', 'Delivery Agent'),
+        ],
+        null=True,
+        blank=True
+    )
+    delivery_agent = models.ForeignKey(
+        'DeliveryAgent', null=True, blank=True,
+        on_delete=models.SET_NULL,
+        help_text="Registered delivery agent if selected"
+    )
 
     def __str__(self):
         return f"Transaction #{self.id} - {self.item.title} ({self.status})"
-    
+
+# Delivery Agent model to handle delivery agents
+class DeliveryAgent(models.Model):
+    name = models.CharField(max_length=100)
+    contact_number = models.CharField(max_length=20)
+    email = models.EmailField()
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
 # Dispute model to handle disputes raised by buyers or sellers
 
 class TransactionDispute(models.Model):
+    DISPUTE_REASONS = [
+    ('item_not_received', 'Item not received'),
+    ('item_not_as_described', 'Item not as described'),
+    ('delayed_delivery', 'Delayed delivery'),
+    ('damaged_item', 'Item arrived damaged'),
+    ('wrong_item', 'Wrong item received'),
+    ('other', 'Other'),
+    ]
+    
     transaction = models.OneToOneField(Transaction, on_delete=models.CASCADE)
-    reason = models.TextField()
+    reason = models.CharField(max_length=50, choices=DISPUTE_REASONS)
+    additional_details = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     resolved = models.BooleanField(default=False)
     seller_response = models.TextField(blank=True, null=True)
     responded_at = models.DateTimeField(blank=True, null=True)
-        # New fields
     status = models.CharField(max_length=20, choices=[('open', 'Open'), ('resolved', 'Resolved'), ('closed', 'Closed')], default='open')
     admin_notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"Dispute for Transaction #{self.transaction.id}"
 
+class DisputeEvidence(models.Model):
+    dispute = models.ForeignKey(TransactionDispute, on_delete=models.CASCADE, related_name='evidences')
+    file = models.FileField(upload_to='dispute_evidence/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
 
 
 # All users database model 

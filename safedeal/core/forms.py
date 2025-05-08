@@ -1,8 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser, Item, Transaction, TransactionOut, TransactionDispute
-
-
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
@@ -96,34 +94,59 @@ class ItemForm(forms.ModelForm):
             raise forms.ValidationError('Bulk price is required if bulk purchase is enabled.')
         return bulk_price
 
-  
+
+
+DISPUTE_REASONS = [
+    ('item_not_received', 'Item not received'),
+    ('item_not_as_described', 'Item not as described'),
+    ('delayed_delivery', 'Delayed delivery'),
+    ('damaged_item', 'Item arrived damaged'),
+    ('wrong_item', 'Wrong item received'),
+    ('other', 'Other'),
+    ]
+
 class DisputeForm(forms.Form):
-    dispute_reason = forms.CharField(
-        label="Reason for Dispute",
-        widget=forms.Textarea(attrs={'rows': 4, 'placeholder': 'Describe the issue...'}),
-        max_length=1000,
+    reason = forms.ChoiceField(
+        label="Dispute Reason",
+        choices=DISPUTE_REASONS,
+        widget=forms.Select(attrs={'class': 'form-control'}),
         required=True
-        
     )
-    def clean_dispute_reason(self):
-        dispute_reason = self.cleaned_data.get('dispute_reason')
-        if not dispute_reason:
-            raise forms.ValidationError('This field is required.')
-        return dispute_reason
-# DisputeResponseForm is used by the seller to respond to a dispute raised by the buyer.
+    additional_details = forms.CharField(
+        label="Additional Details (Optional)",
+        widget=forms.Textarea(attrs={'rows': 4, 'placeholder': 'Explain the issue further if needed...'}),
+        max_length=1000,
+        required=False
+    )
+    def clean(self):
+        cleaned_data = super().clean()
+        reason = cleaned_data.get("reason")
+        additional_details = cleaned_data.get("additional_details")
+
+        if reason == 'other' and not additional_details:
+            self.add_error('additional_details', "Please provide more details for 'Other' reason.")
+
+        return cleaned_data
+
     
-class SellerResponseForm(forms.ModelForm):
+class ShippingForm(forms.ModelForm):
     class Meta:
-        model = TransactionDispute
-        fields = ['seller_response']
+        model = Transaction
+        fields = ['shipping_evidence', 'delivery_mode', 'delivery_agent']
         widgets = {
-            'seller_response': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Enter your response to the dispute...'}),
+            'delivery_mode': forms.Select(attrs={'class': 'form-select'}),
+            'delivery_agent': forms.Select(attrs={'class': 'form-select'}),
         }
-    def clean_seller_response(self):
-        seller_response = self.cleaned_data.get('seller_response')
-        if not seller_response:
-            raise forms.ValidationError('This field is required.')
-        return seller_response  
+
+    def clean(self):
+        cleaned_data = super().clean()
+        mode = cleaned_data.get('delivery_mode')
+        agent = cleaned_data.get('delivery_agent')
+
+        if mode == 'agent' and not agent:
+            raise forms.ValidationError("Please select a delivery agent.")
+        return cleaned_data
+
     
     
     
