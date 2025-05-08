@@ -43,6 +43,7 @@ urlpatterns = [
     path('transaction/<int:transaction_id>/cancel/', views.cancel_transaction, name='cancel_transaction'),
     path('transaction/<int:transaction_id>/confirm/', views.confirm_delivery, name='confirm_delivery'),
     path('transaction/<int:transaction_id>/dispute/', views.raise_dispute, name='raise_dispute'),
+    path('transaction/<int:transaction_id>/dispute/', views.respond_to_dispute, name='respond_to_dispute'),
     path('transaction/<int:transaction_id>/dispute/', views.dispute_transaction, name='dispute_transaction'),
     path('transactions/<int:transaction_id>/close-dispute/', views.admin_close_dispute, name='admin_close_dispute'),
     

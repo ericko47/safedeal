@@ -50,6 +50,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       
       <!-- Purchases -->
+       {% if user.account_type == 'buyer' or user.account_type == 'both' %}
       <div>
         <div class="flex justify-between items-center mb-4">
           <h4 class="text-md font-bold text-blue-700">Your Purchases</h4>
@@ -73,7 +74,26 @@
                 {{ txn.get_status_display }}
               </span>
             </p>
-            <a href="{% url 'transaction_detail' txn.id %}" class="text-sm text-blue-600 hover:underline mt-2 inline-block">View Details</a>
+            <div class="flex flex-wrap gap-2 mt-4">
+              {% if txn.status == "shipped" %}
+              <form method="post" action="{% url 'confirm_delivery' txn.id %}">
+                {% csrf_token %}
+                <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Confirm Delivery</button>
+              </form>
+              {% elif txn.status == "pending" %}
+              <form method="post" action="{% url 'cancel_transaction' txn.id %}">
+                {% csrf_token %}
+                <button type="submit" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Cancel Order</button>
+              </form>
+              {% elif txn.status in "paid shipped" %}
+              <form method="post" action="{% url 'raise_dispute' txn.id %}">
+                {% csrf_token %}
+                <button type="submit" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Raise Dispute</button>
+              </form>
+              {% endif %}
+              <a href="{% url 'transaction_detail' txn.id %}" class="text-sm text-blue-600 hover:underline mt-2 inline-block">View Details</a>
+            </div>
+            
           </li>
           {% endfor %}
         </ul>
@@ -81,7 +101,7 @@
         <p class="text-gray-500">No recent purchases.</p>
         {% endif %}
       </div>
-
+      {% endif %}
       <!-- Sales -->
        {% if user.account_type == 'seller' or user.account_type == 'both' %}
       <div>
@@ -107,7 +127,20 @@
                 {{ txn.get_status_display }}
               </span>
             </p>
-            <a href="{% url 'transaction_detail' txn.id %}" class="text-sm text-blue-600 hover:underline mt-2 inline-block">View Details</a>
+
+            <div class="flex flex-wrap gap-2 mt-4">
+              {% if txn.status == "shipped" %}
+              <form method="post" action="{% url 'confirm_delivery' txn.id %}">
+                {% csrf_token %}
+                <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Confirm Delivery</button>
+              </form>             
+              <form method="post" action="{% url 'raise_dispute' txn.id %}">
+                {% csrf_token %}
+                <button type="submit" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Raise Dispute</button>
+              </form>
+              {% endif %}
+              <a href="{% url 'transaction_detail' txn.id %}" class="text-sm text-blue-600 hover:underline mt-2 inline-block">View Details</a>
+            </div>
           </li>
           {% endfor %}
         </ul>

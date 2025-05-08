@@ -72,12 +72,12 @@
     {% if transaction.status == 'pending' and request.user == transaction.buyer %}
       <form method="post" action="{% url 'cancel_transaction' transaction.id %}">
         {% csrf_token %}
-        <button class="btn btn-secondary">Cancel Order</button>
+        <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Cancel Order</button>
       </form>
     {% endif %}
 
     <!-- Dispute Section -->
-    {% if transaction.dispute %}
+    {% if transaction.status == 'disputed' and request.user == transaction.seller %}
       <div class="bg-yellow-100 border-l-4 border-yellow-400 p-4 rounded">
         <h2 class="font-semibold text-yellow-800">Dispute Raised</h2>
         <p><strong>Reason:</strong> {{ transaction.dispute.reason }}</p>
@@ -102,7 +102,10 @@
 
     <!-- Admin Actions -->
     {% if user.is_staff and transaction.dispute.status != 'closed' %}
-      <a href="{% url 'admin_close_dispute' transaction.id %}" class="btn btn-danger mt-4">Close Dispute (Admin)</a>
+    <div>
+      <a href="{% url 'admin_close_dispute' transaction.id %}" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Close Dispute (Admin)</a>
+
+    </div>
     {% endif %}
 
     {% if transaction.dispute.status == 'closed' %}
