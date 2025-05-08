@@ -1,0 +1,66 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <h2 class="text-2xl font-bold mb-6 text-gray-800">Search Results for "<span class="text-blue-600">{{ query }}</span>"</h2>
+
+  {% if exact_matches %}
+  <div class="mb-8">
+    <h3 class="text-lg font-semibold text-green-700 mb-4">Exact Match</h3>
+    <ul class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      {% for item in exact_matches %}
+      <li class="bg-white p-4 shadow rounded-lg border border-green-400">
+        <a href="{% url 'item_detail' item.id %}" class="block hover:underline">
+          <img src="{{ item.images.first.image.url }}" alt="{{ item.title }}" class="h-40 w-full object-cover rounded mb-2">
+          <h3 class="text-lg font-semibold text-gray-800">{{ item.title }}</h3>
+        </a>
+        <p class="text-green-700 text-sm">Ref: {{ item.item_reference }}</p>
+        <p class="text-gray-600 text-sm">Description: {{ item.description }}</p>
+        <p class="text-gray-600 text-sm">Seller: {{ item.seller.username }}</p>
+        {% if item.seller.is_premium %}
+        <span class="flex items-center gap-1 text-xs bg-yellow-400 text-white px-2 py-1 rounded-full mt-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m-3-3H9m3-4a1 1 0 100-2 1 1 0 000 2zM12 2a10 10 0 100 20A10 10 0 0012 2z" />
+          </svg>
+          Premium Seller
+        </span>
+        {% endif %}
+        <p class="text-blue-600 font-bold mt-2">KSh {{ item.price }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if keyword_matches %}
+  <div>
+    <h3 class="text-lg font-semibold text-gray-700 mb-4">Related Results</h3>
+    <ul class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      {% for item in keyword_matches %}
+      <li class="bg-white p-4 shadow rounded-lg border">
+        <a href="{% url 'item_detail' item.id %}" class="block hover:underline">
+          <img src="{{ item.images.first.image.url }}" alt="{{ item.title }}" class="h-40 w-full object-cover rounded mb-2">
+          <h3 class="text-lg font-semibold text-gray-800">{{ item.title }}</h3>
+        </a>
+        <p class="text-gray-600 text-sm">Ref: {{ item.item_reference }}</p>
+        <p class="text-gray-600 text-sm">Description: {{ item.description }}</p>
+        <p class="text-gray-600 text-sm">Seller: {{ item.seller.username }}</p>
+        {% if item.seller.is_premium %}
+        <span class="flex items-center gap-1 text-xs bg-yellow-400 text-white px-2 py-1 rounded-full mt-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m-3-3H9m3-4a1 1 0 100-2 1 1 0 000 2zM12 2a10 10 0 100 20A10 10 0 0012 2z" />
+          </svg>
+          Premium Seller
+        </span>
+        {% endif %}
+        <p class="text-blue-600 font-bold mt-2">KSh {{ item.price }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if not exact_matches and not keyword_matches %}
+  <p class="text-gray-600 text-lg">No items found matching "<strong>{{ query }}</strong>".</p>
+  {% endif %}
+</div>
+{% endblock %}
