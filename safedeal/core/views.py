@@ -227,6 +227,24 @@ def browse_view(request):
         'search_query': query,
     })
     
+def search_items(request):
+    query = request.GET.get('q')
+    exact_matches = []
+    keyword_matches = []
+
+    if query:
+        exact_matches = Item.objects.filter(item_reference__iexact=query)
+        keyword_matches = Item.objects.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query)
+        ).exclude(item_reference__iexact=query)
+
+    context = {
+        'query': query,
+        'exact_matches': exact_matches,
+        'keyword_matches': keyword_matches,
+    }
+    return render(request, 'core/search_results.html', context)
 
 def escrow_view(request):
     return render(request, 'core/escrow.html')
@@ -243,7 +261,9 @@ def post_item_view(request):
         user.phone_number,
         user.current_location,
         user.permanent_address,
-        user.account_type
+        user.account_type,
+        user.profile_picture,
+        user.national_id_picture,
     ]
 
     if not all(required_fields):
@@ -286,7 +306,7 @@ def post_item_view(request):
     return render(request, 'core/post-item.html', {'form': form})
 
 
-def item_detail(request, item_id):
+def item_detail(request, item_id):   
     item = get_object_or_404(Item, id=item_id)
     in_wishlist = False
 
@@ -303,6 +323,21 @@ def item_detail(request, item_id):
 
 @login_required
 def report_item(request, item_id):
+    user = request.user
+    # Check for essential profile fields
+    required_fields = [
+        user.national_id,
+        user.phone_number,
+        user.current_location,
+        user.permanent_address,
+        user.account_type,
+        user.profile_picture,
+        user.national_id_picture,
+    ]
+
+    if not all(required_fields):
+        messages.warning(request, "Please complete your profile before you can report this item.")
+        return redirect('update_profile')
     item = get_object_or_404(Item, id=item_id)
 
     if request.method == 'POST':
@@ -497,7 +532,22 @@ def create_secure_transaction(request):
 
 
 @login_required
-def place_order(request, item_id):
+def place_order(request, item_id): 
+    user = request.user
+    # Check for essential profile fields
+    required_fields = [
+        user.national_id,
+        user.phone_number,
+        user.current_location,
+        user.permanent_address,
+        user.account_type,
+        user.profile_picture,
+        user.national_id_picture,
+    ]
+
+    if not all(required_fields):
+        messages.warning(request, "Please complete your profile before you can place an order.")
+        return redirect('update_profile')
     item = get_object_or_404(Item, id=item_id)
     if item.seller == request.user:
         messages.error(request, "You cannot buy your own item.")
@@ -549,6 +599,21 @@ def transaction_detail(request, transaction_id):
 
 @login_required
 def buy_bulk_view(request, item_id):
+    user = request.user
+    # Check for essential profile fields
+    required_fields = [
+        user.national_id,
+        user.phone_number,
+        user.current_location,
+        user.permanent_address,
+        user.account_type,
+        user.profile_picture,
+        user.national_id_picture,
+    ]
+
+    if not all(required_fields):
+        messages.warning(request, "Please complete your profile before posting an item.")
+        return redirect('update_profile')
     item = get_object_or_404(Item, id=item_id)
 
     if not item.is_bulk or not item.bulk_price:
@@ -746,6 +811,21 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 @staff_member_required
 def admin_dashboard(request):
+    user = request.user
+    # Check for essential profile fields
+    required_fields = [
+        user.national_id,
+        user.phone_number,
+        user.current_location,
+        user.permanent_address,
+        user.account_type,
+        user.profile_picture,
+        user.national_id_picture,
+    ]
+
+    if not all(required_fields):
+        messages.warning(request, "Please complete your profile before posting an item.")
+        return redirect('update_profile')
     disputes = TransactionDispute.objects.all().order_by('-created_at')
     open_disputes = disputes.filter(status='open')
     closed_disputes = disputes.filter(status='closed')
