@@ -1,0 +1,19 @@
+<!-- templates/emails/funding_requested.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Funding Requested</title>
+</head>
+<body>
+  <h2>Hello {{ transaction.buyer.username }},</h2>
+  <p>The seller has requested the release of funds for transaction #{{ transaction.id }}.</p>
+  <p>Item: {{ transaction.item.title }}</p>
+  <p>Please confirm delivery if you’ve received the item, or raise a dispute if there’s an issue.</p>
+
+  <br>
+  <p>Regards,</p>
+  <p><strong>SafeDeal Escrow</strong></p>
+  <p>&copy; {{ year }}</p>
+</body>
+</html>

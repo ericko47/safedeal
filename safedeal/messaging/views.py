@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from core.models import Item
+from core.models import Item, Transaction
 from .models import Conversation, Message
 from django.contrib.auth.decorators import login_required
 
@@ -8,31 +8,49 @@ from django.contrib import messages
 
 from .forms import ContactForm
 
+
 @login_required
 def start_conversation(request, item_id):
     item = get_object_or_404(Item, id=item_id)
-    if not item.is_available:
+
+    if not item.is_available and not Transaction.objects.filter(item=item, status='disputed').exists():
         messages.error(request, "This item is no longer available.")
         return redirect('item_detail', item_id=item.id)
+
     if not item.seller.is_active:
         messages.error(request, "The seller is no longer active.")
         return redirect('item_detail', item_id=item.id)
-    if item.seller == request.user:
-        # Prevent sellers from starting a conversation with themselves  
-        messages.error(request, "You cannot start a conversation with yourself.")
-        return redirect('item_detail', item_id=item.id)
 
+    # Prevent user from messaging themselves on their own item
+    if item.seller == request.user:
+        # Try to find the latest transaction involving this item
+        try:
+            transaction = Transaction.objects.filter(item=item).latest('created_at')
+            buyer = transaction.buyer
+            seller = request.user
+        except Transaction.DoesNotExist:
+            messages.error(request, "No buyer found to contact.")
+            return redirect('item_detail', item_id=item.id)
+    else:
+        buyer = request.user
+        seller = item.seller
+
+    # Ensure consistent roles (buyer/seller)
     conversation, created = Conversation.objects.get_or_create(
-        buyer=request.user,
-        seller=item.seller,
+        buyer=buyer,
+        seller=seller,
         item=item
     )
 
     return redirect('conversation_detail', conversation_id=conversation.id)
 
+
 @login_required
 def conversation_detail(request, conversation_id):
     conversation = get_object_or_404(Conversation, id=conversation_id)
+
+    # Mark all unread messages *not* sent by current user as read
+    conversation.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
 
     if request.method == 'POST':
         content = request.POST.get('message')
@@ -44,7 +62,11 @@ def conversation_detail(request, conversation_id):
             )
 
     messages = conversation.messages.order_by('timestamp')
-    return render(request, 'messaging/conversation_detail.html', {'conversation': conversation, 'messages': messages})
+    return render(request, 'messaging/conversation_detail.html', {
+        'conversation': conversation,
+        'messages': messages
+    })
+
 
 @login_required
 def inbox_view(request):
@@ -55,7 +77,16 @@ def inbox_view(request):
     )
     threads = threads.distinct().order_by('-created_at')
 
-    return render(request, 'messaging/inbox.html', {'threads': threads})
+    # Check for unread messages not sent by current user
+    has_unread_messages = Message.objects.filter(
+        conversation__in=threads,
+        is_read=False
+    ).exclude(sender=request.user).exists()
+
+    return render(request, 'messaging/inbox.html', {
+        'threads': threads,
+        'has_unread_messages': has_unread_messages
+    })
 
 
 from django.http import JsonResponse

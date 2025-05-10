@@ -26,7 +26,7 @@
           {{ transaction.status|capfirst }}
         </span>
       </p>
-      <p><strong>Transaction ID:</strong> {{ transaction.transaction_reference }}</p>
+      <p><strong>Item ID:</strong> {{ transaction.item.item_reference }}</p>
       <p><strong>Date:</strong> {{ transaction.created_at|date:"M d, Y H:i" }}</p>
     </div>
 
@@ -81,15 +81,28 @@
         <button class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Raise Dispute</button>
       </form>
     {% endif %}
+    {% if transaction.can_buyer_request_refund and user == transaction.buyer %}
+      <form method="POST" action="{% url 'request_refund' transaction.id %}">
+        {% csrf_token %}
+        <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Request Refund</button>
+      </form>
+    {% endif %}
+
+    {% if transaction.can_seller_request_funding and user == transaction.seller %}
+      <form method="POST" action="{% url 'request_funding' transaction.id %}">
+        {% csrf_token %}
+        <button class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Request Funding</button>
+      </form>
+    {% endif %}
+
     {% if transaction.status in "paid" and request.user == transaction.seller %}
-      <a href="{% url 'ship_item' 'transaction.id' %}"class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Ship the Item</a>
+      <a href="{% url 'ship_item' transaction.id %}"class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Ship the Item</a>
        
     {% endif %}
     {% if transaction.status == 'disputed' and request.user == transaction.buyer %}
-      <form method="post" action="{% url 'respond_to_dispute' transaction.id %}">
-        {% csrf_token %}
-        <button class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Respond to Dispute</button>
-      </form>
+    <a href="{% url 'start_conversation' transaction.item.id %}" class="inline-block mt-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded">
+      Engage in Conversation
+    </a>
     {% endif %}
   
     {% if transaction.status == 'disputed' and request.user == transaction.buyer %}
@@ -103,12 +116,12 @@
     {% if transaction.status == 'disputed' and request.user == transaction.seller %}
       <div class="bg-yellow-100 border-l-4 border-yellow-400 p-4 rounded">
         <h2 class="font-semibold text-yellow-800">Dispute Raised</h2>
-        <p><strong>Reason:</strong> {{ transaction.dispute.reason }}</p>
+        <p><strong>Reason:</strong> {{ transaction.transactiondispute.reason }}</p>
         <p><strong>Raised by:</strong> {{ transaction.buyer.username }}</p>
-        <p><strong>Raised on:</strong> {{ transaction.dispute.created_at }}</p>
+        <p><strong>Raised on:</strong> {{ transaction.transactiondispute.created_at }}</p>
 
           {% if user == transaction.seller %}
-          <a href="{% url 'start_conversation' item.id %}" class="inline-block mt-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded">
+          <a href="{% url 'start_conversation' transaction.item.id %}" class="inline-block mt-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded">
             Engage in Conversation
           </a>
           {% endif %}

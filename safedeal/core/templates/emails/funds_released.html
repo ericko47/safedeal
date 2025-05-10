@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Funds Released</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      color: #333333;
+      background-color: #f7f7f7;
+      padding: 20px;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .header {
+      color: #16a34a;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .content {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #777777;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">Funds Released to Seller</div>
+    <div class="content">
+      <p>Hello {{ transaction.buyer.username }},</p>
+
+      <p>We are pleased to inform you that the payment for your transaction has been successfully released to the seller <strong>{{ transaction.seller.username }}</strong>.</p>
+
+      <ul>
+        <li><strong>Item:</strong> {{ transaction.item.title }}</li>
+        <li><strong>Transaction ID:</strong> {{ transaction.transaction_reference }}</li>
+        <li><strong>Amount:</strong> KES {{ transaction.amount }}</li>
+        <li><strong>Released on:</strong> {{ transaction.updated_at|date:"M d, Y H:i" }}</li>
+      </ul>
+
+      <p>Thank you for confirming delivery and for using SafeDeal. We hope to serve you again soon!</p>
+    </div>
+
+    <div class="footer">
+      &copy; {{ year }} SafeDeal. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

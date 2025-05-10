@@ -1,16 +1,29 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
+<style>
+  .msg-user {
+    background-color: #3B82F6; /* Tailwind's blue-500 */
+    color: white;
+  }
+  .msg-other {
+    background-color: #E5E7EB; /* Tailwind's gray-200 */
+    color: black;
+  }
+</style>
+
 <div class="max-w-3xl mx-auto py-10 px-4">
   <div class="bg-white rounded-2xl shadow p-6">
     <h2 class="text-xl font-bold mb-4">Conversation</h2>
 
-    <div class="space-y-2 mb-4" id="messages-container">
+    <div id="messages-container" class="space-y-2 mb-4 max-h-96 overflow-y-auto pr-2">
       {% for msg in messages %}
-        <div class="{% if msg.sender == request.user %}text-right{% endif %}">
-          <p class="text-sm text-gray-500">{{ msg.sender.username }}</p>
-          <p class="inline-block bg-gray-200 rounded p-2">{{ msg.content }}</p>
-          <p class="text-sm text-gray-500">{{ msg.timestamp }}</p>
+        <div class="flex {% if msg.sender == request.user %}justify-end{% else %}justify-start{% endif %}">
+          <div class="{% if msg.sender == request.user %}msg-user{% else %}msg-other{% endif %} rounded-xl px-4 py-2 max-w-xs break-words">
+            <p class="text-xs font-semibold">{{ msg.sender.username }}</p>
+            <p class="text-sm">{{ msg.content }}</p>
+            <p class="text-xs mt-1 opacity-75">{{ msg.timestamp|date:"M d, H:i" }}</p>
+          </div>
         </div>
       {% endfor %}
     </div>
@@ -19,78 +32,93 @@
       {% csrf_token %}
       <textarea id="message-input" name="message" class="w-full border rounded p-2 mb-2" rows="3" placeholder="Type your message..."></textarea>
       <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Send</button>
-    </form>   
-  
-  
+    </form>
+
     <script>
       const conversationId = "{{ conversation.id }}";
       const fetchUrl = "{% url 'fetch_messages' conversation_id=conversation.id %}";
       const sendUrl = "{% url 'send_message_ajax' conversation_id=conversation.id %}";
-  
+    
       const spinner = document.getElementById('loading-spinner');
       const container = document.getElementById('messages-container');
-  
-      document.getElementById('message-form').addEventListener('submit', function(e) {
-          e.preventDefault();
-          const messageInput = document.getElementById('message-input');
-          const message = messageInput.value.trim();
-          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-  
-          if (message === '') return;
-  
-          spinner.style.display = 'flex';
-  
-          fetch(sendUrl, {
-              method: 'POST',
-              headers: {
-                  'X-CSRFToken': csrfToken,
-                  'Content-Type': 'application/x-www-form-urlencoded'
-              },
-              body: `message=${encodeURIComponent(message)}`
-          })
-          .then(response => response.json())
-          .then(data => {
-              messageInput.value = '';
-              fetchMessages();  // Reload messages immediately
-          })
-          .catch(error => console.error('Sending failed:', error))
-          .finally(() => {
-              spinner.style.display = 'none';
-          });
-      });
-  
-      function fetchMessages() {
-          spinner.style.display = 'flex';
-  
-          fetch(fetchUrl)
-          .then(response => response.json())
-          .then(data => {
-              container.innerHTML = '';
-              data.messages.forEach(msg => {
-                  const isUser = msg.sender_id === {{ request.user.id }};
-                  container.innerHTML += `
-                      <div class="${isUser ? 'text-left' : ''} space-y-2 mb-4">
-                          <p class="text-sm text-gray-500">${msg.sender}</p>
-                          <p class="inline-block bg-gray-200 rounded p-2">${msg.content}</p>
-                          <p class="text-sm text-gray-500">${msg.timestamp}</p>
-                      </div>
-                  `;
-              });
-          })
-          .catch(error => console.error('Fetching failed:', error))
-          .finally(() => {
-              spinner.style.display = 'none';
-          });
-      }
-  
-      // Initial fetch
-      fetchMessages();
-  
-      // Poll every 5 seconds
-      setInterval(fetchMessages, 5000);
-  </script>
-  
+      const userId = {{ request.user.id|safe }};
     
-    {% endblock %}
+      function createMessageElement(msg) {
+        const isUser = msg.sender_id === userId;
+    
+        const wrapper = document.createElement('div');
+        wrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'} mb-2`;
+    
+        const bubble = document.createElement('div');
+        bubble.className = `${isUser ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'} rounded-xl px-4 py-2 max-w-xs break-words`;
+    
+        const sender = document.createElement('p');
+        sender.className = 'text-xs font-semibold';
+        sender.textContent = msg.sender;
+    
+        const content = document.createElement('p');
+        content.className = 'text-sm';
+        content.textContent = msg.content;
+    
+        const timestamp = document.createElement('p');
+        timestamp.className = 'text-xs mt-1 opacity-75';
+        timestamp.textContent = msg.timestamp;
+    
+        bubble.appendChild(sender);
+        bubble.appendChild(content);
+        bubble.appendChild(timestamp);
+        wrapper.appendChild(bubble);
+    
+        return wrapper;
+      }
+    
+      function fetchMessages() {
+        fetch(fetchUrl)
+          .then(response => response.json())
+          .then(data => {
+            container.innerHTML = '';
+            data.messages.forEach(msg => {
+              const msgEl = createMessageElement(msg);
+              container.appendChild(msgEl);
+            });
+            container.scrollTop = container.scrollHeight;
+          })
+          .catch(err => console.error('Fetch error:', err));
+      }
+    
+      document.getElementById('message-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const messageInput = document.getElementById('message-input');
+        const message = messageInput.value.trim();
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+        if (message === '') return;
+    
+        spinner.style.display = 'flex';
+    
+        fetch(sendUrl, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: `message=${encodeURIComponent(message)}`
+        })
+        .then(response => response.json())
+        .then(() => {
+          messageInput.value = '';
+          fetchMessages();  // Refresh messages
+        })
+        .catch(error => console.error('Send failed:', error))
+        .finally(() => {
+          spinner.style.display = 'none';
+        });
+      });
+    
+      fetchMessages();
+      setInterval(fetchMessages, 5000);
+    </script>
+    
   </div>
 </div>
+{% endblock %}

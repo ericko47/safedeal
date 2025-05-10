@@ -19,7 +19,13 @@
     <p class="text-red-600">Your account is not verified. Please check your email for the verification link.</p>
     {% endif %}  
     <p class="text-gray-600"><strong>Manage your account here</strong></p>
-    <a href="{% url 'inbox' %}" class="text-sm text-blue-600 hover:underline">My Inbox |</a>
+    <a href="{% url 'inbox' %}" class="text-sm text-blue-600 hover:underline relative">
+      My Inbox
+      {% if has_unread_messages %}
+        <span class="absolute -top-1 -right-3 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">●</span>
+      {% endif %}
+    </a>
+    
     {% if user.is_superuser %}
     <a href="{% url 'admin:index' %}" class="text-sm text-blue-600 hover:underline">Senior Admin |</a>
     {% endif %}
@@ -50,7 +56,6 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       
       <!-- Purchases -->
-       {% if user.account_type == 'buyer' or user.account_type == 'both' %}
       <div>
         <div class="flex justify-between items-center mb-4">
           <h4 class="text-md font-bold text-blue-700">Your Purchases</h4>
@@ -101,9 +106,7 @@
         <p class="text-gray-500">No recent purchases.</p>
         {% endif %}
       </div>
-      {% endif %}
       <!-- Sales -->
-       {% if user.account_type == 'seller' or user.account_type == 'both' %}
       <div>
         <div class="flex justify-between items-center mb-4">
           <h4 class="text-md font-bold text-green-700">Your Sales</h4>
@@ -151,7 +154,6 @@
         <p class="text-gray-500">No recent sales.</p>
         {% endif %}
       </div>
-      {% endif %}
     </div>
   </div>
   

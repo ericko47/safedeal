@@ -1,0 +1,19 @@
+<!-- templates/emails/refund_requested.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Refund Requested</title>
+</head>
+<body>
+  <h2>Hello {{ transaction.seller.username }},</h2>
+  <p>The buyer has requested a refund for transaction #{{ transaction.id }}.</p>
+  <p>Item: {{ transaction.item.title }}</p>
+  <p>Please review the transaction and respond accordingly.</p>
+
+  <br>
+  <p>Regards,</p>
+  <p><strong>SafeDeal Escrow</strong></p>
+  <p>&copy; {{ year }}</p>
+</body>
+</html>

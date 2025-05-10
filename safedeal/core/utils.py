@@ -18,3 +18,16 @@ def send_custom_email(subject, template_name, context, recipient_list):
         recipient_list,
         html_message=message,
     )
+from .models import TransactionStatusLog
+
+def log_transaction_status_change(transaction, new_status, user=None, reason=""):
+    if transaction.status != new_status:
+        TransactionStatusLog.objects.create(
+            transaction=transaction,
+            previous_status=transaction.status,
+            new_status=new_status,
+            changed_by=user,
+            reason=reason
+        )
+        transaction.status = new_status
+        transaction.save()

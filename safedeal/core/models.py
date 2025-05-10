@@ -2,10 +2,12 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import RegexValidator
 from django.conf import settings
+from datetime import timedelta
 from django.utils import timezone
 
 
 
+REFUND_WAIT_DURATION = timedelta(hours=24)  # or days=1
 # Item model to handle the items listed for sale
 # This model will include fields for the seller, title, description, price, category, condition, image, and other relevant details.
 import uuid
@@ -112,19 +114,26 @@ class Transaction(models.Model):
         on_delete=models.SET_NULL,
         help_text="Registered delivery agent if selected"
     )
+    paid_at = models.DateTimeField(null=True, blank=True)
+    shipped_at = models.DateTimeField(null=True, blank=True)
+
+    def can_buyer_request_refund(self):
+        return (
+            self.status == 'Paid' and
+            self.paid_at and
+            timezone.now() - self.paid_at > timezone.timedelta(hours=24)
+        )
+
+    def can_seller_request_funding(self):
+        return (
+            self.status == 'Shipped' and
+            self.shipped_at and
+            timezone.now() - self.shipped_at > timezone.timedelta(days=3)
+        )
 
     def __str__(self):
         return f"Transaction #{self.id} - {self.item.title} ({self.status})"
 
-# Delivery Agent model to handle delivery agents
-class DeliveryAgent(models.Model):
-    name = models.CharField(max_length=100)
-    contact_number = models.CharField(max_length=20)
-    email = models.EmailField()
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.name
 
 # Dispute model to handle disputes raised by buyers or sellers
 
@@ -155,6 +164,17 @@ class DisputeEvidence(models.Model):
     dispute = models.ForeignKey(TransactionDispute, on_delete=models.CASCADE, related_name='evidences')
     file = models.FileField(upload_to='dispute_evidence/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+
+# Delivery Agent model to handle delivery agents
+class DeliveryAgent(models.Model):
+    name = models.CharField(max_length=100)
+    contact_number = models.CharField(max_length=20)
+    email = models.EmailField()
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
 
 
 # All users database model 
@@ -288,6 +308,19 @@ class MpesaPaymentLog(models.Model):
 
     def __str__(self):
         return f"{self.mpesa_receipt} - {self.amount}"
+
+
+
+class TransactionStatusLog(models.Model):
+    transaction = models.ForeignKey('Transaction', on_delete=models.CASCADE, related_name='status_logs')
+    previous_status = models.CharField(max_length=20)
+    new_status = models.CharField(max_length=20)
+    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    reason = models.TextField(blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Transaction #{self.transaction.id}: {self.previous_status} → {self.new_status} at {self.timestamp}"
 
 
 # Report model to handle item reports

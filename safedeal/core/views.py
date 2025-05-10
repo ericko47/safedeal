@@ -5,7 +5,7 @@ from .forms import CustomUserCreationForm, UserProfileForm, ItemForm, DisputeFor
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.contrib import messages
-from .models import Item , ItemImage, Transaction, TransactionDispute, TransactionOut, ItemReport, Wishlist, DisputeEvidence
+from .models import Item , ItemImage, Transaction, TransactionDispute, TransactionOut, ItemReport, Wishlist, DisputeEvidence, TransactionStatusLog
 import uuid
 from django.http import HttpResponseForbidden
 from django.http import JsonResponse
@@ -13,7 +13,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q
 from mpesa.utils import lipa_na_mpesa,format_phone
-from core.utils import send_custom_email
+from core.utils import send_custom_email, log_transaction_status_change
 
 
 
@@ -36,19 +36,66 @@ def confirm_delivery(request, transaction_id):
             
             messages.success(request, "Delivery confirmed. Funds will now be released to the seller.")
             send_custom_email(
-                subject='Item Delivered Confirmation',
+                subject='Delivery Confirmed by Buyer',
                 template_name='emails/delivery_confirmed.html',
                 context={
-                    'seller': transaction.seller,
-                    'item': transaction.item,
+                    'transaction': transaction,
+                    'year': timezone.now().year,
                 },
                 recipient_list=[transaction.seller.email],
-            )   
+            )
         else:
             messages.warning(request, "This transaction is not in a 'shipped' state.")
 
     return redirect('transaction_detail', transaction_id=transaction.id)
 
+@login_required
+def request_refund(request, transaction_id):
+    transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
+
+    if transaction.can_buyer_request_refund():
+        transaction.status = 'Refund Requested'
+        transaction.save()
+
+        send_custom_email(
+            subject='Refund Requested by Buyer',
+            template_name='emails/refund_requested.html',
+            context={
+                'transaction': transaction,
+                'year': timezone.now().year,
+            },
+            recipient_list=[transaction.seller.email],
+        )
+
+        messages.success(request, "Refund request sent to seller.")
+    else:
+        messages.error(request, "You are not eligible to request a refund yet.")
+
+    return redirect('transaction_detail', transaction_id=transaction.id)
+
+@login_required
+def request_funding(request, transaction_id):
+    transaction = get_object_or_404(Transaction, id=transaction_id, seller=request.user)
+
+    if transaction.can_seller_request_funding():
+        transaction.status = 'Funding Requested'
+        transaction.save()
+
+        send_custom_email(
+            subject='Funding Request from Seller',
+            template_name='emails/funding_requested.html',
+            context={
+                'transaction': transaction,
+                'year': timezone.now().year,
+            },
+            recipient_list=[transaction.buyer.email],
+        )
+
+        messages.success(request, "Funding request sent to buyer.")
+    else:
+        messages.error(request, "You are not eligible to request funding yet.")
+
+    return redirect('transaction_detail', transaction_id=transaction.id)
 
 
 @login_required
@@ -84,9 +131,17 @@ def raise_dispute(request, transaction_id):
     if request.method == 'POST':
         form = DisputeForm(request.POST)
         if form.is_valid():
-            # Update transaction status
+            # Update and log transaction status
+            previous_status = transaction.status
             transaction.status = 'disputed'
             transaction.save()
+
+            log_transaction_status_change(
+                transaction,
+                new_status='disputed',
+                user=request.user,
+                reason=f'Dispute raised by buyer (was {previous_status})'
+            )
 
             # Create the dispute record
             dispute = TransactionDispute.objects.create(
@@ -95,19 +150,19 @@ def raise_dispute(request, transaction_id):
                 additional_details=form.cleaned_data['additional_details'],
                 created_at=timezone.now()
             )
+
             files = request.FILES.getlist('evidence_files')
             if files:
                 for file in files:
                     if file.size > 5 * 1024 * 1024:  # 5MB limit
                         messages.error(request, f"{file.name} is too large (max 5MB).")
                         return render(request, 'core/raise_dispute.html', {'form': form, 'transaction': transaction})
-                    else:
-                        if not file.content_type.startswith('image/'):
-                            messages.error(request, f"{file.name} is not a valid image.")
-                            return render(request, 'core/raise_dispute.html', {'form': form, 'transaction': transaction})                    
+                    if not file.content_type.startswith('image/'):
+                        messages.error(request, f"{file.name} is not a valid image.")
+                        return render(request, 'core/raise_dispute.html', {'form': form, 'transaction': transaction})
 
-                        DisputeEvidence.objects.create(dispute=dispute, file=file)
-                
+                    DisputeEvidence.objects.create(dispute=dispute, file=file)
+
             send_custom_email(
                 subject='Dispute Raised',
                 template_name='emails/dispute_raised.html',
@@ -119,6 +174,7 @@ def raise_dispute(request, transaction_id):
                 },
                 recipient_list=[transaction.seller.email],
             )
+
             messages.success(request, "Dispute raised successfully. Our team will review it.")
             return redirect('dashboard')
     else:
@@ -142,6 +198,7 @@ def ship_item(request, transaction_id):
         if form.is_valid():
             transaction = form.save(commit=False)
             transaction.status = 'shipped'
+            transaction.shipped_at = timezone.now()
             transaction.save()
             # Send email to buyer
             send_custom_email(  
@@ -149,7 +206,7 @@ def ship_item(request, transaction_id):
                 template_name='emails/item_shipped.html',
                 context={
                     'buyer': transaction.buyer,
-                    'item': transaction.item,
+                    'item': transaction.item.item_reference,
                     'shipping_evidence': form.cleaned_data['shipping_evidence'],
                 },
                 recipient_list=[transaction.buyer.email],
@@ -748,7 +805,8 @@ def mpesa_callback(request):
         if not transaction_found:
             try:
                 t = Transaction.objects.get(transaction_reference=account_reference)
-                t.status = 'paid'
+                t.status = 'paid'                
+                t.paid_at = timezone.now()
                 t.save()
                 transaction_found = True
                 mpesa_logger.info(f"[INTERNAL] Payment matched via reference {account_reference}")
@@ -818,21 +876,86 @@ def buyer_transaction_view(request, transaction_id):
 
 from django.contrib.admin.views.decorators import staff_member_required
 
-@staff_member_required
 def admin_close_dispute(request, transaction_id):
     dispute = get_object_or_404(TransactionDispute, transaction__id=transaction_id)
+    transaction = dispute.transaction
 
     if request.method == 'POST':
         notes = request.POST.get('admin_notes')
         dispute.status = 'closed'
         dispute.admin_notes = notes
         dispute.save()
+
+        if transaction.status == 'disputed':
+            # Fetch the last status before 'disputed'
+            previous_log = TransactionStatusLog.objects.filter(
+                transaction=transaction
+            ).exclude(new_status='disputed').order_by('-timestamp').first()
+
+            restored_status = previous_log.new_status if previous_log else 'paid'
+
+            log_transaction_status_change(
+                transaction,
+                new_status=restored_status,
+                user=request.user,
+                reason='Admin closed dispute, transaction restored to previous state'
+            )
+            send_custom_email(
+                subject='Dispute Raised',
+                template_name='emails/dispute_raised.html',
+                context={
+                    'buyer': transaction.buyer,
+                    'item': transaction.item,
+                    'reason': notes,
+                },
+                recipient_list=[transaction.buyer.email],
+            )
+
         messages.success(request, "Dispute closed successfully.")
         return redirect('transaction_detail', transaction_id=transaction_id)
 
     return render(request, 'transactions/admin_close_dispute.html', {'dispute': dispute})
 
+@login_required
+def close_dispute(request, transaction_id):
+    dispute = get_object_or_404(TransactionDispute, transaction__id=transaction_id)
+    transaction = dispute.transaction
 
+    if request.method == 'POST':
+        notes = 'This dispute was closed by ',request.user
+        dispute.status = 'closed'
+        dispute.admin_notes = notes
+        dispute.save()
+
+        if transaction.status == 'disputed':
+            # Get the last status *before* it was marked as disputed
+            previous_log = TransactionStatusLog.objects.filter(
+                transaction=transaction
+            ).exclude(new_status='disputed').order_by('-timestamp').first()
+
+            restored_status = previous_log.new_status if previous_log else 'paid'  # default fallback
+
+            log_transaction_status_change(
+                transaction,
+                new_status=restored_status,
+                user=request.user,
+                reason='User closed the dispute, transaction restored to previous state'
+            )
+            send_custom_email(
+                subject='Dispute Raised',
+                template_name='emails/dispute_raised.html',
+                context={
+                    'buyer': transaction.buyer,
+                    'item': transaction.item,
+                    'reason': notes,
+                },
+                recipient_list=[transaction.buyer.email],
+            )
+
+        messages.success(request, "Dispute closed successfully.")
+        return redirect('dashboard')
+
+    return render(request, 'transactions/close_dispute.html', {'dispute': dispute})
 
 
 from django.contrib.auth import get_user_model
