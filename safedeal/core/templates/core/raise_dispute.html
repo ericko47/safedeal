@@ -28,7 +28,7 @@
     
     <div>
       <label for="{{ form.additional_details.id_for_label }}" class="block text-sm font-medium text-gray-700">Additional Details</label>
-      {{ form.additional_details }}
+      {{ form.additional_details|add_class:"w-full border-b border-gray-300 focus:outline-none focus:border-gray-600 placeholder-gray-400 py-2 bg-transparent transition-all duration-200" }}
       {% if form.additional_details.errors %}
         <p class="text-red-500 text-sm mt-1">{{ form.additional_details.errors.0 }}</p>
       {% endif %}

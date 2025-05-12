@@ -20,7 +20,17 @@
     <h2>Create a New Transaction</h2>
     <form method="POST">
       {% csrf_token %}
-      {{ form.as_p }}
+      {% for filed in form%}
+      <div>
+        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+          {{ field.label }}
+        </label>
+        {{ field|add_class:"w-full border-b border-gray-300 focus:outline-none focus:border-gray-600 placeholder-gray-400 py-2 bg-transparent transition-all duration-200" }}
+        {% if field.help_text %}
+          <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
       <button type="submit" class="btn-primary">Generate Transaction</button>
     </form>
   </main>

@@ -34,6 +34,7 @@
 
   <form method="POST" enctype="multipart/form-data" class="space-y-4">
     {% csrf_token %}
+  
     {% if form.errors %}
       <ul class="mb-4 text-red-600 text-sm">
         {% for field in form %}
@@ -43,22 +44,23 @@
         {% endfor %}
       </ul>
     {% endif %}
+  
     {% for field in form %}
       <div>
-        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
-        {{ field|add_class:"w-full input input-bordered" }}
+        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+        {{ field|add_class:"w-full border-b border-gray-300 focus:outline-none focus:border-gray-600 placeholder-gray-400 py-2 bg-transparent transition-all duration-200" }}
       </div>
     {% endfor %}
-
+  
     <div class="mt-4">
       <label class="inline-flex items-center text-sm">
         <input type="checkbox" required class="mr-2">
         I agree to the <a href="{% url 'terms' %}" class="text-blue-600 hover:underline">terms and conditions</a>
       </label>
     </div>
-
+  
     <button type="submit" class="btn btn-primary w-full mt-4">Register</button>
-  </form>
+  </form> 
 
   <p class="text-center text-sm mt-6">
     Already have an account?

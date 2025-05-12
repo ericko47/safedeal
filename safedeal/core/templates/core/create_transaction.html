@@ -1,6 +1,15 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
+{% load widget_tweaks %}
+
+{% block title %}Create Transaction - SafeDeal{% endblock %}
+
+{% block meta %}
+    <meta name="description" content="Create a secure transaction on SafeDeal. Fill out the form to generate a secure link for your transaction.">
+    <meta name="keywords" content="SafeDeal, Create Transaction, Secure Link, Transaction Form">
+{% endblock %}
+
 {% block content %}
 <div class="max-w-xl mx-auto bg-white shadow-md rounded-lg p-6 mt-8">
     <h2 class="text-2xl font-semibold text-center mb-6 text-gray-800">Create a Secure Transaction</h2>
@@ -8,7 +17,7 @@
         &larr; Go Back
     </a>
     <p class="text-center text-gray-600 mb-4">
-        To create a secure transaction, please fill out the form below. Ensure all details are accurate to avoid any issues.
+        This will generate a link to this item in safedeal. You can then share this link with the buyer to complete the transaction.
     </p>
     <p class="text-center text-gray-600 mb-4">
         <strong>Disclaimer:</strong> By proceeding, you agree to our terms and conditions. Always verify the details before Submitting.
@@ -20,7 +29,7 @@
                 <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
                     {{ field.label }}
                 </label>
-                {{ field }}
+                {{ field|add_class:"w-full border-b border-gray-300 focus:outline-none focus:border-gray-600 placeholder-gray-400 py-2 bg-transparent transition-all duration-200" }}
                 {% if field.errors %}
                     <p class="text-red-500 text-sm mt-1">{{ field.errors|striptags }}</p>
                 {% endif %}
