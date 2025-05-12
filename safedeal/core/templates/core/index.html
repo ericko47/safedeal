@@ -4,16 +4,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SafeDeal - Secure Local Transactions</title>
+<!-- Inside <head> of base.html -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>{% block title %}SafeDeal™ - Secure Escrow for Kenya{% endblock %}</title>
+  
+  <meta name="description" content="{% block meta_description %}SafeDeal is Kenya’s trusted online escrow platform for secure local buying and selling. Protect your transactions with M-PESA integration, verified users, and dispute resolution.{% endblock %}" />
+  
+  <meta name="keywords" content="{% block meta_keywords %}SafeDeal, escrow Kenya, secure payments, online marketplace, M-PESA escrow, buyer protection, seller protection, local delivery platform, Erick Omondi Ogutu{% endblock %}" />
+  
+  <meta name="author" content="Erick Omondi Ogutu" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://safedeal.co.ke/" />
+  
   <link rel="icon" type="image/png" href="{% static 'core/logos/slogobox.png' %}">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-
-
   <style>
     .feature {
-      padding: 1.25rem; /* equivalent to Tailwind's p-5 */
+      padding: 1.25rem;
       border-radius: 12px;
       background: white;
       box-shadow: 0 0 15px rgba(0,0,0,0.05);
@@ -36,9 +47,15 @@
       width: 100%;
       background-color: royalblue;
     }
+    footer {
+      text-align: center;
+      padding: 2rem;
+      background-color: #f8f9fa;
+      font-size: 0.9rem;
+    }
   </style>
-
 </head>
+<body>
 <body>
   <header class="bg-success text-white py-5">
     <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between gap-4">
@@ -76,21 +93,27 @@
             <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
           {% else %}
             <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Register</a></li>
           {% endif %}
           <li class="nav-item"><a class="nav-link" href="{% url 'faq' %}">FAQs</a></li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'privacy' %}">Privacy</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'about' %}">About</a>
+          </li>
+          
         </ul>
       </div>
     </div>
   </nav>
-  <div class="line"></div>
-  <section class="section text-center bg-light">
+  <div class="line"></div><br><br><br>
+  <section class="section text-center bg-light"><br><br>
     <div class="container">
       <h2 class="mb-4 fw-bold text-success">What is SafeDeal?</h2>
       <p class="lead mb-4">SafeDeal is a secure online marketplace that connects buyers and sellers, ensuring safe transactions through an escrow system.</p>
       <p class="mb-4">We provide a platform for local transactions, allowing users to buy and sell items with confidence.</p>
-      <a href="{% url 'create_secure_transaction' %}" class="btn btn-outline-success btn-lg px-4 py-2 shadow">Get Started</a>
-    </div>
+      <a href="{% url 'register' %}" class="btn btn-outline-success btn-lg px-4 py-2 shadow">Get Started</a>
+    </div> <br><br><br>
   </section><br><br>
   
   <section class="section text-center bg-white">
@@ -134,37 +157,10 @@
 
       </div>
     </div>
-  </section>
-  <section class="section text-center bg-white">
-    <div class="container">
-      <h2 class="mb-4">Our Mission</h2>
-      <p class="lead mb-4">To empower individuals and small businesses by providing a secure platform for online transactions, fostering trust and transparency in every deal.</p>
-      <p class="mb-4">We aim to revolutionize the way people buy and sell locally, making it easier and safer for everyone.</p>
-    </div>
-  </section><br><br>
+  </section><br><br><br>
+  
   <section class="section text-center bg-light">
-    <div class="container">
-      <h2 class="mb-4">Our Vision</h2>
-      <p class="lead mb-4">To be the leading platform for secure local transactions, where every buyer and seller can transact with confidence.</p>
-      <p class="mb-4">We envision a marketplace where trust is paramount, and every transaction is seamless and secure.</p>
-    </div>  
-  </section><br><br>
-  <section class="section text-center bg-white">
-    <div class="container">
-      <h2 class="mb-4">Our Values</h2>
-      <p class="lead mb-4">Integrity, Transparency, Security, and Customer-Centricity are at the core of everything we do.</p>
-      <p class="mb-4">We believe in building a community where trust and safety are prioritized in every transaction.</p>
-    </div>
-  </section><br><br>
-  <section class="section text-center bg-light">
-    <div class="container">
-      <h2 class="mb-4">Our Services</h2>
-      <p class="lead mb-4">SafeDeal offers a range of services to ensure secure transactions:</p>
-      <ul class="list-group list-group-flush mb-4">
-        <li class="list-group-item">Escrow Payment System: Funds are held securely until the buyer confirms receipt of the item.</li>
-        <li class="list-group-item">Verified Users: KYC for both buyers and sellers to build trust.</li>
-        <li class="list-group-item">Dispute Resolution: Admin support for any disputes that may arise.</li>
-      </ul>
+    <div class="container"><br><br>
       <p class="mb-4">We are committed to providing a safe and secure platform for all your buying and selling needs.</p>
     </div>
   <section class="section bg-light">
@@ -215,8 +211,28 @@
   </section>
 
   <footer>
-    &copy; 2025 SafeDeal. All rights reserved.
+    &copy; 2025 SafeDeal™. All rights reserved.<br>
+    <small><em>"SafeDeal Escrow" is a trademark pending registration at the Kenya Industrial Property Institute (KIPI).</em></small><br>
+    <small><em>SafeDeal Escrow is a registered business in Kenya under Business Name No. BN-B8SOZ3AO, owned and operated by Erick Omondi. Based in Mombasa, we provide escrow-powered digital payments to protect buyers and sellers across Kenya.</em></small>
   </footer>
+  
+  <div>
+    <div id="loading-spinner" class="spinner-border text-success position-fixed top-50 start-50 translate-middle hidden" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <style>
+      #loading-spinner {
+        display: none;
+        z-index: 1050;
+      }
+      #loading-spinner.hidden {
+        display: none;
+      }
+      #loading-spinner:not(.hidden) {
+        display: block;
+      }
+    </style>
+  </div>
   
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>

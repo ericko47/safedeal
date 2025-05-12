@@ -143,5 +143,55 @@
       </div>
     {% endif %}
   </div>
+  <div id="payment-overlay" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50 hidden">
+    <div class="text-center">
+      <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+      </svg>
+      <p class="text-gray-800 font-medium">Processing payment, please wait...</p>
+    </div>
+  </div>
+
+
+  <script>
+    const redirectUrl = "{% url 'transaction_detail' transaction.id %}";
+    const transactionId = "{{ transaction.id }}";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const overlay = document.getElementById("payment-overlay");
+      overlay.classList.remove("hidden");
+
+      pollPaymentStatus(transactionId, overlay);
+    });
+
+    function pollPaymentStatus(id, overlay) {
+      const interval = setInterval(() => {
+        fetch(`/check-payment-status/${id}/`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'confirmed') {
+              clearInterval(interval);
+              overlay.classList.add("hidden");
+              window.location.href = redirectUrl;
+            } else if (data.status === 'failed') {
+              clearInterval(interval);
+              overlay.classList.add("hidden");
+              alert("Payment failed. Please try again.");
+              window.location.href = "/retry/";
+            }
+          })
+          .catch(error => {
+            clearInterval(interval);
+            console.error("Polling error:", error);
+            overlay.classList.add("hidden");
+            alert("Something went wrong while checking payment status.");
+          });
+      }, 5000);
+    }
+  </script>
+
+
+  
 </div>
 {% endblock %}

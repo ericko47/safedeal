@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SafeDeal</title>
+  <title>SafeDeal™ </title>
   <link rel="icon" type="image/png" href="{% static 'core/logos/slogobox.png' %}">
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   {% block extra_head %}{% endblock %}
@@ -149,5 +149,24 @@
       }
     });
   </script>
+  <!-- Cookie Consent Banner -->
+<div id="cookie-banner" style="position: fixed; bottom: 0; left: 0; width: 100%; background: #1e293b; color: white; padding: 1rem; text-align: center; font-size: 0.9rem; z-index: 9999; display: none;">
+  This site uses cookies to enhance your experience. By continuing to use SafeDeal, you accept our use of cookies.
+  <button onclick="acceptCookies()" style="margin-left: 1rem; background: #10b981; color: white; border: none; padding: 0.4rem 1rem; border-radius: 5px;">Accept</button>
+</div>
+
+<script>
+  function acceptCookies() {
+    localStorage.setItem('cookiesAccepted', 'true');
+    document.getElementById('cookie-banner').style.display = 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!localStorage.getItem('cookiesAccepted')) {
+      document.getElementById('cookie-banner').style.display = 'block';
+    }
+  });
+</script>
+
 </body>
 </html>

@@ -98,7 +98,7 @@ class Transaction(models.Model):
     dispute_reason = models.TextField(null=True, blank=True)
     is_bulk = models.BooleanField(default=False)    
     quantity = models.PositiveIntegerField(null=True, blank=True)
-    shipping_evidence = models.FileField(upload_to='shipping_evidence/', null=True, blank=True)
+    shipping_evidence = models.FileField(upload_to='shipping_evidence/', null=True, blank=True)    
     delivery_mode = models.CharField(
         max_length=100,
         choices=[
@@ -116,6 +116,11 @@ class Transaction(models.Model):
     )
     paid_at = models.DateTimeField(null=True, blank=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
+    funded_at = models.DateTimeField(null=True, blank=True)     
+    platform_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    seller_payout = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    is_funded = models.BooleanField(default=False)
+    checkout_request_id = models.CharField(max_length=100, null=True, blank=True)
 
     def can_buyer_request_refund(self):
         return (
@@ -274,6 +279,7 @@ class SecureTransaction(models.Model):
 
 #the transactions  that will store all necessary information for the transaction and escrow process.
 
+
 from django.urls import reverse
 
 
@@ -294,6 +300,22 @@ class TransactionOut(models.Model):
 
     def __str__(self):
         return f"Transaction {self.transaction_code} - {self.item}"
+
+class MpesaB2CResult(models.Model):
+    transaction_reference = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=15)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    result_type = models.IntegerField()
+    result_code = models.IntegerField()
+    result_desc = models.CharField(max_length=255)
+    originator_conversation_id = models.CharField(max_length=100)
+    conversation_id = models.CharField(max_length=100)
+    transaction_id = models.CharField(max_length=100, null=True, blank=True)
+    completed_at = models.DateTimeField(default=timezone.now)
+    raw_response = models.JSONField()
+
+    def __str__(self):
+        return f"{self.transaction_reference} - {self.result_desc}"
 
 class MpesaPaymentLog(models.Model):
     merchant_request_id = models.CharField(max_length=100)

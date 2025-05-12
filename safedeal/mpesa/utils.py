@@ -54,3 +54,49 @@ def lipa_na_mpesa(phone_number, amount, account_reference="SafeDeal", transactio
 
     response = requests.post(api_url, json=payload, headers=headers)
     return response.json()
+
+
+def initiate_b2c_payment(phone_number, amount, transaction_reference):
+    access_token = get_access_token()
+    b2c_url = "https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "InitiatorName": settings.MPESA_INITIATOR_NAME,
+        "SecurityCredential": settings.MPESA_SECURITY_CREDENTIAL,
+        "CommandID": "BusinessPayment",
+        "Amount": int(amount),
+        "PartyA": settings.MPESA_SHORTCODE,
+        "PartyB": phone_number,
+        "Remarks": "Seller Payout",
+        "QueueTimeOutURL": settings.MPESA_TIMEOUT_CALLBACK,
+        "ResultURL": settings.MPESA_RESULT_CALLBACK,
+        "Occasion": transaction_reference,
+    }
+
+    response = requests.post(b2c_url, json=payload, headers=headers)
+    return response.json()
+
+def query_stk_status(checkout_request_id):
+    access_token = get_access_token()
+    url = "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query"
+
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    password = base64.b64encode(
+        (settings.MPESA_SHORTCODE + settings.MPESA_PASSKEY + timestamp).encode()
+    ).decode()
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    payload = {
+        "BusinessShortCode": settings.MPESA_SHORTCODE,
+        "Password": password,
+        "Timestamp": timestamp,
+        "CheckoutRequestID": checkout_request_id,
+    }
+
+    response = requests.post(url, json=payload, headers=headers)
+    return response.json()
+

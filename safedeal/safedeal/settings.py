@@ -195,9 +195,13 @@ MPESA_CONSUMER_SECRET = 'xEu7OmeyzZ5z7NJwraGUctUask2lmpVCLpxIqUBrFZp8ilcxPMv1RFQ
 MPESA_SHORTCODE = '174379'  
 MPESA_PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
 MPESA_CALLBACK_URL = 'https://safedeal.co.ke/mpesa/callback/'  # Will define this later
+MPESA_RESULT_CALLBACK = "https://safedeal.co.ke/mpesa/b2c/result/"
+MPESA_TIMEOUT_CALLBACK = "https://safedeal.co.ke/mpesa/b2c/timeout/"
+
 
 log_dir = os.path.join(BASE_DIR, 'logs')
 os.makedirs(log_dir, exist_ok=True)
+
 
 log_file_path = os.path.join(log_dir, 'mpesa.log')
 open(log_file_path, 'a').close()

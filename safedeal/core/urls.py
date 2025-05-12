@@ -23,6 +23,7 @@ urlpatterns = [
     path('wishlist/toggle/<int:item_id>/', views.toggle_wishlist, name='toggle_wishlist'),
     path('privacy/', views.privacy_view, name='privacy'),
     path('terms/', views.terms_view, name='terms'),
+    path('about/', views.about_view, name='about'),
     path('faq/', views.faq, name='faq'),
     path('search/', views.search_items, name='search_items'),
     path('logout/', views.logout_view, name='logout'), 
@@ -63,6 +64,10 @@ urlpatterns = [
     path('secure-transaction/<uuid:transaction_id>/confirm/', views.initiate_payment, name='initiate_payment'),
     
     path('mpesa/callback/', views.mpesa_callback, name='mpesa_callback'),
+    path('mpesa/b2c/result/', views.mpesa_result_callback, name='mpesa_b2c_result_callback'),
+    path('mpesa/b2c/timeout/', views.mpesa_timeout_callback, name='mpesa_b2c_timeout_callback'),
+    path('check-payment-status/<int:transaction_id>/', views.check_payment_status, name='check_payment_status'),
+
 
     path('password-reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
     path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),

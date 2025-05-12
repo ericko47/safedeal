@@ -1,0 +1,67 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>You've Been Funded - SafeDeal</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 30px;
+      background-color: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    .logo {
+      width: 120px;
+      margin-bottom: 20px;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 12px;
+      text-align: center;
+      color: #888;
+    }
+    .highlight {
+      color: #0f62fe;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="{% static 'core/logos/slogobox.png' %}" alt="SafeDeal Logo" class="logo">
+
+    <h2>Hello {{ transaction.seller.get_full_name|default:transaction.seller.username }},</h2>
+
+    <p>
+      Great news! You’ve been funded for <strong> Item {{ transaction.item.item_reference }}</strong>.
+    </p>
+
+    <p>
+      <span class="highlight">Amount:</span> KES {{ transaction.amount }}<br>
+      <span class="highlight">Platform Fee:</span> KES {{ transaction.platform_fee }}<br>
+      <span class="highlight">Your Payout:</span> KES {{ transaction.seller_payout }}<br>
+      <span class="highlight">Funded At:</span> {{ transaction.funded_at|date:"F j, Y, g:i a" }}
+    </p>
+
+    <p>
+      The amount will be processed to your account shortly. Please ensure your withdrawal details are updated in your profile if you haven't done so.
+    </p>
+
+    <p>Thank you for using <strong>SafeDeal</strong>.</p>
+
+    <div class="footer">
+      &copy; {{ year }} SafeDeal. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

@@ -12,8 +12,8 @@ from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q
-from mpesa.utils import lipa_na_mpesa,format_phone
-from core.utils import send_custom_email, log_transaction_status_change
+from mpesa.utils import lipa_na_mpesa, initiate_b2c_payment, query_stk_status
+from core.utils import send_custom_email, log_transaction_status_change, calculate_fees, notify_funding
 
 
 
@@ -66,12 +66,50 @@ def request_refund(request, transaction_id):
             },
             recipient_list=[transaction.seller.email],
         )
+        response = initiate_b2c_payment(
+            phone_number=transaction.seller.phone_number,
+            amount=transaction.seller_payout,
+            transaction_id=transaction.id
+        )
 
         messages.success(request, "Refund request sent to seller.")
     else:
         messages.error(request, "You are not eligible to request a refund yet.")
 
     return redirect('transaction_detail', transaction_id=transaction.id)
+
+@login_required
+def fund_seller(transaction):
+    if transaction.is_funded:
+        return False, "Already funded."
+
+    if not transaction.shipped_at or (timezone.now() - transaction.shipped_at).days < 1:
+        return False, "Too early to fund."
+
+    # Calculate platform fee and seller payout
+    fee, payout = calculate_fees(transaction.amount)
+    
+    # Save these before sending payment
+    transaction.platform_fee = fee
+    transaction.seller_payout = payout
+
+    # Send M-PESA payment
+    response = initiate_b2c_payment(
+        phone_number=transaction.seller.phone_number,
+        amount=payout,
+        transaction_reference=transaction.transaction_reference
+    )
+
+    # Optional: handle B2C errors here
+    if 'errorCode' in response:
+        return False, f"Payment failed: {response.get('errorMessage')}"
+
+    # Finalize transaction state
+    transaction.is_funded = True
+    transaction.funded_at = timezone.now()
+    transaction.save()
+
+    return True, "Funding successful."
 
 @login_required
 def request_funding(request, transaction_id):
@@ -502,6 +540,9 @@ def privacy_view(request):
 def terms_view(request):
     return render(request, 'core/terms.html')
 
+def about_view(request):
+    return render(request, 'core/about.html')
+
 
 
 
@@ -661,9 +702,11 @@ def place_order(request, item_id):
             account_reference=transaction_ref,
             transaction_desc=f"Purchase {item.item_reference}"
         )
-
         if response.get("ResponseCode") == "0":
+            transaction.checkout_request_id = response.get("CheckoutRequestID")
+            transaction.save()
             messages.success(request, "Payment request sent. Check your phone.")
+
         else:
             messages.error(request, "Failed to initiate payment. Try again.")
 
@@ -844,6 +887,113 @@ def mpesa_callback(request):
     )
 
     return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+
+
+from .models import MpesaB2CResult
+
+@csrf_exempt
+def mpesa_result_callback(request):
+    data = json.loads(request.body)
+
+    result = data.get('Result', {})
+
+    # Extract useful fields
+    result_code = result.get("ResultCode")
+    result_desc = result.get("ResultDesc")
+    conv_id = result.get("ConversationID")
+    orig_conv_id = result.get("OriginatorConversationID")
+    transaction_id = result.get("TransactionID")
+    amount = 0
+    phone_number = ""
+    reference = ""
+
+    # Pull transaction reference from ResultParameters if available
+    parameters = result.get("ResultParameters", {}).get("ResultParameter", [])
+    for param in parameters:
+        if param["Key"] == "TransactionAmount":
+            amount = float(param["Value"])
+        if param["Key"] == "ReceiverPartyPublicName":
+            phone_number = param["Value"].split("-")[0].strip()
+        if param["Key"] == "InitiatedTime":
+            pass
+        if param["Key"] == "Occasion":
+            reference = param["Value"]
+
+    MpesaB2CResult.objects.create(
+        transaction_reference=reference,
+        phone_number=phone_number,
+        amount=amount,
+        result_type=data.get("ResultType", 0),
+        result_code=result_code,
+        result_desc=result_desc,
+        originator_conversation_id=orig_conv_id,
+        conversation_id=conv_id,
+        transaction_id=transaction_id,
+        raw_response=data
+    )
+
+    # Optionally update the transaction if needed
+    if reference:
+        try:
+            transaction = Transaction.objects.get(transaction_reference=reference)
+            if result_code == 0:
+                transaction.is_funded = True
+                transaction.funded_at = timezone.now()
+                transaction.save()
+        except Transaction.DoesNotExist:
+            pass
+
+    return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+
+@csrf_exempt
+def mpesa_timeout_callback(request):
+    data = json.loads(request.body)
+
+    conversation_id = data.get("ConversationID", "N/A")
+    originator_id = data.get("OriginatorConversationID", "N/A")
+
+    MpesaB2CResult.objects.create(
+        transaction_reference="TIMEOUT",
+        phone_number="N/A",
+        amount=0,
+        result_type=-1,
+        result_code=-1,
+        result_desc="Queue Timeout",
+        originator_conversation_id=originator_id,
+        conversation_id=conversation_id,
+        transaction_id=None,
+        raw_response=data
+    )
+
+    return JsonResponse({"ResultCode": 0, "ResultDesc": "Timeout logged"})
+
+
+
+@login_required
+def check_payment_status(request, transaction_id):
+    try:
+        transaction = Transaction.objects.get(id=transaction_id)
+
+        if transaction.status == 'paid':
+            return JsonResponse({'status': 'confirmed'})
+
+        if transaction.checkout_request_id:
+            result = query_stk_status(transaction.checkout_request_id)
+            result_code = result.get("ResultCode")
+
+            if result_code == "0":
+                transaction.status = 'paid'
+                transaction.paid_at = timezone.now()
+                transaction.save()
+                return JsonResponse({'status': 'confirmed'})
+            elif result_code in ["1032", "1"]:
+                return JsonResponse({'status': 'failed'})
+
+        return JsonResponse({'status': 'pending'})
+
+    except Transaction.DoesNotExist:
+        return JsonResponse({'status': 'not_found'}, status=404)
+
 
 
 import qrcode
@@ -1063,7 +1213,6 @@ def admin_verify_user(request, user_id):
 def admin_user_verification_view(request, user_id):
     user = get_object_or_404(User, id=user_id)
     return render(request, 'admin/admin_user_verification.html', {'user_obj': user})
-
 
 
 
