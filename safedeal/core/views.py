@@ -418,6 +418,9 @@ def post_item_view(request):
     if not all(required_fields):
         messages.warning(request, "Please complete your profile before posting an item.")
         return redirect('update_profile') 
+    if not user.is_verified:
+        messages.warning(request, "Please wait for admin to verify your details or check your email for admin comments on your account.")
+        return redirect('dashboard')
 
     if request.method == 'POST':
         form = ItemForm(request.POST, request.FILES)
@@ -625,36 +628,39 @@ def initiate_payment(request, transaction_id):
 from .forms import SecureTransactionForm
 @login_required
 def create_secure_transaction(request):
+    user = request.user
+
+    if not user.is_verified:
+        messages.warning(request, "Your account awaits verification. Check your email for admin comments or you can contact support.")
+        return redirect('dashboard')
+
     if request.method == 'POST':
         form = SecureTransactionForm(request.POST)
         if form.is_valid():
             transaction = form.save(commit=False)
-            transaction.seller = request.user
+            transaction.seller = user
 
-            # If item_reference is provided, fill in item details
             item_ref = form.cleaned_data.get('item_reference')
             if item_ref:
                 try:
-                    item = Item.objects.get(item_reference=item_ref)
+                    # Make sure the item belongs to the current user
+                    item = Item.objects.get(item_reference=item_ref, seller=user)
                     transaction.item_name = item.title
                     transaction.amount = item.price
                     transaction.description = item.description
                 except Item.DoesNotExist:
-                    form.add_error('item_reference', 'Invalid item reference.')
+                    form.add_error('item_reference', 'Invalid Item ID or this item does not belong to you.')
 
             transaction.save()
             return redirect('transaction_success', transaction_id=transaction.id)
     else:
-        # Allow passing ?item_reference=xxx in GET
         initial_data = {}
         item_ref = request.GET.get('item_reference')
         if item_ref:
             initial_data['item_reference'] = item_ref
         form = SecureTransactionForm(initial=initial_data)
-    
+
     return render(request, 'core/create_transaction.html', {'form': form})
-
-
 
 
 @login_required

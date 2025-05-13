@@ -30,11 +30,17 @@
                     {{ field.label }}
                 </label>
                 {{ field|add_class:"w-full border-b border-gray-300 focus:outline-none focus:border-gray-600 placeholder-gray-400 py-2 bg-transparent transition-all duration-200" }}
+                
+                {% if field.help_text %}
+                    <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+                {% endif %}
+                
                 {% if field.errors %}
                     <p class="text-red-500 text-sm mt-1">{{ field.errors|striptags }}</p>
                 {% endif %}
             </div>
         {% endfor %}
+
         <div class="pt-4">
             <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
                 Generate Secure Link

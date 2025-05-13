@@ -170,12 +170,21 @@ class TransactionOutForm(forms.ModelForm):
     
 from .models import SecureTransaction
 
+from django import forms
+from .models import SecureTransaction
+
 class SecureTransactionForm(forms.ModelForm):
     class Meta:
         model = SecureTransaction
         exclude = ['seller', 'transaction_status', 'created_at', 'updated_at', 'mpesa_reference']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
+        }
+        labels = {
+            'item_reference': 'Item ID',
+        }
+        help_texts = {
+            'item_reference': 'Paste the SafeDeal Item ID from your listing (e.g., SDI-123456)',
         }
 
     def clean_buyer_phone(self):

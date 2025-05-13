@@ -10,13 +10,13 @@
     <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
       &larr; Go Back
     </a>
-    <p class="text-gray-600">You're logged in as a {{ user.account_type|capfirst }}.</p>
-    <p class="text-gray-600">Your account was created on {{ user.date_joined|date:"F j, Y" }}.</p>
-    <p class="text-gray-600">Your account is currently {{ user.is_active|yesno:"active,inactive" }}.</p>
+    <p class="text-gray-600">You're logged in as a <strong>{{ user.account_type|capfirst }}</strong>.</p>
+    <p class="text-gray-600">Your account was created on <strong>{{ user.date_joined|date:"F j, Y" }}</strong> .</p>
+    <p class="text-gray-600">Your account is currently <strong>{{ user.is_active|yesno:"active,inactive" }}</strong> .</p>
     {% if user.is_verified %}
-    <p class="text-green-600">Your account is verified.</p>
+    <p class="text-green-600">Your account is verified. Sellers can start selling.</p>
     {% else %}
-    <p class="text-red-600">Your account is not verified. Please check your email for the verification link.</p>
+    <p class="text-red-600">Your account is not verified. Please check your email for the reason.</p>
     {% endif %}  
     <p class="text-gray-600"><strong>Manage your account here</strong></p>
     <a href="{% url 'inbox' %}" class="text-sm text-blue-600 hover:underline relative">
@@ -33,9 +33,12 @@
     <a href="{% url 'admindashboard' %}" class="text-sm text-blue-600 hover:underline"> Admin Control dashboard |</a>
     {% endif %}
     <a href="{% url 'view_wishlist' %}" class="text-sm text-blue-600 hover:underline"> My Wishlist |</a>
+    <a href="#" class="text-sm text-blue-600 hover:underline"> <strong> Support</strong> |</a>
   </div>
 
-  <div style="color: royalblue; font-size: 20px;"><a href="{% url 'create_secure_transaction'%}">Generate External Link</a></div>
+  <div ><a style="color: royalblue; font-size: 20px;" href="{% url 'create_secure_transaction'%}">Generate External Link</a> <br>
+    <small style="color: gray; font-size: 10px;"><i>This will creat a link that you can post on other platforms to direct the buyers for safe transaction.</i></small>
+  </div>
   <!-- Profile Info -->
   <div class="bg-white rounded-lg shadow p-6">
     <h3 class="text-lg font-semibold mb-4">Your Profile Information</h3>
