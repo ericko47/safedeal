@@ -46,7 +46,7 @@
                     <p class="text-xs text-gray-400 mb-4">Posted on {{ item.created_at|date:"M d, Y" }}</p>
                     
 
-                    <a href="{% url 'delete_item' item.id %}"class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Delete</a>
+                    <a href="{% url 'delete_item' item.item_reference %}"class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Delete</a>
                     <a href="{% url 'create_secure_transaction' %}?item_reference={{ item.item_reference }}"
                     class="mt-2 inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
                         Secure Transaction

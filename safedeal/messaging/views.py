@@ -10,16 +10,16 @@ from .forms import ContactForm
 
 
 @login_required
-def start_conversation(request, item_id):
-    item = get_object_or_404(Item, id=item_id)
+def start_conversation(request, item_reference):
+    item = get_object_or_404(Item, item_reference=item_reference)
 
     if not item.is_available and not Transaction.objects.filter(item=item, status='disputed').exists():
         messages.error(request, "This item is no longer available.")
-        return redirect('item_detail', item_id=item.id)
+        return redirect('item_detail', item_reference=item.item_reference)
 
     if not item.seller.is_active:
         messages.error(request, "The seller is no longer active.")
-        return redirect('item_detail', item_id=item.id)
+        return redirect('item_detail', item_reference=item.item_reference)
 
     # Prevent user from messaging themselves on their own item
     if item.seller == request.user:
@@ -30,7 +30,7 @@ def start_conversation(request, item_id):
             seller = request.user
         except Transaction.DoesNotExist:
             messages.error(request, "No buyer found to contact.")
-            return redirect('item_detail', item_id=item.id)
+            return redirect('item_detail', item_reference=item.item_reference)
     else:
         buyer = request.user
         seller = item.seller

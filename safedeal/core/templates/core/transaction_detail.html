@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}Transaction #{{ transaction.id }} - SafeDeal{% endblock %}
+{% block title %}Transaction #{{ transaction.transaction_reference }} - SafeDeal{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 py-8">
@@ -63,26 +63,26 @@
 
     <!-- Buyer Actions -->
     {% if transaction.status == 'shipped' and request.user == transaction.buyer %}
-      <form method="post" action="{% url 'confirm_delivery' transaction.id %}">
+      <form method="post" action="{% url 'confirm_delivery' transaction.transaction_reference %}">
         {% csrf_token %}
         <button class="btn btn-primary">Confirm Delivery</button>
       </form>
     {% endif %}
 
     {% if transaction.status == 'pending' and request.user == transaction.buyer %}
-      <form method="post" action="{% url 'cancel_transaction' transaction.id %}">
+      <form method="post" action="{% url 'cancel_transaction' transaction.transaction_reference %}">
         {% csrf_token %}
         <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Cancel Order</button>
       </form>
     {% endif %}
     {% if transaction.status in "paid shipped" and request.user == transaction.buyer %}
-      <form method="post" action="{% url 'raise_dispute' transaction.id %}">
+      <form method="post" action="{% url 'raise_dispute' transaction.transaction_reference %}">
         {% csrf_token %}
         <button class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Raise Dispute</button>
       </form>
     {% endif %}
     {% if transaction.can_buyer_request_refund and user == transaction.buyer %}
-      <form method="POST" action="{% url 'request_refund' transaction.id %}">
+      <form method="POST" action="{% url 'request_refund' transaction.id%}">
         {% csrf_token %}
         <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Request Refund</button>
       </form>
@@ -96,17 +96,17 @@
     {% endif %}
 
     {% if transaction.status in "paid" and request.user == transaction.seller %}
-      <a href="{% url 'ship_item' transaction.id %}"class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Ship the Item</a>
+      <a href="{% url 'ship_item' transaction.transaction_reference %}"class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Ship the Item</a>
        
     {% endif %}
     {% if transaction.status == 'disputed' and request.user == transaction.buyer %}
-    <a href="{% url 'start_conversation' transaction.item.id %}" class="inline-block mt-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded">
+    <a href="{% url 'start_conversation' transaction.item.item_reference %}" class="inline-block mt-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded">
       Engage in Conversation
     </a>
     {% endif %}
   
     {% if transaction.status == 'disputed' and request.user == transaction.buyer %}
-      <form method="post" action="{% url 'close_dispute' transaction.id %}">
+      <form method="post" action="{% url 'close_dispute' transaction.transaction_reference %}">
         {% csrf_token %}
         <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Close Dispute</button>
       </form>
@@ -121,7 +121,7 @@
         <p><strong>Raised on:</strong> {{ transaction.transactiondispute.created_at }}</p>
 
           {% if user == transaction.seller %}
-          <a href="{% url 'start_conversation' transaction.item.id %}" class="inline-block mt-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded">
+          <a href="{% url 'start_conversation' transaction.item.item_reference %}" class="inline-block mt-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded">
             Engage in Conversation
           </a>
           {% endif %}
@@ -143,7 +143,7 @@
       </div>
     {% endif %}
   </div>
-  <div id="payment-overlay" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50 hidden">
+  {% comment %} <div id="payment-overlay" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50 hidden">
     <div class="text-center">
       <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -151,7 +151,7 @@
       </svg>
       <p class="text-gray-800 font-medium">Processing payment, please wait...</p>
     </div>
-  </div>
+  </div> {% endcomment %}
 
 
   <script>

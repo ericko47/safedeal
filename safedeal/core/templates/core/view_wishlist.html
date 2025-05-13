@@ -24,8 +24,8 @@
                         <p class="text-green-600 font-bold text-sm">KSh {{ wishlist.item.price }}</p>
                     </div>
                     <div class="mt-4 flex justify-between items-center">
-                        <a href="{% url 'item_detail' wishlist.item.id %}" class="text-blue-500 text-sm hover:underline">View Item</a>
-                        <form method="post" action="{% url 'toggle_wishlist' wishlist.item.id %}">
+                        <a href="{% url 'item_detail' wishlist.item.item_reference %}" class="text-blue-500 text-sm hover:underline">View Item</a>
+                        <form method="post" action="{% url 'toggle_wishlist' wishlist.item.item_reference %}">
                             {% csrf_token %}
                             <button type="submit" class="text-red-500 hover:text-red-600 text-sm">Remove</button>
                         </form>

@@ -137,8 +137,8 @@ def request_funding(request, transaction_id):
 
 
 @login_required
-def cancel_transaction(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id)
+def cancel_transaction(request, transaction_reference):
+    transaction = get_object_or_404(Transaction, transaction_reference=transaction_reference)
 
     if request.user != transaction.buyer:
         return HttpResponseForbidden("You are not authorized to cancel this transaction.")
@@ -150,12 +150,12 @@ def cancel_transaction(request, transaction_id):
             messages.success(request, "Transaction has been cancelled.")
         else:
             messages.warning(request, "Only pending transactions can be cancelled.")
-    return redirect('transaction_detail', transaction_id=transaction.id)
+    return redirect('transaction_detail', transaction_reference=transaction.transaction_reference)
 
 
 @login_required
-def raise_dispute(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
+def raise_dispute(request, transaction_reference):
+    transaction = get_object_or_404(Transaction, transaction_reference=transaction_reference, buyer=request.user)
 
     if transaction.status not in ['paid', 'shipped']:
         messages.warning(request, "You can only raise a dispute for paid or shipped transactions.")
@@ -224,8 +224,8 @@ def raise_dispute(request, transaction_id):
     })
 
 @login_required
-def ship_item(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id, seller=request.user)
+def ship_item(request, transaction_reference):
+    transaction = get_object_or_404(Transaction, transaction_reference=transaction_reference, seller=request.user)
 
     if transaction.status != 'paid':
         messages.error(request, "Item cannot be shipped in its current state.")
@@ -333,8 +333,8 @@ def my_items_view(request):
 
 
 @login_required
-def delete_item_view(request, item_id):
-    item = get_object_or_404(Item, id=item_id, seller=request.user)
+def delete_item_view(request, item_reference):
+    item = get_object_or_404(Item, item_reference= item_reference, seller=request.user)
     if request.method == 'POST':
         item.delete()
         messages.success(request, "Item deleted successfully.")
@@ -458,8 +458,8 @@ def post_item_view(request):
     return render(request, 'core/post-item.html', {'form': form})
 
 
-def item_detail(request, item_id):   
-    item = get_object_or_404(Item, id=item_id)
+def item_detail(request, item_reference):   
+    item = get_object_or_404(Item, item_reference=item_reference)
     in_wishlist = False
 
     if request.user.is_authenticated:
@@ -474,7 +474,7 @@ def item_detail(request, item_id):
 
 
 @login_required
-def report_item(request, item_id):
+def report_item(request, item_reference):
     user = request.user
     # Check for essential profile fields
     required_fields = [
@@ -490,7 +490,7 @@ def report_item(request, item_id):
     if not all(required_fields):
         messages.warning(request, "Please complete your profile before you can report this item.")
         return redirect('update_profile')
-    item = get_object_or_404(Item, id=item_id)
+    item = get_object_or_404(Item, item_reference=item_reference)
 
     if request.method == 'POST':
         form = ItemReportForm(request.POST)
@@ -505,21 +505,21 @@ def report_item(request, item_id):
                 messages.success(request, 'Item reported successfully.')
             else:
                 messages.info(request, 'You have already reported this item.')
-            return redirect('item_detail', item_id=item.id)
+            return redirect('item_detail', item_reference=item.item_reference)
     else:
         form = ItemReportForm()
 
     return render(request, 'core/report_item.html', {'form': form, 'item': item})
 
 @login_required
-def toggle_wishlist(request, item_id):
-    item = get_object_or_404(Item, id=item_id)
+def toggle_wishlist(request, item_reference):
+    item = get_object_or_404(Item, item_reference =item_reference)
     wishlist_item, created = Wishlist.objects.get_or_create(user=request.user, item=item)
 
     if not created:
         wishlist_item.delete()
 
-    return redirect('item_detail', item_id=item.id)
+    return redirect('item_detail', item_reference=item.item_reference)
 
 @login_required
 def view_wishlist(request):
@@ -572,20 +572,7 @@ def generate_transaction_out(request):
         form = TransactionOutForm()
 
     return render(request, 'core/generate_transaction_out.html', {'form': form})
-
-
-def transaction_out_detail(request, pk):
-    transaction_out = get_object_or_404(TransactionOut, pk=pk)
-    return render(request, 'core/transaction_out_detail.html', {'transaction_out': transaction_out})
-
-
-def transaction_out_public_view(request, token):
-    transaction = get_object_or_404(TransactionOut, transaction_token=token)
-    return render(request, 'core/transaction_out_public.html', {
-        'transaction': transaction,
-    })
-    
-    
+     
 
 def external_transaction_detail(request, transaction_id):
     transaction = get_object_or_404(SecureTransaction, id=transaction_id)
@@ -664,7 +651,7 @@ def create_secure_transaction(request):
 
 
 @login_required
-def place_order(request, item_id): 
+def place_order(request, item_reference): 
     user = request.user
     # Check for essential profile fields
     required_fields = [
@@ -680,10 +667,10 @@ def place_order(request, item_id):
     if not all(required_fields):
         messages.warning(request, "Please complete your profile before you can place an order.")
         return redirect('update_profile')
-    item = get_object_or_404(Item, id=item_id)
+    item = get_object_or_404(Item, item_reference=item_reference)
     if item.seller == request.user:
         messages.error(request, "You cannot buy your own item.")
-        return redirect('item_detail', item_id=item.id)
+        return redirect('item_detail', item_reference=item.item_reference)
 
     if request.method == 'POST':
         transaction_ref = str(uuid.uuid4()).replace('-', '')[:12]  # Unique 12-char ref
@@ -716,14 +703,14 @@ def place_order(request, item_id):
         else:
             messages.error(request, "Failed to initiate payment. Try again.")
 
-        return redirect('transaction_detail', transaction.id)
+        return redirect('transaction_detail', transaction.transaction_reference)
 
-    return redirect('item_detail', item_id=item_id)
+    return redirect('item_detail', item_reference=item_reference)
 
 
 @login_required
-def transaction_detail(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id)
+def transaction_detail(request, transaction_reference):
+    transaction = get_object_or_404(Transaction, transaction_reference=transaction_reference)
 
     if request.user != transaction.buyer and request.user != transaction.seller:
         return render(request, 'core/dashboard.html', {'message': "Access denied"})
@@ -1006,8 +993,8 @@ import qrcode
 import io
 import base64
 @login_required
-def transaction_success(request, transaction_id):
-    transaction = SecureTransaction.objects.get(id=transaction_id, seller=request.user)
+def transaction_success(request, transaction_reference):
+    transaction = SecureTransaction.objects.get(transaction_reference=transaction_reference, seller=request.user)
     secure_link = request.build_absolute_uri(transaction.get_secure_link())
 
     # Generate QR code image in memory
@@ -1021,10 +1008,7 @@ def transaction_success(request, transaction_id):
         'secure_link': secure_link,
         'qr_code': qr_base64,
     })
-    
-def buyer_transaction_view(request, transaction_id):
-    transaction = get_object_or_404(SecureTransaction, id=transaction_id)
-    return render(request, 'core/buyer_transaction_view.html', {'transaction': transaction})
+
 
 
 
@@ -1073,8 +1057,8 @@ def admin_close_dispute(request, transaction_id):
     return render(request, 'transactions/admin_close_dispute.html', {'dispute': dispute})
 
 @login_required
-def close_dispute(request, transaction_id):
-    dispute = get_object_or_404(TransactionDispute, transaction__id=transaction_id)
+def close_dispute(request, transaction_reference):
+    dispute = get_object_or_404(TransactionDispute, transaction_reference=transaction_reference)
     transaction = dispute.transaction
 
     if request.method == 'POST':
@@ -1111,7 +1095,7 @@ def close_dispute(request, transaction_id):
         messages.success(request, "Dispute closed successfully.")
         return redirect('dashboard')
 
-    return render(request, 'transactions/close_dispute.html', {'dispute': dispute})
+    return render(request, 'core/close_dispute.html', {'dispute': dispute})
 
 
 from django.contrib.auth import get_user_model

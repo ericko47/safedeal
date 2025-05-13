@@ -73,7 +73,7 @@
 
   <!-- Action Buttons -->
   <div class="mt-6 flex flex-col sm:flex-row flex-wrap gap-4">
-    <a href="{% url 'start_conversation' item.id %}" class="inline-block mt-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded">
+    <a href="{% url 'start_conversation' item.item_reference %}" class="inline-block mt-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded">
       Contact Seller
     </a>
       {% if item.is_bulk and item.seller.is_premium %}
@@ -83,7 +83,7 @@
       {% endif %}
 
 
-    <form method="post" action="{% url 'place_order' item.id %}" class="flex flex-col sm:flex-row gap-4 items-center w-full">
+    <form method="post" action="{% url 'place_order' item.item_reference %}" class="flex flex-col sm:flex-row gap-4 items-center w-full">
       {% csrf_token %}
       <input type="text" name="delivery_address"
              placeholder="Your delivery address"
@@ -101,9 +101,9 @@
     </form>
 
     <!-- Extra Buttons -->
-    <a href="{% url 'report_item' item.id %}" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded w-full sm:w-auto">Report Item</a>
+    <a href="{% url 'report_item' item.item_reference %}" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded w-full sm:w-auto">Report Item</a>
 
-    <form action="{% url 'toggle_wishlist' item.id %}" method="post">
+    <form action="{% url 'toggle_wishlist' item.item_reference %}" method="post">
       {% csrf_token %}
       {% if in_wishlist %}
           <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded w-full sm:w-auto">Remove from Wishlist</button>
