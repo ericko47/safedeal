@@ -370,3 +370,35 @@ class Wishlist(models.Model):
 
     def __str__(self):
         return f"{self.user} -> {self.item}"
+
+# Support Ticket model to handle user support requests
+class SupportTicket(models.Model):
+    ISSUE_CHOICES = [
+        # Identity & Account
+        ('id_approval_delay', 'ID/profile photo not approved in 72hrs'),
+        ('id_change_request', 'Need to replace uploaded ID/photo'),
+        # Payments & Payouts
+        ('payment_not_reflected', 'Payment made, status not updated'),
+        ('mpesa_failed', 'M-PESA failed or not received'),
+        ('payout_not_received', 'Seller payout missing or delayed'),
+        # Shipping & Disputes
+        ('unresponsive_user', 'Other party is unresponsive'),
+        ('dispute_open', 'Open a transaction dispute'),
+        ('dispute_appeal', 'Dispute resolution unfair'),
+        # Security & Abuse
+        ('suspected_fraud', 'Suspected fraud or scam listing'),
+        ('abuse_report', 'Abuse or threats from user'),
+        ('bypass_attempt', 'User tried to bypass platform'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='support_tickets')
+    issue_type = models.CharField(max_length=50, choices=ISSUE_CHOICES)
+    reference = models.CharField(max_length=50, blank=True)  # Item or Transaction reference
+    message = models.TextField()
+    is_resolved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_issue_type_display()}"
+
