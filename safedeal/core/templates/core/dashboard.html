@@ -16,7 +16,7 @@
     {% if user.is_verified %}
     <p class="text-green-600">Your account is verified. Sellers can start selling.</p>
     {% else %}
-    <p class="text-red-600">Your account is not verified. Please check your email for the reason.</p>
+    <p class="text-red-600">Your account is not verified. Please check your email for the reason or seek support below.</p>
     {% endif %}  
     <p class="text-gray-600"><strong>Manage your account here</strong></p>
     <a href="{% url 'inbox' %}" class="text-sm text-blue-600 hover:underline relative">

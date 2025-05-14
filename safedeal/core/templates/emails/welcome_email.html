@@ -1,17 +1,42 @@
-<!-- templates/emails/welcome_email.html -->
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <title>Welcome to SafeDeal</title>
 </head>
-<body style="font-family: Arial, sans-serif;">
-  <h2>Hi {{ user.first_name }},</h2>
-  <p>Welcome to <strong>SafeDeal</strong> — your trusted platform for secure and reliable online transactions!</p>
-  <p>We’re excited to have you onboard. Click the <strong>update account</strong> button on the dashbord and... </p>
-  <p>Start exploring great deals now.</p>
-  <br>
-  <p>Cheers,</p>
-  <p>The SafeDeal Team</p>
+<body style="font-family: sans-serif; background: #f9f9f9; padding: 20px;">
+  <div style="max-width: 600px; background: white; padding: 30px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+    
+    <h2 style="color: #00b894;">Welcome to SafeDeal, {{ user.first_name }} 👋</h2>
+    
+    <p style="font-size: 15px; color: #555;">
+      We're thrilled to have you join Kenya’s trusted platform for secure local transactions.
+    </p>
+
+    <p style="font-size: 15px; color: #555;">
+      To activate your account and start using SafeDeal, please confirm your email address by clicking the button below:
+    </p>
+
+    <p style="text-align: center; margin: 30px 0;">
+      <a href="{{ activation_url }}" style="background: #00b894; color: white; padding: 12px 25px; text-decoration: none; border-radius: 4px;">
+        Activate My Account
+      </a>
+    </p>
+
+    <p style="font-size: 14px; color: #777;">
+      Please update your account soon after successful login to enjoy our services with ease. This step keeps your account secure and helps us ensure you're a real person. The link will expire after a few days for security reasons.
+    </p>
+
+    <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+
+    <p style="font-size: 14px; color: #888;">
+      If you didn’t register for SafeDeal, you can ignore this email.
+    </p>
+
+    <p style="font-size: 14px; color: #888;">
+      Welcome aboard,<br>
+      The SafeDeal Team
+    </p>
+  </div>
 </body>
 </html>

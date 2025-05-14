@@ -7,6 +7,13 @@ from django.contrib.auth import logout
 from django.contrib import messages
 from .models import Item , ItemImage, Transaction, TransactionDispute, TransactionOut, ItemReport, Wishlist, DisputeEvidence, TransactionStatusLog
 import uuid
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
 from django.http import HttpResponseForbidden
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
@@ -262,22 +269,54 @@ def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST, request.FILES)
         if form.is_valid():
-            user = form.save()
+            user = form.save(commit=False)
+            user.is_active = False  # Prevent login until verified
+            user.save()
+
+            # Generate token and UID
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+            # Build activation link
+            activation_url = request.build_absolute_uri(
+                reverse('activate_account', kwargs={'uidb64': uid, 'token': token})
+            )
+
+            # Send activation email
             send_custom_email(
-                subject='Welcome to SafeDeal!',
+                subject='Activate your SafeDeal account',
                 template_name='emails/welcome_email.html',
-                context={'user': user},
+                context={'user': user, 'activation_url': activation_url},
                 recipient_list=[user.email],
-            )  
-            user.backend = 'allauth.account.auth_backends.AuthenticationBackend'                      
-            login(request, user)            
-            messages.success(request, 'Registration successful!')
-            return redirect('dashboard')  # Redirect to dashboard after successful registration
+            )
+
+            messages.info(request, 'Registration successful! Please check your email to activate your account.')
+            return redirect('login')  # Wait until verification
     else:
         form = CustomUserCreationForm()
 
     return render(request, 'core/register.html', {'form': form})
 
+def activate_account(request, uidb64, token):
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+    except (User.DoesNotExist, ValueError, TypeError):
+        user = None
+
+    if user is not None and default_token_generator.check_token(user, token):
+        user.is_active = True
+        user.save()
+
+        # Fix for multiple backends
+        user.backend = 'allauth.account.auth_backends.AuthenticationBackend'
+        login(request, user)
+
+        messages.success(request, 'Your email has been verified and your account is now active! Please Update your account to enjoy our services with ease.')
+        return redirect('dashboard')
+    else:
+        messages.error(request, 'Activation link is invalid or expired.')
+        return redirect('login')
 
 def logout_view(request):
     # Log out the user

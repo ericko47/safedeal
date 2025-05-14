@@ -35,9 +35,9 @@
     </form>
 
     <script>
-      const conversationId = "{{ conversation.id }}";
-      const fetchUrl = "{% url 'fetch_messages' conversation_id=conversation.id %}";
-      const sendUrl = "{% url 'send_message_ajax' conversation_id=conversation.id %}";
+      const conversationId = "{{ conversation_reference }}";
+      const fetchUrl = "{% url 'fetch_messages' conversation_reference=conversation.conversation_reference %}";
+      const sendUrl = "{% url 'send_message_ajax' conversation_reference=conversation.conversation_reference %}";
     
       const spinner = document.getElementById('loading-spinner');
       const container = document.getElementById('messages-container');

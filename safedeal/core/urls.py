@@ -64,7 +64,7 @@ urlpatterns = [
     path('mpesa/b2c/timeout/', views.mpesa_timeout_callback, name='mpesa_b2c_timeout_callback'),
     path('check-payment-status/<int:transaction_id>/', views.check_payment_status, name='check_payment_status'),
 
-
+    path('activate/<uidb64>/<token>/', views.activate_account, name='activate_account'),
     path('password-reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
     path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),

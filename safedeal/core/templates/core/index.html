@@ -65,7 +65,7 @@
       <div class="text-md-end text-center">
         <h1 class="display-5 fw-bold mb-2">Welcome to SafeDeal</h1>
         <p class="lead mb-3">Empowering Safe Online Transactions for Small Businesses and Everyday Users</p>
-        <a href="{% url 'create_secure_transaction' %}" class="btn btn-light btn-lg px-4 py-2 shadow">Guest Seller!</a>
+        <a href="{% url 'register' %}" class="btn btn-light btn-lg px-4 py-2 shadow">Register</a>
       </div>
     </div>
   </header>
@@ -94,10 +94,8 @@
           {% else %}
             <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
           {% endif %}
-          <li class="nav-item"><a class="nav-link" href="{% url 'faq' %}">FAQs</a></li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'privacy' %}">Privacy</a>
-          </li>
+            <a class="nav-link" href="{% url 'contact_us' %}">Contact Us</a>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'about' %}">About</a>
           </li>
@@ -211,7 +209,13 @@
   </section>
 
   <footer>
-    &copy; 2025 SafeDeal™. All rights reserved.<br>
+    <div class="container mx-auto space-x-6">
+      <a href="{% url 'faq' %}" class="text-gray-700 hover:text-blue-600">FAQ</a>
+      <a href="{% url 'terms' %}" class="text-gray-700 hover:text-blue-600">Terms</a>
+      <a href="{% url 'privacy' %}" class="text-gray-700 hover:text-blue-600">Privacy</a>
+      <a href="{% url 'about' %}" class="text-gray-700 hover:text-blue-600">About</a>
+    </div>
+    <p class="mt-4">&copy; 2025 SafeDeal™. All rights reserved.</p>
     <small><em>"SafeDeal Escrow" is a trademark pending registration at the Kenya Industrial Property Institute (KIPI).</em></small><br>
     <small><em>SafeDeal Escrow is a registered business in Kenya under Business Name No. BN-B8SOZ3AO, owned and operated by Erick Omondi. Based in Mombasa, we provide escrow-powered digital payments to protect buyers and sellers across Kenya.</em></small>
   </footer>

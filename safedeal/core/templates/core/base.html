@@ -57,11 +57,11 @@
         <a href="{% url 'browse' %}" class="flex items-center space-x-1 text-gray-700 hover:text-blue-600">
           <i data-feather="grid"></i><span>Browse</span>
         </a>
-        <a href="{% url 'faq' %}" class="flex items-center space-x-1 text-gray-700 hover:text-blue-600">
-          <i data-feather="help-circle"></i><span>FAQs</span>
-        </a>
         <a href="{% url 'contact_us' %}" class="flex items-center space-x-1 text-gray-700 hover:text-blue-600">
           <i data-feather="mail"></i><span>Contact Us</span>
+        </a>
+        <a href="{% url 'about' %}" class="flex items-center space-x-1 text-gray-700 hover:text-blue-600">
+          <i data-feather="info"></i><span>About</span>
         </a>
         {% if user.is_authenticated %}
           <a href="{% url 'dashboard' %}" class="flex items-center space-x-1 text-gray-700 hover:text-blue-600">
@@ -113,7 +113,13 @@
   </main>
 
   <footer class="bg-white border-t mt-10 py-6 text-center text-sm text-gray-500">
-    <p>&copy; {{ now|date:"Y" }} SafeDeal. All rights reserved.</p>
+    <div class="container mx-auto space-x-6">
+      <a href="{% url 'faq' %}" class="text-gray-700 hover:text-blue-600">FAQ</a>
+      <a href="{% url 'terms' %}" class="text-gray-700 hover:text-blue-600">Terms</a>
+      <a href="{% url 'privacy' %}" class="text-gray-700 hover:text-blue-600">Privacy</a>
+      <a href="{% url 'about' %}" class="text-gray-700 hover:text-blue-600">About</a>
+    </div>
+    <p class="mt-4">&copy; {{ now|date:"Y" }} SafeDeal. All rights reserved.</p>
   </footer>
 
   <script src="https://unpkg.com/feather-icons"></script>
@@ -150,23 +156,25 @@
     });
   </script>
   <!-- Cookie Consent Banner -->
-<div id="cookie-banner" style="position: fixed; bottom: 0; left: 0; width: 100%; background: #1e293b; color: white; padding: 1rem; text-align: center; font-size: 0.9rem; z-index: 9999; display: none;">
-  This site uses cookies to enhance your experience. By continuing to use SafeDeal, you accept our use of cookies.
-  <button onclick="acceptCookies()" style="margin-left: 1rem; background: #10b981; color: white; border: none; padding: 0.4rem 1rem; border-radius: 5px;">Accept</button>
-</div>
-
-<script>
-  function acceptCookies() {
-    localStorage.setItem('cookiesAccepted', 'true');
-    document.getElementById('cookie-banner').style.display = 'none';
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    if (!localStorage.getItem('cookiesAccepted')) {
-      document.getElementById('cookie-banner').style.display = 'block';
+  <div id="cookie-banner" style="position: fixed; bottom: 0; left: 0; width: 100%; background: #1e293b; color: white; padding: 1rem; text-align: center; font-size: 0.9rem; z-index: 9999; display: none;">
+    This site uses cookies to enhance your experience. By continuing to use SafeDeal, you accept our use of cookies.
+    <button onclick="acceptCookies()" style="margin-left: 1rem; background: #10b981; color: white; border: none; padding: 0.4rem 1rem; border-radius: 
+    0.3rem; cursor: pointer;">Accept</button>
+    <button onclick="declineCookies()" style="margin-left: 0.5rem; background: #ef4444; color: white; border: none; padding: 0.4rem 1rem; border-radius: 0.3rem; cursor: pointer;">Decline</button>
+  </div>
+  <script>
+    function acceptCookies() {
+      document.cookie = "cookies_accepted=true; max-age=31536000; path=/";
+      document.getElementById("cookie-banner").style.display = "none";
     }
-  });
-</script>
 
-</body>
-</html>
+    function declineCookies() {
+      document.cookie = "cookies_accepted=false; max-age=31536000; path=/";
+      document.getElementById("cookie-banner").style.display = "none";
+    }
+
+    window.onload = function() {
+      if (!document.cookie.includes("cookies_accepted")) {
+        document.getElementById("cookie-banner").style.display = "block";
+      }
+    };

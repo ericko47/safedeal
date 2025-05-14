@@ -4,7 +4,7 @@ from .models import Conversation, Message
 from django.contrib.auth.decorators import login_required
 
 from django.contrib import messages
-
+from django.db.models import Q
 
 from .forms import ContactForm
 
@@ -42,13 +42,15 @@ def start_conversation(request, item_reference):
         item=item
     )
 
-    return redirect('conversation_detail', conversation_id=conversation.id)
+    return redirect('conversation_detail', conversation_reference=conversation.conversation_reference)
 
 
 @login_required
-def conversation_detail(request, conversation_id):
-    conversation = get_object_or_404(Conversation, id=conversation_id)
-
+def conversation_detail(request, conversation_reference):
+    conversation = get_object_or_404(
+    Conversation,
+    Q(conversation_reference=conversation_reference) & (Q(buyer=request.user) | Q(seller=request.user))
+    )
     # Mark all unread messages *not* sent by current user as read
     conversation.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
 
@@ -66,6 +68,10 @@ def conversation_detail(request, conversation_id):
         'conversation': conversation,
         'messages': messages
     })
+
+def redirect_conversation_by_id(request, id):
+    conversation = get_object_or_404(Conversation, id=id)
+    return redirect('conversation_detail', conversation_reference=conversation.conversation_reference)
 
 
 @login_required
@@ -92,9 +98,9 @@ def inbox_view(request):
 from django.http import JsonResponse
 
 @login_required
-def send_message_ajax(request, conversation_id):
+def send_message_ajax(request, conversation_reference):
     if request.method == 'POST':
-        conversation = get_object_or_404(Conversation, id=conversation_id)
+        conversation = get_object_or_404(Conversation, conversation_reference=conversation_reference)
         content = request.POST.get('message')
         if content:
             msg = Message.objects.create(
@@ -111,8 +117,8 @@ def send_message_ajax(request, conversation_id):
 
 
 @login_required
-def fetch_messages(request, conversation_id):
-    conversation = get_object_or_404(Conversation, id=conversation_id)
+def fetch_messages(request, conversation_reference):
+    conversation = get_object_or_404(Conversation, conversation_reference=conversation_reference)
     messages = conversation.messages.order_by('timestamp')
     messages_data = [{
         'sender': msg.sender.username,
@@ -121,8 +127,6 @@ def fetch_messages(request, conversation_id):
     } for msg in messages]
 
     return JsonResponse({'messages': messages_data})
-
-
 
 
 def contact_us(request):
