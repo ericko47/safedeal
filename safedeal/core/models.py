@@ -39,7 +39,7 @@ class Item(models.Model):
     is_personal = models.BooleanField(default=True)
     item_reference = models.CharField(max_length=15, unique=True, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)# models.py
+    updated_at = models.DateTimeField(auto_now=True) 
     is_bulk = models.BooleanField(default=False)
     bulk_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
@@ -374,31 +374,27 @@ class Wishlist(models.Model):
 # Support Ticket model to handle user support requests
 class SupportTicket(models.Model):
     ISSUE_CHOICES = [
-        # Identity & Account
-        ('id_approval_delay', 'ID/profile photo not approved in 72hrs'),
-        ('id_change_request', 'Need to replace uploaded ID/photo'),
-        # Payments & Payouts
-        ('payment_not_reflected', 'Payment made, status not updated'),
-        ('mpesa_failed', 'M-PESA failed or not received'),
-        ('payout_not_received', 'Seller payout missing or delayed'),
-        # Shipping & Disputes
-        ('unresponsive_user', 'Other party is unresponsive'),
-        ('dispute_open', 'Open a transaction dispute'),
-        ('dispute_appeal', 'Dispute resolution unfair'),
-        # Security & Abuse
-        ('suspected_fraud', 'Suspected fraud or scam listing'),
-        ('abuse_report', 'Abuse or threats from user'),
-        ('bypass_attempt', 'User tried to bypass platform'),
+        ('payment', 'Payment Issue'),
+        ('delivery', 'Delivery Issue'),
+        ('dispute', 'Dispute Resolution'),
+        ('verification', 'Verification/ID Issues'),
+        ('account', 'Account Access'),
+        ('other', 'Other'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='support_tickets')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     issue_type = models.CharField(max_length=50, choices=ISSUE_CHOICES)
-    reference = models.CharField(max_length=50, blank=True)  # Item or Transaction reference
+    reference = models.CharField(max_length=100, blank=True, null=True)
     message = models.TextField()
+    attachment = models.FileField(upload_to='support_attachments/', blank=True, null=True)
     is_resolved = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    resolved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)    
 
     def __str__(self):
-        return f"{self.user.username} - {self.get_issue_type_display()}"
+        return f"{self.user.username} - {self.issue_type} ({self.created_at.date()})"
 
+class PremiumSubscription(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    start_date = models.DateTimeField(auto_now_add=True)
+    expiry_date = models.DateTimeField()
+    is_active = models.BooleanField(default=True)

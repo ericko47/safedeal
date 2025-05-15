@@ -1,0 +1,38 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto p-6 bg-white rounded-xl shadow">
+  <h2 class="text-xl font-semibold mb-4">Upgrade to Premium</h2>
+  {% if not user.national_id %}
+    <p class="text-red-500">Please <a href="{% url 'update_profile' %}" class="underline">update your Account</a> before upgrading.</p>
+  {% else %}
+    <ul class="mb-4 list-disc pl-5 text-gray-700">
+      <li>Unlimited item listings</li>
+      <li>Bulk buying option for buyers</li>
+      <li>Highlighted and featured listings</li>
+      <li>Priority search placement</li>
+      <li>Faster customer support</li>
+      <li>Increased buyer trust and visibility</li>
+    </ul>
+    <h2 class="text-xl font-semibold text-gray-800">Premium Eligibility</h2>
+    {% if eligibility.qualified %}
+      <p class="text-green-600 font-medium">You currently qualify for Premium upgrade!</p>
+    {% else %}
+      <p class="text-red-600 font-medium">You do not yet meet the criteria. See details below:</p>
+    {% endif %}
+
+    <ul class="mt-2 space-y-1 text-sm text-gray-700">
+      {% for title, detail in eligibility.reasons.items %}
+        <li><strong>{{ title }}:</strong> {{ detail }}</li>
+      {% endfor %}
+    </ul>
+
+    {% if user.account_type == 'premium' %}
+      <p class="mt-4 text-sm text-gray-500">You are currently a premium user. You can <a href="{% url 'downgrade_to_free' %}" class="underline">downgrade</a> at any time.</p>
+    {% else %}
+      <form method="post">{% csrf_token %}
+        <button class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Upgrade for KES 699</button>
+      </form>
+      <p class="mt-4 text-sm text-gray-500">Note: This is a one-time fee. You will not be charged again unless you choose to renew your premium status.</p>    {% endif%}
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <h2 class="text-2xl font-semibold mb-6 text-center text-blue-700">Submit a Support Ticket</h2>
+
+  <form method="POST" enctype="multipart/form-data" class="bg-white shadow-md rounded-lg p-6 space-y-4">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Issue Type</label>
+      <select name="issue_type" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+        <option value="">Select an issue</option>
+        <option value="payment">Payment Issue</option>
+        <option value="delivery">Delivery Issue</option>
+        <option value="dispute">Dispute Resolution</option>
+        <option value="verification">Verification/ID Issues</option>
+        <option value="account">Account Access</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Transaction/Item Reference (optional)</label>
+      <input type="text" name="reference" placeholder="e.g. SDI-123456" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Describe Your Issue</label>
+      <textarea name="message" rows="4" required placeholder="Explain your issue here..." class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Attachment (optional)</label>
+      <input type="file" name="attachment" accept="image/*,.pdf,.doc,.docx,.txt" class="mt-1 text-sm">
+      <p class="text-xs text-gray-500 mt-1">Screenshot, document (max 5MB)</p>
+    </div>
+
+    <div>
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">Submit Ticket</button>
+    </div>
+  </form>
+
+  <hr class="my-10 border-gray-300">
+
+  <h3 class="text-xl font-semibold mb-4 text-gray-700">Your Previous Tickets</h3>
+
+  {% if tickets %}
+    <div class="space-y-4">
+      {% for ticket in tickets %}
+        <div class="bg-white p-4 border rounded-md shadow-sm">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="text-sm font-medium text-gray-800">{{ ticket.get_issue_type_display }}</p>
+              <p class="text-xs text-gray-500">Submitted on :{{ ticket.created_at|date:"M d, Y H:i" }}</p>
+            </div>
+            <span class="text-xs px-2 py-1 rounded-full 
+              {% if ticket.is_resolved %}
+                bg-green-100 text-green-700
+              {% else %}
+                bg-yellow-100 text-yellow-700
+              {% endif %}
+            ">
+              {% if ticket.is_resolved %}Resolved{% else %}Pending{% endif %}
+            </span>
+          </div>
+
+          {% if ticket.reference %}
+            <p class="text-sm mt-1 text-gray-600">Reference: {{ ticket.reference }}</p>
+          {% endif %}
+
+          <p class="text-sm mt-2 text-gray-700 whitespace-pre-line">{{ ticket.message }}</p>
+
+          {% if ticket.attachment %}
+            <div class="mt-2">
+              <a href="{{ ticket.attachment.url }}" target="_blank" class="text-blue-600 hover:underline text-sm">
+                📎 View Attachment
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-sm text-gray-500">You haven't submitted any support tickets yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

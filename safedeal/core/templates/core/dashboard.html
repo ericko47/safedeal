@@ -5,7 +5,7 @@
 <div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
 
   <!-- Greeting -->
-  <div>
+   <div>
     <h2 class="text-2xl font-bold text-gray-800">Welcome, <span class="text-blue-600">{{ user.first_name }} {{user.last_name}}</span></h2>
     <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
       &larr; Go Back
@@ -14,26 +14,25 @@
     <p class="text-gray-600">Your account was created on <strong>{{ user.date_joined|date:"F j, Y" }}</strong> .</p>
     <p class="text-gray-600">Your account is currently <strong>{{ user.is_active|yesno:"active,inactive" }}</strong> .</p>
     {% if user.is_verified %}
-    <p class="text-green-600">Your account is verified. Sellers can start selling.</p>
+    <p class="text-green-600">Your account is verified.</p>
     {% else %}
     <p class="text-red-600">Your account is not verified. Please check your email for the reason or seek support below.</p>
     {% endif %}  
     <p class="text-gray-600"><strong>Manage your account here</strong></p>
-    <a href="{% url 'inbox' %}" class="text-sm text-blue-600 hover:underline relative">
-      My Inbox
-      {% if has_unread_messages %}
-        <span class="absolute -top-1 -right-3 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">●</span>
-      {% endif %}
-    </a>
-    
-    {% if user.is_superuser %}
-    <a href="{% url 'admin:index' %}" class="text-sm text-blue-600 hover:underline">Senior Admin |</a>
-    {% endif %}
-    {% if user.is_staff %}
-    <a href="{% url 'admindashboard' %}" class="text-sm text-blue-600 hover:underline"> Admin Control dashboard |</a>
-    {% endif %}
-    <a href="{% url 'view_wishlist' %}" class="text-sm text-blue-600 hover:underline"> My Wishlist |</a>
-    <a href="#" class="text-sm text-blue-600 hover:underline"> <strong> Support</strong> |</a>
+
+    <!-- User Navbar Links -->
+    <nav class="flex flex-wrap gap-4 mt-4 text-sm">
+      <a href="{% url 'inbox' %}" class="text-blue-600 hover:underline relative">
+        My Inbox
+        {% if has_unread_messages %}
+          <span class="absolute -top-1 -right-3 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">●</span>
+        {% endif %}
+      </a>
+      {% if user.is_superuser %}<a href="{% url 'admin:index' %}" class="text-blue-600 hover:underline">Senior Admin</a>{% endif %}
+      {% if user.is_staff %}<a href="{% url 'admindashboard' %}" class="text-blue-600 hover:underline">Admin Dashboard</a>{% endif %}
+      <a href="{% url 'view_wishlist' %}" class="text-blue-600 hover:underline">Wishlist</a>
+      <a href="{% url 'support' %}" class="text-blue-600 hover:underline font-semibold">Support</a>
+    </nav>
   </div>
 
   <div ><a style="color: royalblue; font-size: 20px;" href="{% url 'create_secure_transaction'%}">Generate External Link</a> <br>
@@ -168,6 +167,10 @@
     <p class="text-gray-600">You're registered as a seller. Start listing your products now.</p>
     <a href="{% url 'post_item' %}" class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">Post New Item</a>
     <a href="{% url 'my_items' %}" class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">View My Items</a>
+    <div class="mt-6">
+      <p class="text-sm text-gray-700">Want to increase your visibility and features?</p>
+      <a href="{% url 'upgrade_to_premium' %}" class="mt-2 inline-block bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md">Apply for Premium Account</a>
+    </div>
   </div>
   {% endif %}
 

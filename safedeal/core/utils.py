@@ -3,12 +3,62 @@ from django.template.loader import render_to_string
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
+from .models import PremiumSubscription, Transaction
 
-# def send_custom_email(subject, template_name, context, recipient_list):
-#     html_content = render_to_string(template_name, context)
-#     email = EmailMultiAlternatives(subject, '', to=[recipient_list])
-#     email.attach_alternative(html_content, "text/html")
-#     email.send()
+from django.utils import timezone
+# from reviews.models import Rating  # adjust if different
+
+def check_premium_eligibility(user):
+    """
+    Returns a dict with eligibility details and explanation.
+    Criteria:
+    - At least 5 completed transactions.
+    - Delivery rate >= 80%
+    - Average rating >= 4.0
+    - No recent complaints (customize as needed)
+    """
+
+    completed_transactions = Transaction.objects.filter(
+        seller=user,
+        status='delivered',
+    ).count()
+
+    delivered_rate = Transaction.objects.filter(seller=user, shipped_at__isnull=False).count()
+    delivery_score = (delivered_rate / completed_transactions * 100) if completed_transactions else 0
+
+    # average_rating = Rating.objects.filter(target_user=user).aggregate(avg=models.Avg('score'))['avg'] or 0
+
+    # Set your own complaint filtering logic if you track complaints
+    recent_complaints = 0  # example only
+
+    qualified = (
+        completed_transactions >= 5 and
+        delivery_score >= 80 and
+        # average_rating >= 4.0 and
+        recent_complaints == 0
+    )
+
+    return {
+        "qualified": qualified,
+        "reasons": {
+            "Transactions completed": f"{completed_transactions} (min: 5)",
+            "Delivery success rate": f"{delivery_score:.0f}% (min: 80%)",
+            # "Average buyer rating": f"{average_rating:.1f}★ (min: 4.0★)",
+            "Recent complaints": f"{recent_complaints} (must be 0)",
+        }
+    }
+
+
+def deactivate_expired_subscriptions():
+    now = timezone.now()
+    expired_subs = PremiumSubscription.objects.filter(is_active=True, expiry_date__lt=now)
+
+    for sub in expired_subs:
+        sub.is_active = False
+        sub.save()
+        sub.user.is_premium = False
+        sub.user.save()
+
     
 def send_custom_email(subject, template_name, context, recipient_list):
     message = render_to_string(template_name, context)

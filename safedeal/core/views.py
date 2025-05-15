@@ -5,7 +5,7 @@ from .forms import CustomUserCreationForm, UserProfileForm, ItemForm, DisputeFor
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.contrib import messages
-from .models import Item , ItemImage, Transaction, TransactionDispute, TransactionOut, ItemReport, Wishlist, DisputeEvidence, TransactionStatusLog
+from .models import Item , ItemImage, Transaction, TransactionDispute, CustomUser, ItemReport, Wishlist, DisputeEvidence, TransactionStatusLog, SupportTicket
 import uuid
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
@@ -18,10 +18,84 @@ from django.http import HttpResponseForbidden
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from datetime import timedelta
 from django.db.models import Q
 from mpesa.utils import lipa_na_mpesa, initiate_b2c_payment, query_stk_status
 from core.utils import send_custom_email, log_transaction_status_change, calculate_fees, notify_funding
+from django.utils.timezone import now
+from django.core.mail import send_mail
+from django.conf import settings
+from .models import PremiumSubscription
 
+from .utils import check_premium_eligibility 
+
+@login_required
+def upgrade_to_premium(request):
+    user = request.user
+    eligibility = check_premium_eligibility(user)
+
+    if request.method == 'POST':
+        if not user.national_id:
+            messages.error(request, "You must update your national ID before upgrading.")
+            return redirect('update_profile')
+
+        phone = user.phone_number
+        amount = 699
+        account_reference = user.national_id
+        transaction_desc = f"Premium Upgrade for {user.get_full_name()}"
+
+        response = lipa_na_mpesa(
+            phone_number=phone,
+            amount=amount,
+            account_reference=account_reference,
+            transaction_desc=transaction_desc
+        )
+
+        if response.get('ResponseCode') == "0":
+            messages.success(request, "STK Push sent. Complete the payment on your phone.")
+        else:
+            messages.error(request, "Failed to initiate payment. Try again later.")
+
+        return redirect('upgrade_to_premium')
+
+    return render(request, 'core/upgrade_to_premium.html', {
+        "eligibility": eligibility
+    })
+
+@login_required
+def support(request):
+    if request.method == 'POST':
+        issue_type = request.POST.get('issue_type')
+        reference = request.POST.get('reference')
+        message = request.POST.get('message')
+        attachment = request.FILES.get('attachment')
+        user = request.user
+
+        ticket = SupportTicket.objects.create(
+            user=user,
+            issue_type=issue_type,
+            reference=reference,
+            message=message, 
+            attachment = attachment
+        )
+
+        # Email notification
+        send_mail(
+            subject=f"[SafeDeal Support] New Ticket from {user.username}",
+            message=f"Issue: {ticket.get_issue_type_display()}\n"
+                    f"Reference: {ticket.reference or 'N/A'}\n"
+                    f"Message:\n{ticket.message}\n\n"
+                    f"Submitted by: {user.username} ({user.email})",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[admin[1] for admin in settings.ADMINS],
+            fail_silently=True,
+        )
+
+        messages.success(request, "Your support request has been submitted. We’ll get back to you shortly.")
+        return redirect('support')
+    else:    
+        tickets = SupportTicket.objects.filter(user=request.user).order_by('-created_at')
+        return render(request, 'core/support.html', {'tickets': tickets})
 
 
 @login_required
@@ -889,22 +963,54 @@ def mpesa_callback(request):
                 pass
 
         # === 3. Notify for unmatched payments ===
-        if not transaction_found:
-            message = f"UNMATCHED PAYMENT:\nPhone: {phone}\nAmount: {amount}\nReference: {account_reference}\nReceipt: {mpesa_receipt}"
-            send_mail(
-                subject="Unmatched M-PESA Payment",
-                message=message,
-                from_email=None,
-                recipient_list=['mpesa@safedeal.co.ke'],
-            )
-            mpesa_logger.warning(message)
+        if not transaction_found and account_reference:
+            try:
+                user = CustomUser.objects.get(national_id=account_reference)
+
+                # Activate premium on the user
+                user.is_premium = True
+                user.save()
+
+                start_date = timezone.now()
+                expiry_date = start_date + timedelta(days=30)
+
+                sub, created = PremiumSubscription.objects.get_or_create(user=user)
+                sub.start_date = start_date
+                sub.expiry_date = expiry_date
+                sub.is_active = True
+                sub.save()
+
+                # Log & email
+                message = (
+                    f"PREMIUM ACTIVATION:\n"
+                    f"User: {user.get_full_name()} ({user.email})\n"
+                    f"National ID: {account_reference}\n"
+                    f"Phone: {phone}\n"
+                    f"Amount: {amount}\n"
+                    f"Receipt: {mpesa_receipt}"
+                )
+                send_mail(
+                    subject=f"{account_reference} Premium Activated via M-PESA",
+                    message=message,
+                    from_email=None,
+                    recipient_list=['mpesa@safedeal.co.ke'],
+                )
+                mpesa_logger.info(message)
+
+                transaction_found = True  # So it doesn’t send unmatched warning
+            except CustomUser.DoesNotExist:
+                mpesa_logger.warning(f"National ID {account_reference} not found for premium activation.")
         else:
-            send_mail(
-                subject="M-PESA Payment Received",
-                message=f"Payment of KES {amount} received from {phone}.\nReceipt: {mpesa_receipt}",
-                from_email=None,
-                recipient_list=['mpesa@safedeal.co.ke'],
+            message = (
+                f"✅ M-PESA PAYMENT RECEIVED\n\n"
+                f"Phone Number: {phone}\n"
+                f"Amount: KES {amount}\n"
+                f"Account Reference: {account_reference}\n"
+                f"M-PESA Receipt: {mpesa_receipt}\n"
+                f"Date: {now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
+            subject = f"✅ Payment Received | Ref: {account_reference}"
+            send_mail(subject, message, from_email=None, recipient_list=['mpesa@safedeal.co.ke'])
 
     # === 4. Always log callback ===
     MpesaPaymentLog.objects.create(

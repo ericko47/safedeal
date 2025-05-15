@@ -109,11 +109,16 @@ EMAIL_HOST = 'mail.safedeal.co.ke'  # or your provider's SMTP
 EMAIL_PORT = 465
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
-EMAIL_HOST_USER = 'info@safedeal.co.ke'
-EMAIL_HOST_PASSWORD = 'PLi6.4f7#8F5'
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_HOST_USER = 'noreply@safedeal.co.ke'
+EMAIL_HOST_PASSWORD = 'By4~00QW.&2Y'
 
+DEFAULT_FROM_EMAIL = "SafeDeal <noreply@safedeal.co.ke>"
 # https://docs.djangoproject.com/en/5.2/topics/email/#email-backends
+ADMINS = [
+    ("Erick Omondi", "erickogutu47@gmail.com"),
+    ("SafeDeal Admin", "admin@safedeal.co.ke"),
+    ("SafeDeal Support", "support@safedeal.co.ke"),
+]
 
 
 # Password validation
