@@ -53,6 +53,10 @@ urlpatterns = [
     path('transactions/<str:transaction_reference>/request_refund/', views.request_refund, name='request_refund'),
     path('transactions/<str:transaction_reference>/request_funding/', views.request_funding, name='request_funding'),
 
+    path('admin/premium-subscriptions/<int:sub_id>/approve/', views.approve_premium, name='approve_premium'),
+    path('premium-subscriptions/', views.admin_premium_subscriptions, name='admin_premium_subscriptions'),
+    path('reported_items_view/', views.reported_items_view, name='reported_items'),
+
     
     path('generate_transaction_out/', views.generate_transaction_out, name='generate_transaction_out'),
     

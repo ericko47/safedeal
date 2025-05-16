@@ -1,0 +1,62 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="max-w-5xl mx-auto p-6 bg-white rounded-xl shadow">
+
+    <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+        &larr; Go Back  
+    </a>
+  <h2 class="text-2xl font-semibold mb-6">Reported Items</h2>
+
+  {% if reports %}
+    <table class="min-w-full text-sm text-left border border-gray-200">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-4 py-2">Item</th>
+          <th class="px-4 py-2">Reported By</th>
+          <th class="px-4 py-2">Reason</th>
+          <th class="px-4 py-2">Timestamp</th>
+          <th class="px-4 py-2">Reviewed</th>
+          <th class="px-4 py-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for report in reports %}
+        <tr class="border-t">
+          <td class="px-4 py-2">
+            <a href="{% url 'item_detail' report.item.item_reference %}" class="text-blue-600 hover:underline">
+              {{ report.item.title }}
+            </a>
+          </td>
+          <td class="px-4 py-2">{{ report.reported_by.get_full_name }} ({{ report.reported_by.email }})</td>
+          <td class="px-4 py-2 text-gray-800">{{ report.reason }}</td>
+          <td class="px-4 py-2 text-gray-600">{{ report.timestamp|date:"Y-m-d H:i" }}</td>
+          <td class="px-4 py-2">
+            {% if report.reviewed %}
+              ✅ Reviewed
+            {% else %}
+              ❌ Not Reviewed
+            {% endif %}
+          </td>
+          <td class="px-4 py-2 space-y-1">
+            <form action="" method="post" class="inline">{% csrf_token %}
+              <input type="hidden" name="report_id" value="{{ report.id }}">
+              <button name="action" value="delete_item" class="text-red-600 hover:underline">Delete Item</button>
+            </form>
+            <form action="" method="post" class="inline ml-2">{% csrf_token %}
+              <input type="hidden" name="report_id" value="{{ report.id }}">
+              <button name="action" value="contact_users" class="text-blue-600 hover:underline">Contact Users</button>
+            </form>
+            <form action="" method="post" class="inline ml-2">{% csrf_token %}
+              <input type="hidden" name="report_id" value="{{ report.id }}">
+              <button name="action" value="mark_reviewed" class="text-green-600 hover:underline">Mark Reviewed</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="text-gray-700">No reported items at the moment.</p>
+  {% endif %}
+</div>
+{% endblock %}

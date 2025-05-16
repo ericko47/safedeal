@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Dispute Closed</title>
+</head>
+<body style="font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
+    <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <h2 style="color: #333;">Dispute Closed</h2>
+
+        <p>Dear {{ seller.get_full_name }},</p>
+
+        <p>The dispute raised regarding the item <strong>{{ item.title }}</strong> has been closed by the buyer.</p>
+
+        <p><strong>Reason:</strong><br>
+        {{ reason }}</p>
+
+        <p>The transaction has been restored to its previous status. Please check your dashboard for full details.</p>
+
+        <p>Regards,<br>SafeDeal Support Team</p>
+    </div>
+</body>
+</html>

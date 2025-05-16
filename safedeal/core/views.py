@@ -32,15 +32,29 @@ from .utils import check_premium_eligibility
 @login_required
 def upgrade_to_premium(request):
     user = request.user
-    eligibility = check_premium_eligibility(user)
+    
+    required_fields = [
+    user.national_id,
+    user.phone_number,
+    user.current_location,
+    user.permanent_address,
+    user.account_type,
+    user.profile_picture,
+    user.national_id_picture,
+    ]
 
+    if not all(required_fields):
+        messages.warning(request, "Please complete your profile before uprading.")
+        return redirect('update_profile') 
+    eligibility = check_premium_eligibility(user)
+    status = PremiumSubscription.objects.filter(user=user).first()
     if request.method == 'POST':
         if not user.national_id:
             messages.error(request, "You must update your national ID before upgrading.")
             return redirect('update_profile')
 
         phone = user.phone_number
-        amount = 699
+        amount = 499
         account_reference = user.national_id
         transaction_desc = f"Premium Upgrade for {user.get_full_name()}"
 
@@ -59,7 +73,8 @@ def upgrade_to_premium(request):
         return redirect('upgrade_to_premium')
 
     return render(request, 'core/upgrade_to_premium.html', {
-        "eligibility": eligibility
+        "eligibility": eligibility,
+        "status": status,
     })
 
 @login_required
@@ -453,6 +468,46 @@ def delete_item_view(request, item_reference):
         return redirect('my_items')
     return render(request, 'core/confirm_delete.html', {'item': item})
 
+from django.contrib.auth.decorators import user_passes_test
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def reported_items_view(request):
+    reports = ItemReport.objects.select_related('item', 'reported_by', 'item__seller').order_by('-timestamp')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        report_id = request.POST.get('report_id')
+        report = get_object_or_404(ItemReport, id=report_id)
+
+        if action == 'delete_item':
+            item = report.item
+            item.delete()
+            report.reviewed = True
+            report.save()
+            messages.success(request, f"Item '{item.title}' deleted and report marked as reviewed.")
+
+        elif action == 'contact_users':
+            seller = report.item.seller
+            reporter = report.reported_by
+
+            # Example email logic (adjust as needed)
+            send_mail(
+                subject="Item Report Notice",
+                message=f"The item '{report.item.title}' was reported for the following reason: {report.reason}",
+                from_email=None,
+                recipient_list=[seller.email, reporter.email]
+            )
+            messages.success(request, "Emails sent to reporter and seller.")
+
+        elif action == 'mark_reviewed':
+            report.reviewed = True
+            report.save()
+            messages.success(request, "Report marked as reviewed.")
+
+        return redirect('reported_items')
+
+    return render(request, 'admin/reported_items.html', {'reports': reports})
+
 @login_required
 def update_profile(request):
     if request.method == 'POST':
@@ -465,28 +520,33 @@ def update_profile(request):
         form = UserProfileForm(instance=request.user)
 
     return render(request, 'core/update_profile.html', {'form': form})
-
+from django.db.models import BooleanField, ExpressionWrapper, Q
 
 def browse_view(request):
     category_filter = request.GET.get('category', '')
     query = request.GET.get('q', '')
-    
-    items = Item.objects.filter(is_available=True).order_by('-created_at')
-    
+
+    # Annotate each item with whether the seller is premium (True/False)
+    items = Item.objects.filter(is_available=True).annotate(
+        seller_is_premium=ExpressionWrapper(Q(seller__is_premium=True), output_field=BooleanField())
+    ).order_by('-seller_is_premium', '-created_at')  # Premium items appear first
+
     if category_filter:
         items = items.filter(category=category_filter)
     if query:
         items = items.filter(
             Q(title__icontains=query) | Q(description__icontains=query)
         )
+
     categories = Item.CATEGORY_CHOICES
-    
+
     return render(request, 'core/browse.html', {
         'items': items,
         'categories': categories,
         'selected_category': category_filter,
         'search_query': query,
     })
+
     
 def search_items(request):
     query = request.GET.get('q')
@@ -510,13 +570,10 @@ def search_items(request):
 def escrow_view(request):
     return render(request, 'core/escrow.html')
 
-
 @login_required
 def post_item_view(request):
-    
     user = request.user
 
-    # Check for essential profile fields
     required_fields = [
         user.national_id,
         user.phone_number,
@@ -530,33 +587,46 @@ def post_item_view(request):
     if not all(required_fields):
         messages.warning(request, "Please complete your profile before posting an item.")
         return redirect('update_profile') 
+
     if not user.is_verified:
         messages.warning(request, "Please wait for admin to verify your details or check your email for admin comments on your account.")
         return redirect('dashboard')
 
+    # Check current item count
+    active_count = Item.objects.filter(seller=user, is_available=True).count()
+    can_post = True
+    remaining_slots = None
+
+    if not user.is_premium:
+        remaining_slots = 5 - active_count
+        if active_count >= 5:
+            can_post = False
+
     if request.method == 'POST':
+        if not can_post:
+            messages.error(request, "Free users can only list up to 5 items. Upgrade to Premium to list more.")
+            return redirect('upgrade_to_premium')
+
         form = ItemForm(request.POST, request.FILES)
         files = request.FILES.getlist('images')
 
         if form.is_valid():
             item = form.save(commit=False)
-            item.seller = request.user
-            
-            if item.is_bulk and not request.user.is_premium:
+            item.seller = user
+
+            if item.is_bulk and not user.is_premium:
                 messages.error(request, "Bulk listings are only available to Premium sellers. Please uncheck 'bulk' or upgrade your account.")
-                return render(request, 'core/post-item.html', {'form': form})
-            
-            # Validate each file before saving
+                return render(request, 'core/post-item.html', {'form': form, 'can_post': can_post, 'remaining_slots': remaining_slots})
+
             for f in files:
-                if f.size > 5 * 1024 * 1024:  # 5MB limit
+                if f.size > 5 * 1024 * 1024:
                     messages.error(request, f"{f.name} is too large (max 5MB).")
-                    return render(request, 'core/post-item.html', {'form': form})
+                    return render(request, 'core/post-item.html', {'form': form, 'can_post': can_post, 'remaining_slots': remaining_slots})
                 if not f.content_type.startswith('image/'):
                     messages.error(request, f"{f.name} is not a valid image.")
-                    return render(request, 'core/post-item.html', {'form': form})
+                    return render(request, 'core/post-item.html', {'form': form, 'can_post': can_post, 'remaining_slots': remaining_slots})
 
             item.save()
-
             for f in files:
                 ItemImage.objects.create(item=item, image=f)
 
@@ -567,7 +637,11 @@ def post_item_view(request):
     else:
         form = ItemForm()
 
-    return render(request, 'core/post-item.html', {'form': form})
+    return render(request, 'core/post-item.html', {
+        'form': form,
+        'can_post': can_post,
+        'remaining_slots': remaining_slots,
+    })
 
 
 def item_detail(request, item_reference):   
@@ -964,39 +1038,35 @@ def mpesa_callback(request):
         # === 3. Notify for unmatched payments ===
         if not transaction_found and account_reference:
             try:
-                user = CustomUser.objects.get(national_id=account_reference)
+                    user = CustomUser.objects.get(national_id=account_reference)
 
-                # Activate premium on the user
-                user.is_premium = True
-                user.save()
+                    start_date = timezone.now()
+                    # expiry_date = start_date + timedelta(days=30)
 
-                start_date = timezone.now()
-                expiry_date = start_date + timedelta(days=30)
+                    sub, created = PremiumSubscription.objects.get_or_create(user=user)
+                    sub.paid_date = start_date
+                    # sub.expiry_date = expiry_date
+                    sub.status = 'pending'  # Awaiting admin approval
+                    sub.save()
 
-                sub, created = PremiumSubscription.objects.get_or_create(user=user)
-                sub.start_date = start_date
-                sub.expiry_date = expiry_date
-                sub.is_active = True
-                sub.save()
+                    # Email the admin team for manual review
+                    message = (
+                        f"PREMIUM APPLICATION RECEIVED:\n"
+                        f"User: {user.get_full_name()} ({user.email})\n"
+                        f"National ID: {account_reference}\n"
+                        f"Phone: {phone}\n"
+                        f"Amount: {amount}\n"
+                        f"Receipt: {mpesa_receipt}"
+                    )
+                    send_mail(
+                        subject=f"{account_reference} Premium Application via M-PESA",
+                        message=message,
+                        from_email=None,
+                        recipient_list=['mpesa@safedeal.co.ke'],
+                    )
+                    mpesa_logger.info(message)
 
-                # Log & email
-                message = (
-                    f"PREMIUM ACTIVATION:\n"
-                    f"User: {user.get_full_name()} ({user.email})\n"
-                    f"National ID: {account_reference}\n"
-                    f"Phone: {phone}\n"
-                    f"Amount: {amount}\n"
-                    f"Receipt: {mpesa_receipt}"
-                )
-                send_mail(
-                    subject=f"{account_reference} Premium Activated via M-PESA",
-                    message=message,
-                    from_email=None,
-                    recipient_list=['mpesa@safedeal.co.ke'],
-                )
-                mpesa_logger.info(message)
-
-                transaction_found = True  # So it doesn’t send unmatched warning
+                    transaction_found = True
             except CustomUser.DoesNotExist:
                 mpesa_logger.warning(f"National ID {account_reference} not found for premium activation.")
         else:
@@ -1158,8 +1228,33 @@ def transaction_success(request, transaction_reference):
 
 # # Admin views for handling disputes
 
+
 from django.contrib.admin.views.decorators import staff_member_required
 
+@staff_member_required
+def admin_premium_subscriptions(request):
+    pending_subs = PremiumSubscription.objects.filter(status='pending').select_related('user')
+
+    return render(request, 'admin/pending_premium_subscriptions.html', {
+        'pending_subs': pending_subs,
+        'current_time': now(),
+    })
+    
+@staff_member_required
+def approve_premium(request, sub_id):
+    sub = get_object_or_404(PremiumSubscription, pk=sub_id, status='pending')
+    start_date = timezone.now()
+    sub.status = 'active'
+    sub.user.is_premium = True    
+    sub.premium_start_date = start_date
+    sub.expiry_date = start_date + timedelta(days=30)
+    sub.user.save()
+    sub.save()
+    messages.success(request, f"{sub.user.get_full_name()} has been approved as a premium user.")
+    return redirect('admin_premium_subscriptions')
+
+
+@staff_member_required
 def admin_close_dispute(request, transaction_id):
     dispute = get_object_or_404(TransactionDispute, transaction__id=transaction_id)
     transaction = dispute.transaction
@@ -1261,6 +1356,7 @@ def admin_dashboard(request):
         messages.warning(request, "Please complete your profile before posting an item.")
         return redirect('update_profile')
     disputes = TransactionDispute.objects.all().order_by('-created_at')
+    items = Item.objects.all().order_by('-created_at')
     open_disputes = disputes.filter(status='open')
     closed_disputes = disputes.filter(status='closed')
     all_transactions = Transaction.objects.all().order_by('-created_at') 
@@ -1289,6 +1385,7 @@ def admin_dashboard(request):
         'users': account_update_pending,
         'unverified_users': unverified_users,
         'inactive_users': inactive_users,
+        'items': items,
     })
     
     

@@ -226,6 +226,15 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.username
 
+
+class PremiumSubscription(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    paid_date = models.DateTimeField(auto_now_add=True)
+    premium_start_date = models.DateTimeField(null=True, blank=True)
+    expiry_date = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=[('active', 'Active'), ('pending', 'Pending'), ('expired', 'Expired')], default='pending')
+
+
 # Transaction model to handle the transactions between buyers and sellers
 # This model will include fields for the buyer, seller, item, amount, status, and other relevant details.
 from django.contrib.auth import get_user_model
@@ -392,9 +401,3 @@ class SupportTicket(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.issue_type} ({self.created_at.date()})"
-
-class PremiumSubscription(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    start_date = models.DateTimeField(auto_now_add=True)
-    expiry_date = models.DateTimeField()
-    is_active = models.BooleanField(default=True)

@@ -7,14 +7,14 @@ from .models import PremiumSubscription
 
 @admin.register(PremiumSubscription)
 class PremiumSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'start_date', 'expiry_date', 'is_active')
-    list_filter = ('is_active',)
+    list_display = ('user', 'paid_date', 'premium_start_date', 'expiry_date', 'status')
+    list_filter = ('status',)
     search_fields = ('user__email', 'user__national_id', 'user__phone_number')
     actions = ['mark_as_active', 'mark_as_expired']
 
     def mark_as_active(self, request, queryset):
         for sub in queryset:
-            sub.is_active = True
+            sub.status = 'active'
             sub.user.is_premium = True
             sub.user.save()
             sub.save()
@@ -22,7 +22,7 @@ class PremiumSubscriptionAdmin(admin.ModelAdmin):
 
     def mark_as_expired(self, request, queryset):
         for sub in queryset:
-            sub.is_active = False
+            sub.status = 'expired'
             sub.user.is_premium = False
             sub.user.save()
             sub.save()
@@ -30,6 +30,7 @@ class PremiumSubscriptionAdmin(admin.ModelAdmin):
 
     mark_as_active.short_description = "Mark selected as Active"
     mark_as_expired.short_description = "Mark selected as Expired"
+
 
 @admin.register(SupportTicket)
 class SupportTicketAdmin(admin.ModelAdmin):
