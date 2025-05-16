@@ -99,8 +99,8 @@ def support(request):
 
 
 @login_required
-def confirm_delivery(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id)
+def confirm_delivery(request, transaction_reference):
+    transaction = get_object_or_404(Transaction, transaction_reference=transaction_reference)
 
     if request.user != transaction.buyer:
         return HttpResponseForbidden("You are not authorized to confirm this delivery.")
@@ -128,7 +128,7 @@ def confirm_delivery(request, transaction_id):
         else:
             messages.warning(request, "This transaction is not in a 'shipped' state.")
 
-    return redirect('transaction_detail', transaction_id=transaction.id)
+    return redirect('transaction_detail', transaction_reference=transaction.transaction_reference)
 
 @login_required
 def request_refund(request, transaction_id):
@@ -286,8 +286,7 @@ def raise_dispute(request, transaction_reference):
                 subject='Dispute Raised',
                 template_name='emails/dispute_raised.html',
                 context={
-                    'buyer': transaction.buyer,
-                    'item': transaction.item,
+                    'transaction': transaction,
                     'reason': form.cleaned_data['reason'],
                     'additional_details': form.cleaned_data['additional_details'],
                 },
@@ -325,7 +324,7 @@ def ship_item(request, transaction_reference):
                 template_name='emails/item_shipped.html',
                 context={
                     'buyer': transaction.buyer,
-                    'item': transaction.item.item_reference,
+                    'item': transaction.item,
                     'shipping_evidence': form.cleaned_data['shipping_evidence'],
                 },
                 recipient_list=[transaction.buyer.email],
@@ -1186,7 +1185,7 @@ def admin_close_dispute(request, transaction_id):
                 reason='Admin closed dispute, transaction restored to previous state'
             )
             send_custom_email(
-                subject='Dispute Raised',
+                subject='Dispute Closed by Admin',
                 template_name='emails/dispute_raised.html',
                 context={
                     'buyer': transaction.buyer,
@@ -1200,25 +1199,23 @@ def admin_close_dispute(request, transaction_id):
         return redirect('transaction_detail', transaction_id=transaction_id)
 
     return render(request, 'transactions/admin_close_dispute.html', {'dispute': dispute})
-
 @login_required
 def close_dispute(request, transaction_reference):
-    dispute = get_object_or_404(TransactionDispute, transaction_reference=transaction_reference)
+    dispute = get_object_or_404(TransactionDispute, transaction__transaction_reference=transaction_reference)
     transaction = dispute.transaction
 
     if request.method == 'POST':
-        notes = 'This dispute was closed by ',request.user
+        notes = f'This dispute was closed by {request.user}'
         dispute.status = 'closed'
         dispute.admin_notes = notes
         dispute.save()
 
         if transaction.status == 'disputed':
-            # Get the last status *before* it was marked as disputed
             previous_log = TransactionStatusLog.objects.filter(
                 transaction=transaction
             ).exclude(new_status='disputed').order_by('-timestamp').first()
 
-            restored_status = previous_log.new_status if previous_log else 'paid'  # default fallback
+            restored_status = previous_log.new_status if previous_log else 'paid'
 
             log_transaction_status_change(
                 transaction,
@@ -1227,20 +1224,21 @@ def close_dispute(request, transaction_reference):
                 reason='User closed the dispute, transaction restored to previous state'
             )
             send_custom_email(
-                subject='Dispute Raised',
-                template_name='emails/dispute_raised.html',
+                subject='Dispute Closed',
+                template_name='emails/dispute_closed.html',
                 context={
-                    'buyer': transaction.buyer,
+                    'seller': transaction.seller,
                     'item': transaction.item,
                     'reason': notes,
                 },
-                recipient_list=[transaction.buyer.email],
+                recipient_list=[transaction.seller.email],
             )
 
         messages.success(request, "Dispute closed successfully.")
         return redirect('dashboard')
 
     return render(request, 'core/close_dispute.html', {'dispute': dispute})
+
 
 
 from django.contrib.auth import get_user_model
