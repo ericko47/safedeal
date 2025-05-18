@@ -69,7 +69,8 @@ class Transaction(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('paid', 'Paid'),
-        ('shipped', 'Shipped'),
+        ('shipped', 'Shipped'),        
+        ('arrived', 'Arrived'), 
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
         ('disputed', 'Disputed'),
@@ -116,25 +117,37 @@ class Transaction(models.Model):
     )
     paid_at = models.DateTimeField(null=True, blank=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
-    funded_at = models.DateTimeField(null=True, blank=True)     
+    funded_at = models.DateTimeField(null=True, blank=True)  
+    arrived_at = models.DateTimeField(null=True, blank=True)   
     platform_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     seller_payout = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    is_funded = models.BooleanField(default=False)
+    is_funded = models.BooleanField(default=False)    
+    hold_payout = models.BooleanField(default=False)  # NEW FIELD
     checkout_request_id = models.CharField(max_length=100, null=True, blank=True)
 
     def can_buyer_request_refund(self):
-        return (
-            self.status == 'Paid' and
-            self.paid_at and
-            timezone.now() - self.paid_at > timezone.timedelta(hours=24)
-        )
+        if self.status == 'paid' and self.paid_at:
+            return timezone.now() - self.paid_at > timezone.timedelta(hours=24)
+        elif self.status == 'shipped' and self.shipped_at:
+            return timezone.now() - self.shipped_at > timezone.timedelta(hours=48)
+        return False
 
     def can_seller_request_funding(self):
-        return (
-            self.status == 'Shipped' and
-            self.shipped_at and
-            timezone.now() - self.shipped_at > timezone.timedelta(days=3)
-        )
+        if self.is_funded:
+            return False
+        if self.hold_payout:
+            return False
+        # Case 1: Buyer has confirmed delivery
+        if self.status == 'delivered':
+            return True
+
+        # Case 2: Buyer is delaying after item arrival
+        if self.status == 'arrived' and self.arrived_at:
+            return timezone.now() - self.arrived_at > timezone.timedelta(hours=48)
+
+        return False
+
+
 
     def __str__(self):
         return f"Transaction #{self.id} - {self.item.title} ({self.status})"

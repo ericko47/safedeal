@@ -1,0 +1,60 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<section class="max-w-7xl mx-auto p-6 bg-white shadow rounded-xl mt-6">
+    <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+        &larr; Go Back
+    </a>
+
+  <h2 class="text-2xl font-semibold mb-4">All Transactions</h2>
+
+  <form method="get" class="mb-4 flex gap-2">
+    <input type="text" name="q" value="{{ search_query }}" placeholder="Search by reference"
+           class="border border-gray-300 rounded px-3 py-2 flex-grow">
+    <button class="bg-blue-600 text-white px-4 py-2 rounded">Search</button>
+  </form>
+
+  <table class="min-w-full text-sm border">
+    <thead class="bg-gray-100 text-left">
+      <tr>
+        <th class="px-3 py-2">Reference</th>
+        <th>Item</th>
+        <th>Buyer</th>
+        <th>Seller</th>
+        <th>Status</th>
+        <th>Amount</th>
+        <th>Funded?</th>
+        <th>Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for tx in page_obj %}
+      <tr class="border-t">
+        <td class="px-3 py-2">{{ tx.transaction_reference }}</td>
+        <td>{{ tx.item.title|truncatechars:25 }}</td>
+        <td>{{ tx.buyer.username }}</td>
+        <td>{{ tx.seller.username }}</td>
+        <td>{{ tx.status }}</td>
+        <td>KES {{ tx.amount }}</td>
+        <td>{% if tx.is_funded %}✅{% else %}❌{% endif %}</td>
+        <td>{{ tx.created_at|date:"Y-m-d H:i" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="text-center py-4">No transactions found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  <div class="mt-4 flex justify-center">
+    {% if page_obj.has_previous %}
+      <a href="?q={{ search_query }}&page={{ page_obj.previous_page_number }}"
+         class="px-3 py-1 border rounded-l bg-gray-100">Prev</a>
+    {% endif %}
+    <span class="px-4 py-1 border-t border-b">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a href="?q={{ search_query }}&page={{ page_obj.next_page_number }}"
+         class="px-3 py-1 border rounded-r bg-gray-100">Next</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

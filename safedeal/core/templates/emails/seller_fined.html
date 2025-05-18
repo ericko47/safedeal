@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Delivery Confirmed</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      color: #333333;
+      background-color: #f7f7f7;
+      padding: 20px;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .header {
+      color: #1d4ed8;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .content {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #777777;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">Fine Applied</div>
+    <div class="content">
+      <p>Hello {{ transaction.seller.username }},</p>
+
+      <p>Because “{{ transaction.item.title }}” was not marked “Arrived” within 24 h of shipping, a 2 % late-shipment fine (KES {{ fine }}) has been applied. </p> 
+       <p>Your new payout: KES {{ payout }}.</p> 
+     
+
+      <p>You are requested to work within safedeal timeline to avoid more fines</p>
+
+      <p>Thank you for using SafeDeal.</p>
+    </div>
+
+    <div class="footer">
+      &copy; {{ year }} SafeDeal. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

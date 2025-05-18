@@ -8,12 +8,12 @@
   </a>
   <div>
     <nav class="flex flex-wrap gap-4 mt-4 text-sm">
-      <a href="{% url 'admin_premium_subscriptions' %}" class="text-blue-600 hover:underline"> Manage Premium</a>
-      <a href="{% url 'reported_items' %}" class="text-blue-600 hover:underline"> Reported Items</a>
-      <a href="{% url 'view_wishlist' %}" class="text-blue-600 hover:underline">Refund requests</a>
+      <a href="{% url 'admin_premium_subscriptions' %}" class="text-blue-600 hover:underline font-semibold"> Manage Premium</a>
+      <a href="{% url 'reported_items' %}" class="text-blue-600 hover:underline font-semibold"> Reported Items</a>
+      <a href="{% url 'fundable_transactions' %}" class="text-blue-600 hover:underline font-semibold">Fundable transactions</a>
       <a href="{% url 'support' %}" class="text-blue-600 hover:underline font-semibold">Seller funding</a>
       <a href="{% url 'support' %}" class="text-blue-600 hover:underline font-semibold">Transaction statements</a>
-      <a href="{% url 'support' %}" class="text-blue-600 hover:underline font-semibold">User support</a>
+      <a href="{% url 'manage_support_tickets' %}" class="text-blue-600 hover:underline font-semibold">User support</a>
     </nav>
   </div><br>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">   
@@ -74,7 +74,7 @@
   <!-- Recent Transactions -->
   <div class="bg-white p-4 shadow rounded-xl mb-10">
     <h2 class="text-xl font-semibold mb-4">Recent Transactions</h2>
-    <a href="{% url 'admin_user_list' %}" class="text-blue-600 hover:underline">View All transactions</a>
+    <a href="{% url 'all_transactions_admin' %}" class="text-blue-600 hover:underline">View All transactions</a>
     <div class="overflow-x-auto">
       <table class="min-w-full text-sm text-left text-gray-600">
         <thead class="bg-gray-100 font-medium text-gray-700">

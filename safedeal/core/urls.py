@@ -52,10 +52,17 @@ urlpatterns = [
     path('transactions/<str:transaction_reference>/close-dispute/', views.close_dispute, name='close_dispute'),
     path('transactions/<str:transaction_reference>/request_refund/', views.request_refund, name='request_refund'),
     path('transactions/<str:transaction_reference>/request_funding/', views.request_funding, name='request_funding'),
+    path('transactions/<str:transaction_reference>/mark-arrived/', views.mark_arrived, name='mark_arrived'),
 
+
+    path("transactions/", views.all_transactions_admin, name="all_transactions_admin"),
     path('admin/premium-subscriptions/<int:sub_id>/approve/', views.approve_premium, name='approve_premium'),
     path('premium-subscriptions/', views.admin_premium_subscriptions, name='admin_premium_subscriptions'),
-    path('reported_items_view/', views.reported_items_view, name='reported_items'),
+    path('reported_items/', views.reported_items_view, name='reported_items'),
+    path('manage_support_tickets/', views.manage_support_tickets, name='manage_support_tickets'),
+    path("fundable-transactions/", views.fundable_transactions, name="fundable_transactions"),
+    path("fund-seller/<int:transaction_id>/", views.fund_seller, name="fund_seller"),
+    path("toggle-hold/<int:transaction_id>/", views.toggle_hold_payout, name="toggle_hold_payout"),
 
     
     path('generate_transaction_out/', views.generate_transaction_out, name='generate_transaction_out'),

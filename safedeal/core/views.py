@@ -27,6 +27,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .models import PremiumSubscription
 
+from django.contrib.admin.views.decorators import staff_member_required
 from .utils import check_premium_eligibility 
 
 @login_required
@@ -145,6 +146,26 @@ def confirm_delivery(request, transaction_reference):
 
     return redirect('transaction_detail', transaction_reference=transaction.transaction_reference)
 
+@staff_member_required
+def fundable_transactions(request):
+    transactions = Transaction.objects.filter(
+        status="delivered",
+        is_funded=False,
+        hold_payout=False
+    ).order_by("-created_at")
+
+    return render(request, "admin/fundable_transactions.html", {
+        "transactions": transactions
+    })
+@staff_member_required
+def toggle_hold_payout(request, transaction_id):
+    tx = get_object_or_404(Transaction, id=transaction_id)
+    tx.hold_payout = not tx.hold_payout
+    tx.save(update_fields=["hold_payout"])
+
+    state = "paused" if tx.hold_payout else "resumed"
+    messages.info(request, f"Payout {state} for TX #{tx.transaction_reference}.")
+    return redirect("fundable_transactions")
 @login_required
 def request_refund(request, transaction_id):
     transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
@@ -164,7 +185,7 @@ def request_refund(request, transaction_id):
         )
         response = initiate_b2c_payment(
             phone_number=transaction.seller.phone_number,
-            amount=transaction.seller_payout,
+            amount=transaction.seller_payout, # Adjust as needed.....
             transaction_id=transaction.id
         )
 
@@ -174,62 +195,90 @@ def request_refund(request, transaction_id):
 
     return redirect('transaction_detail', transaction_id=transaction.id)
 
-@login_required
-def fund_seller(transaction):
-    if transaction.is_funded:
-        return False, "Already funded."
 
-    if not transaction.shipped_at or (timezone.now() - transaction.shipped_at).days < 1:
-        return False, "Too early to fund."
+@staff_member_required
+def fund_seller(request, transaction_id):
+    tx = get_object_or_404(Transaction, id=transaction_id)
 
-    # Calculate platform fee and seller payout
-    fee, payout = calculate_fees(transaction.amount)
+    if not tx.status == "delivered" or tx.is_funded or tx.hold_payout:
+        messages.warning(request, "This transaction is not eligible for funding.")
+        return redirect("fundable_transactions")
+
+    fee, payout = calculate_fees(tx.amount)
     
     # Save these before sending payment
-    transaction.platform_fee = fee
-    transaction.seller_payout = payout
-
-    # Send M-PESA payment
+    tx.platform_fee = fee
+    tx.seller_payout = payout
     response = initiate_b2c_payment(
-        phone_number=transaction.seller.phone_number,
-        amount=payout,
-        transaction_reference=transaction.transaction_reference
+        phone_number=tx.seller.phone_number,
+        amount=tx.seller_payout,
+        transaction_reference=tx.transaction_reference
     )
 
-    # Optional: handle B2C errors here
-    if 'errorCode' in response:
-        return False, f"Payment failed: {response.get('errorMessage')}"
+    if response.get("ResultCode") == 0:
+        tx.is_funded = True
+        tx.funded_at = timezone.now()
+        tx.save(update_fields=["is_funded", "funded_at"])
+        messages.success(request, f"Successfully funded seller for TX #{tx.transaction_reference}.")
+    else:
+        messages.error(request, f"Failed to fund: {response.get('ResultDesc')}")
 
-    # Finalize transaction state
-    transaction.is_funded = True
-    transaction.funded_at = timezone.now()
-    transaction.save()
-
-    return True, "Funding successful."
+    return redirect("fundable_transactions")
 
 @login_required
-def request_funding(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id, seller=request.user)
+def request_funding(request, transaction_reference):
+    tx = get_object_or_404(Transaction, transaction_reference=transaction_reference, seller=request.user)
 
-    if transaction.can_seller_request_funding():
-        transaction.status = 'Funding Requested'
-        transaction.save()
+    if not tx.can_seller_request_funding():
+        messages.error(request, "You’re not yet eligible to request payout.")
+        return redirect('transaction_detail', transaction_reference=transaction_reference)
 
-        send_custom_email(
-            subject='Funding Request from Seller',
-            template_name='emails/funding_requested.html',
-            context={
-                'transaction': transaction,
-                'year': timezone.now().year,
-            },
-            recipient_list=[transaction.buyer.email],
-        )
-
-        messages.success(request, "Funding request sent to buyer.")
+    # initiate B2C to seller
+    response = initiate_b2c_payment(
+        phone_number=tx.seller.phone_number,
+        amount=tx.seller_payout,
+        transaction_id=tx.id
+    )
+    if response["ResponseCode"] == "0":
+        tx.is_funded = True
+        tx.funded_at = timezone.now()
+        tx.save()
+        messages.success(request, "Payout requested. Funds will reach your M-PESA shortly.")
     else:
-        messages.error(request, "You are not eligible to request funding yet.")
+        messages.error(request, "Failed to initiate payout. Please contact support.")
 
-    return redirect('transaction_detail', transaction_id=transaction.id)
+    return redirect('transaction_detail', transaction_reference=transaction_reference)
+
+
+@login_required
+def mark_arrived(request, transaction_reference):
+    transaction = get_object_or_404(Transaction, transaction_reference=transaction_reference)
+
+    if request.user != transaction.seller and request.user != transaction.delivery_agent.user:
+        return HttpResponseForbidden("You are not authorized to mark this item as arrived.")
+
+    if transaction.status != 'shipped':
+        messages.warning(request, "This transaction is not in a 'shipped' state.")
+        return redirect('transaction_detail', transaction_reference=transaction_reference)
+
+    transaction.status = 'arrived'
+    transaction.arrived_at = timezone.now()
+    transaction.save()
+
+    messages.success(request, "Item marked as arrived. Buyer has 48h to confirm delivery.")
+
+    send_custom_email(
+        subject='Item Arrival Notification',
+        template_name='emails/item_arrived.html',
+        context={
+            'transaction': transaction,
+            'year': timezone.now().year,
+        },
+        recipient_list=[transaction.buyer.email],
+    )
+
+    return redirect('transaction_detail', transaction_reference=transaction_reference)
+
 
 
 @login_required
@@ -1239,6 +1288,45 @@ def admin_premium_subscriptions(request):
         'pending_subs': pending_subs,
         'current_time': now(),
     })
+
+
+def is_admin(user):
+    return user.is_staff or user.is_superuser
+
+@login_required
+@user_passes_test(is_admin)
+def manage_support_tickets(request):
+    filter_status = request.GET.get('status', 'open')
+    filter_type = request.GET.get('issue_type', '')
+
+    tickets = SupportTicket.objects.all().order_by('-created_at')
+
+    if filter_status == 'open':
+        tickets = tickets.filter(is_resolved=False)
+    elif filter_status == 'resolved':
+        tickets = tickets.filter(is_resolved=True)
+
+    if filter_type:
+        tickets = tickets.filter(issue_type=filter_type)
+
+    if request.method == 'POST':
+        ticket_id = request.POST.get('ticket_id')
+        action = request.POST.get('action')
+        ticket = get_object_or_404(SupportTicket, id=ticket_id)
+
+        if action == 'resolve':
+            ticket.is_resolved = True
+            ticket.save()
+            messages.success(request, f"Ticket #{ticket.id} marked as resolved.")
+            return redirect('manage_support_tickets')
+
+    return render(request, 'admin/support_tickets.html', {
+        'tickets': tickets,
+        'filter_status': filter_status,
+        'filter_type': filter_type,
+        'issue_choices': SupportTicket.ISSUE_CHOICES,
+    })
+
     
 @staff_member_required
 def approve_premium(request, sub_id):
@@ -1252,6 +1340,25 @@ def approve_premium(request, sub_id):
     sub.save()
     messages.success(request, f"{sub.user.get_full_name()} has been approved as a premium user.")
     return redirect('admin_premium_subscriptions')
+
+
+from django.core.paginator import Paginator
+
+@staff_member_required
+def all_transactions_admin(request):
+    q = request.GET.get("q", "").strip()
+
+    tx_qs = Transaction.objects.all().select_related("buyer", "seller", "item").order_by("-created_at")
+    if q:
+        tx_qs = tx_qs.filter(transaction_reference__icontains=q)
+
+    paginator = Paginator(tx_qs, 30)          # 30 rows per page
+    page_obj  = paginator.get_page(request.GET.get("page"))
+
+    return render(request, "admin/all_transactions.html", {
+        "page_obj": page_obj,
+        "search_query": q,
+    })
 
 
 @staff_member_required
