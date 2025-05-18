@@ -262,7 +262,7 @@ class SecureTransaction(models.Model):
         ('shipped', 'Shipped'),
         ('delivered', 'Delivered'),
         ('disputed', 'Disputed'),
-        ('completed', 'Completed'),
+        ('arrived', 'arrived'),
         ('cancelled', 'Cancelled'),
     ]
 

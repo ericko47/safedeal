@@ -480,10 +480,12 @@ def dashboard_view(request):
     user = request.user
     buyer_transactions = Transaction.objects.filter(buyer=user).order_by('-created_at')[:10]
     seller_transactions = Transaction.objects.filter(seller=user).order_by('-created_at')[:10]
+    seller_securetransactions = SecureTransaction.objects.filter(seller=user).order_by('-created_at')[:10]
     
     return render(request, 'core/dashboard.html', {
         'buyer_transactions': buyer_transactions,
         'seller_transactions': seller_transactions,
+        'seller_securetransactions': seller_securetransactions,
     })
 @login_required
 def all_purchases_view(request):
@@ -787,12 +789,6 @@ def about_view(request):
 
 
 
-
-
-
-
-
-
 #hanling guest transaction
 @login_required
 def generate_transaction_out(request):
@@ -810,9 +806,16 @@ def generate_transaction_out(request):
      
 
 def external_transaction_detail(request, transaction_id):
-    transaction = get_object_or_404(SecureTransaction, id=transaction_id)
+    tx = get_object_or_404(SecureTransaction, id=transaction_id)
+    timeline = [
+        ("Paid",      tx.transaction_status in ["paid", "shipped", "delivered", "arrived"]),
+        ("Shipped",   tx.transaction_status in ["shipped", "delivered", "arrived"]),
+        ("Arrived", tx.transaction_status in ["delivered", "arrived"]),
+        ("Delivered", tx.transaction_status == "delivered"),
+    ]
     return render(request, 'core/external_transaction_detail.html', {
-        'transaction': transaction
+        'transaction': tx,
+        "timeline": timeline
     })
 
 
@@ -824,7 +827,7 @@ def initiate_payment(request, transaction_id):
         if not transaction.mpesa_reference:
             transaction.mpesa_reference = f"SD-{uuid.uuid4().hex[:10]}"
             transaction.save()
-
+        
         phone = transaction.buyer_phone
         amount = transaction.amount
 
@@ -833,7 +836,7 @@ def initiate_payment(request, transaction_id):
             phone_number=phone,
             amount=amount,
             account_reference=transaction.mpesa_reference,  # Pass here
-            transaction_desc=f"Payment for {transaction.item_reference}"
+            transaction_desc=f"Payment for {transaction.mpesa_reference}"
         )
 
         print("STK Push Response:", response)  # Optional debug
@@ -853,36 +856,111 @@ def create_secure_transaction(request):
     user = request.user
 
     if not user.is_verified:
-        messages.warning(request, "Your account awaits verification. Check your email for admin comments or you can contact support.")
+        messages.warning(
+            request,
+            "Your account awaits verification. Check your email for admin comments or contact support."
+        )
         return redirect('dashboard')
 
     if request.method == 'POST':
         form = SecureTransactionForm(request.POST)
+
         if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.seller = user
+            tx = form.save(commit=False)
+            tx.seller = user
 
             item_ref = form.cleaned_data.get('item_reference')
             if item_ref:
                 try:
-                    # Make sure the item belongs to the current user
                     item = Item.objects.get(item_reference=item_ref, seller=user)
-                    transaction.item_name = item.title
-                    transaction.amount = item.price
-                    transaction.description = item.description
-                except Item.DoesNotExist:
-                    form.add_error('item_reference', 'Invalid Item ID or this item does not belong to you.')
 
-            transaction.save()
-            return redirect('transaction_success', transaction_id=transaction.id)
+                    if not item.is_available:
+                        form.add_error('item_reference', 'This item is no longer available.')
+                        raise ValueError
+
+                    tx.item_name = item.title
+                    tx.amount = item.price
+                    tx.description = item.description
+
+                except Item.DoesNotExist:
+                    form.add_error('item_reference', 'Invalid reference—item not found for your account.')
+                    # fall through to re-render form
+                except ValueError:
+                    # already added a form error above
+                    pass
+
+            # Only save if no field errors were added
+            if not form.errors:
+                tx.save()
+                messages.success(request, 'Transaction created successfully!')
+                return redirect('transaction_success', transaction_id=tx.id)
+
     else:
-        initial_data = {}
+        # GET
+        initial = {}
         item_ref = request.GET.get('item_reference')
         if item_ref:
-            initial_data['item_reference'] = item_ref
-        form = SecureTransactionForm(initial=initial_data)
+            initial['item_reference'] = item_ref
+        form = SecureTransactionForm(initial=initial)
 
     return render(request, 'core/create_transaction.html', {'form': form})
+# core/views.py  (or wherever your view lives)
+import io, base64, qrcode
+from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
+
+@login_required
+def transaction_success(request, transaction_id):
+    transaction = get_object_or_404(
+        SecureTransaction,
+        id=transaction_id,
+        seller=request.user
+    )
+
+    secure_link = request.build_absolute_uri(transaction.get_secure_link())
+
+    # --- 1. generate QR code ---
+    qr = qrcode.make(secure_link)
+    buffer = io.BytesIO()
+    qr.save(buffer, format="PNG")
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+    # --- 2. email buyer with link + QR ---
+    subject = "Secure Purchase Link for your order via SafeDeal"
+    context = {
+        "buyer_name": transaction.buyer_name or "there",
+        "seller": request.user,
+        "item_name": transaction.item_name or "your item",
+        "amount": transaction.amount,
+        "secure_link": secure_link,
+    }
+
+    html_body = render_to_string(
+        "emails/secure_link_to_buyer.html", context
+    )
+    text_body = render_to_string(
+        "emails/secure_link_to_buyer.txt", context
+    )
+
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[transaction.buyer_email],
+    )
+    email.attach_alternative(html_body, "text/html")
+    email.send(fail_silently=True)   # swap to False in staging/dev
+
+    # --- 3. render success page for seller ---
+    return render(
+        request,
+        "core/transaction_success.html",
+        {
+            "transaction": transaction,
+            "secure_link": secure_link,
+            "qr_code": qr_base64,
+        },
+    )
 
 
 @login_required
@@ -1249,29 +1327,6 @@ def check_payment_status(request, transaction_id):
 
     except Transaction.DoesNotExist:
         return JsonResponse({'status': 'not_found'}, status=404)
-
-
-
-import qrcode
-import io
-import base64
-@login_required
-def transaction_success(request, transaction_reference):
-    transaction = SecureTransaction.objects.get(transaction_reference=transaction_reference, seller=request.user)
-    secure_link = request.build_absolute_uri(transaction.get_secure_link())
-
-    # Generate QR code image in memory
-    qr = qrcode.make(secure_link)
-    buffer = io.BytesIO()
-    qr.save(buffer, format='PNG')
-    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
-
-    return render(request, 'core/transaction_success.html', {
-        'transaction': transaction,
-        'secure_link': secure_link,
-        'qr_code': qr_base64,
-    })
-
 
 
 

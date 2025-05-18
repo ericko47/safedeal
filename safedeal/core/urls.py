@@ -14,7 +14,8 @@ urlpatterns = [
     path('transactions/purchases/', views.all_purchases_view, name='all_purchases'),
     path('transactions/sales/', views.all_sales_view, name='all_sales'),
     path('profile/', views.profile_view, name='profile'),
-    path('browse/', views.browse_view, name='browse'),
+    path('browse/', views.browse_view, name='browse'),    
+    path("i/<str:item_reference>/", views.item_detail, name="item_shortlink"),
     path('item/<str:item_reference>/', views.item_detail, name='item_detail'),
     path('escrow/', views.escrow_view, name='escrow'),
     path('post_item/', views.post_item_view, name='post_item'),
@@ -68,7 +69,7 @@ urlpatterns = [
     path('generate_transaction_out/', views.generate_transaction_out, name='generate_transaction_out'),
     
     path('create-transaction/', views.create_secure_transaction, name='create_secure_transaction'),
-    path('transaction-success/<uuid:transaction_reference>/', views.transaction_success, name='transaction_success'),    
+    path('transaction-success/<uuid:transaction_id>/', views.transaction_success, name='transaction_success'),    
     path('secure-transaction/<uuid:transaction_id>/', views.external_transaction_detail, name='external_transaction_detail'),
     path('secure-transaction/<uuid:transaction_id>/confirm/', views.initiate_payment, name='initiate_payment'),
     

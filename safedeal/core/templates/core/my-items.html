@@ -22,13 +22,26 @@
                     {% endif %}
                     
                     <h3 class="text-lg font-semibold">{{ item.title }}</h3>
-                                        <!-- Item Reference Code -->
                     <div class="mt-2 flex items-center space-x-2">
                         <p class="text-sm text-gray-700"><strong>Item Code:</strong> <span id="item-code">{{ item.item_reference }}</span></p>
                         <button onclick="copyItemCode()" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded">
                         Copy Code
                         </button>
                     </div>
+                    <div class="mt-2 flex items-center space-x-2">
+                        <p class="text-sm text-gray-600">
+                            <strong>Shareable link:</strong> You can post this link on social media when advertising your item.  
+                            <span id="item-link">
+                                <code class="bg-gray-100 px-1 rounded">
+                                    {{ request.build_absolute_uri|cut:request.path }}/i/{{ item.item_reference }}
+                                </code>
+                            </span>
+                        </p>
+                        <button onclick="copyItemlink()" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded">
+                        Copy Link
+                        </button>
+                    </div>
+                   
                     
                     <script>
                         function copyItemCode() {
@@ -39,6 +52,18 @@
                             alert("Failed to copy item code.");
                         });
                         }
+
+                        function copyItemlink() {
+                        const link = document.getElementById("item-link").textContent;
+                        navigator.clipboard.writeText(link).then(function () {
+                            alert("Item code link to clipboard: " + link);
+                        }, function () {
+                            alert("Failed to copy item code.");
+                        });
+                        }
+                    </script>
+                    <script>
+                        
                     </script>
   
                     <p class="text-gray-600">Ksh {{ item.price }}</p>

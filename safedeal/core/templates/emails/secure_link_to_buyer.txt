@@ -1,0 +1,14 @@
+Hi {{ buyer_name }},
+
+{{ seller.get_full_name|default:seller.username }} created a secure SafeDeal
+checkout link for "{{ item_name }}" (KES {{ amount }}).
+
+Open the link below to pay safely via M-PESA:
+
+{{ secure_link }}
+
+Your payment remains in escrow until the seller delivers.
+
+Need help? Contact us at support@safedeal.co.ke.
+
+– SafeDeal Team
