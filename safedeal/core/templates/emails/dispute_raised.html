@@ -55,24 +55,27 @@
     <div class="container">
         <div class="header">
             <img src="cid:safedeal_logo" alt="SafeDeal Logo" class="logo">
-            <div class="title">Dispute Raised on Transaction #{{ transaction.id }}</div>
+            <div class="title">Dispute Raised on Transaction #{{ item.transaction_reference }}</div>
         </div>
 
         <div class="content">
-            Hello {{ seller.first_name }},<br><br>
+            Hello {{ transaction.seller.first_name }},<br><br>
 
-            A dispute has been raised by the buyer ({{ buyer.get_full_name }}) regarding the transaction for <strong>{{ transaction.item.title }}</strong>.<br><br>
+            A dispute has been raised by the buyer ({{ transaction.buyer.get_full_name }}) regarding the transaction for Item ID <strong>{{transaction.item.item_reference}}</strong> Name: <strong>{{ transaction.item.title }}</strong>.<br><br>
 
             <strong>Reason for Dispute:</strong><br>
             <blockquote style="border-left: 4px solid #e53e3e; padding-left: 10px; color: #c53030;">
-                {{ dispute.reason }}
+                {{ reason }}
             </blockquote>
 
             Please log in to your SafeDeal account to respond to the dispute promptly.
-
-            <a href="{{ dispute_link }}" class="button">View Dispute</a>
         </div>
+        <div class="content">
+            If you have any questions, feel free to reach out to our support team.<br><br>
 
+            Thank you for using SafeDeal!<br>
+            The SafeDeal Team
+        </div>
         <div class="footer">
             &copy; {{ year }} SafeDeal. All rights reserved.<br>
             This is an automated message — please do not reply directly.

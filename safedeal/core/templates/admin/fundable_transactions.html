@@ -1,0 +1,46 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8">
+    <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+        &larr; Go Back
+    </a>
+    <h1 class="text-3xl font-bold text-blue-600 mb-6">Fundable Transactions</h1>
+    <h2 class="text-xl font-semibold mb-4">Delivered Transactions Awaiting Funding</h2>
+
+    <table class="table-auto w-full border">
+        <thead>
+            <tr class="bg-gray-100">
+                <th class="px-3 py-2">#</th>
+                <th>Item</th>
+                <th>Seller</th>
+                <th>Amount</th>
+                <th>Platform Fee</th>
+                <th>Status</th>
+                <th>Hold?</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tx in transactions %}
+            <tr class="border-t">
+                <td class="px-3 py-2">{{ tx.transaction_reference }}</td>
+                <td>{{ tx.item.title }}</td>
+                <td>{{ tx.seller.username }}</td>
+                <td>KES {{ tx.amount }}</td>
+                <td>KES {{ tx.platform_fee }}</td>
+                <td>{{ tx.status }}</td>
+                <td>{{ tx.hold_payout }}</td>
+                <td>
+                    <a href="{% url 'fund_seller' tx.id %}" class="text-green-600 hover:underline">Fund</a> |
+                    <a href="{% url 'toggle_hold_payout' tx.id %}" class="text-yellow-600 hover:underline">
+                        {% if tx.hold_payout %}Resume{% else %}Hold{% endif %}
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-center py-4">No transactions to fund.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <body style="font-family: Arial, sans-serif; color: #333;">
+    <h2 style="color:#1e88e5;">Complete your purchase safely through SafeDeal</h2>
+
+    <p>Hi {{ buyer_name }},</p>
+
+    <p>
+      <strong>{{ seller.get_full_name|default:seller.username }}</strong>
+      (the seller) just created a secure checkout link for
+      <em>{{ item_name }}</em> worth <strong>KES {{ amount }}</strong>.
+    </p>
+
+    <p>To proceed:</p>
+    <ol>
+      <li>Click the button or scan the QR code to open the secure page.</li>
+      <li>Review the item &amp; amount.</li>
+      <li>Use the <strong>“Buy Now”</strong> button to pay via M-PESA.</li>
+      <li>Your money stays in escrow until the item is delivered.</li>
+    </ol>
+    <p><strong>Note:</strong> You will be visiting this link to see/update the status of this transaction.</p>
+    <p style="text-align:center; margin: 24px 0;">
+      <a href="{{ secure_link }}"
+         style="background:#1e88e5; color:#fff; padding:12px 24px;
+                text-decoration:none; border-radius:4px;">Open Secure Link</a>
+    </p>
+
+    <p style="text-align:center;">
+      or scan:<br>
+      <img src="cid:qr_code" width="160" height="160" alt="QR code"/>
+    </p>
+
+    <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
+    <small>
+      Need help? Reply to this email or visit
+      <a href="https://safedeal.co.ke/support">safedeal.co.ke/support</a>.
+    </small>
+  </body>
+</html>

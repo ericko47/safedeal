@@ -27,20 +27,35 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .models import PremiumSubscription
 
+from django.contrib.admin.views.decorators import staff_member_required
 from .utils import check_premium_eligibility 
 
 @login_required
 def upgrade_to_premium(request):
     user = request.user
-    eligibility = check_premium_eligibility(user)
+    
+    required_fields = [
+    user.national_id,
+    user.phone_number,
+    user.current_location,
+    user.permanent_address,
+    user.account_type,
+    user.profile_picture,
+    user.national_id_picture,
+    ]
 
+    if not all(required_fields):
+        messages.warning(request, "Please complete your profile before uprading.")
+        return redirect('update_profile') 
+    eligibility = check_premium_eligibility(user)
+    status = PremiumSubscription.objects.filter(user=user).first()
     if request.method == 'POST':
         if not user.national_id:
             messages.error(request, "You must update your national ID before upgrading.")
             return redirect('update_profile')
 
         phone = user.phone_number
-        amount = 699
+        amount = 499
         account_reference = user.national_id
         transaction_desc = f"Premium Upgrade for {user.get_full_name()}"
 
@@ -59,7 +74,8 @@ def upgrade_to_premium(request):
         return redirect('upgrade_to_premium')
 
     return render(request, 'core/upgrade_to_premium.html', {
-        "eligibility": eligibility
+        "eligibility": eligibility,
+        "status": status,
     })
 
 @login_required
@@ -99,8 +115,8 @@ def support(request):
 
 
 @login_required
-def confirm_delivery(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id)
+def confirm_delivery(request, transaction_reference):
+    transaction = get_object_or_404(Transaction, transaction_reference=transaction_reference)
 
     if request.user != transaction.buyer:
         return HttpResponseForbidden("You are not authorized to confirm this delivery.")
@@ -128,8 +144,28 @@ def confirm_delivery(request, transaction_id):
         else:
             messages.warning(request, "This transaction is not in a 'shipped' state.")
 
-    return redirect('transaction_detail', transaction_id=transaction.id)
+    return redirect('transaction_detail', transaction_reference=transaction.transaction_reference)
 
+@staff_member_required
+def fundable_transactions(request):
+    transactions = Transaction.objects.filter(
+        status="delivered",
+        is_funded=False,
+        hold_payout=False
+    ).order_by("-created_at")
+
+    return render(request, "admin/fundable_transactions.html", {
+        "transactions": transactions
+    })
+@staff_member_required
+def toggle_hold_payout(request, transaction_id):
+    tx = get_object_or_404(Transaction, id=transaction_id)
+    tx.hold_payout = not tx.hold_payout
+    tx.save(update_fields=["hold_payout"])
+
+    state = "paused" if tx.hold_payout else "resumed"
+    messages.info(request, f"Payout {state} for TX #{tx.transaction_reference}.")
+    return redirect("fundable_transactions")
 @login_required
 def request_refund(request, transaction_id):
     transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
@@ -149,7 +185,7 @@ def request_refund(request, transaction_id):
         )
         response = initiate_b2c_payment(
             phone_number=transaction.seller.phone_number,
-            amount=transaction.seller_payout,
+            amount=transaction.seller_payout, # Adjust as needed.....
             transaction_id=transaction.id
         )
 
@@ -159,62 +195,90 @@ def request_refund(request, transaction_id):
 
     return redirect('transaction_detail', transaction_id=transaction.id)
 
-@login_required
-def fund_seller(transaction):
-    if transaction.is_funded:
-        return False, "Already funded."
 
-    if not transaction.shipped_at or (timezone.now() - transaction.shipped_at).days < 1:
-        return False, "Too early to fund."
+@staff_member_required
+def fund_seller(request, transaction_id):
+    tx = get_object_or_404(Transaction, id=transaction_id)
 
-    # Calculate platform fee and seller payout
-    fee, payout = calculate_fees(transaction.amount)
+    if not tx.status == "delivered" or tx.is_funded or tx.hold_payout:
+        messages.warning(request, "This transaction is not eligible for funding.")
+        return redirect("fundable_transactions")
+
+    fee, payout = calculate_fees(tx.amount)
     
     # Save these before sending payment
-    transaction.platform_fee = fee
-    transaction.seller_payout = payout
-
-    # Send M-PESA payment
+    tx.platform_fee = fee
+    tx.seller_payout = payout
     response = initiate_b2c_payment(
-        phone_number=transaction.seller.phone_number,
-        amount=payout,
-        transaction_reference=transaction.transaction_reference
+        phone_number=tx.seller.phone_number,
+        amount=tx.seller_payout,
+        transaction_reference=tx.transaction_reference
     )
 
-    # Optional: handle B2C errors here
-    if 'errorCode' in response:
-        return False, f"Payment failed: {response.get('errorMessage')}"
+    if response.get("ResultCode") == 0:
+        tx.is_funded = True
+        tx.funded_at = timezone.now()
+        tx.save(update_fields=["is_funded", "funded_at"])
+        messages.success(request, f"Successfully funded seller for TX #{tx.transaction_reference}.")
+    else:
+        messages.error(request, f"Failed to fund: {response.get('ResultDesc')}")
 
-    # Finalize transaction state
-    transaction.is_funded = True
-    transaction.funded_at = timezone.now()
-    transaction.save()
-
-    return True, "Funding successful."
+    return redirect("fundable_transactions")
 
 @login_required
-def request_funding(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id, seller=request.user)
+def request_funding(request, transaction_reference):
+    tx = get_object_or_404(Transaction, transaction_reference=transaction_reference, seller=request.user)
 
-    if transaction.can_seller_request_funding():
-        transaction.status = 'Funding Requested'
-        transaction.save()
+    if not tx.can_seller_request_funding():
+        messages.error(request, "You’re not yet eligible to request payout.")
+        return redirect('transaction_detail', transaction_reference=transaction_reference)
 
-        send_custom_email(
-            subject='Funding Request from Seller',
-            template_name='emails/funding_requested.html',
-            context={
-                'transaction': transaction,
-                'year': timezone.now().year,
-            },
-            recipient_list=[transaction.buyer.email],
-        )
-
-        messages.success(request, "Funding request sent to buyer.")
+    # initiate B2C to seller
+    response = initiate_b2c_payment(
+        phone_number=tx.seller.phone_number,
+        amount=tx.seller_payout,
+        transaction_id=tx.id
+    )
+    if response["ResponseCode"] == "0":
+        tx.is_funded = True
+        tx.funded_at = timezone.now()
+        tx.save()
+        messages.success(request, "Payout requested. Funds will reach your M-PESA shortly.")
     else:
-        messages.error(request, "You are not eligible to request funding yet.")
+        messages.error(request, "Failed to initiate payout. Please contact support.")
 
-    return redirect('transaction_detail', transaction_id=transaction.id)
+    return redirect('transaction_detail', transaction_reference=transaction_reference)
+
+
+@login_required
+def mark_arrived(request, transaction_reference):
+    transaction = get_object_or_404(Transaction, transaction_reference=transaction_reference)
+
+    if request.user != transaction.seller and request.user != transaction.delivery_agent.user:
+        return HttpResponseForbidden("You are not authorized to mark this item as arrived.")
+
+    if transaction.status != 'shipped':
+        messages.warning(request, "This transaction is not in a 'shipped' state.")
+        return redirect('transaction_detail', transaction_reference=transaction_reference)
+
+    transaction.status = 'arrived'
+    transaction.arrived_at = timezone.now()
+    transaction.save()
+
+    messages.success(request, "Item marked as arrived. Buyer has 48h to confirm delivery.")
+
+    send_custom_email(
+        subject='Item Arrival Notification',
+        template_name='emails/item_arrived.html',
+        context={
+            'transaction': transaction,
+            'year': timezone.now().year,
+        },
+        recipient_list=[transaction.buyer.email],
+    )
+
+    return redirect('transaction_detail', transaction_reference=transaction_reference)
+
 
 
 @login_required
@@ -286,8 +350,7 @@ def raise_dispute(request, transaction_reference):
                 subject='Dispute Raised',
                 template_name='emails/dispute_raised.html',
                 context={
-                    'buyer': transaction.buyer,
-                    'item': transaction.item,
+                    'transaction': transaction,
                     'reason': form.cleaned_data['reason'],
                     'additional_details': form.cleaned_data['additional_details'],
                 },
@@ -325,7 +388,7 @@ def ship_item(request, transaction_reference):
                 template_name='emails/item_shipped.html',
                 context={
                     'buyer': transaction.buyer,
-                    'item': transaction.item.item_reference,
+                    'item': transaction.item,
                     'shipping_evidence': form.cleaned_data['shipping_evidence'],
                 },
                 recipient_list=[transaction.buyer.email],
@@ -417,10 +480,12 @@ def dashboard_view(request):
     user = request.user
     buyer_transactions = Transaction.objects.filter(buyer=user).order_by('-created_at')[:10]
     seller_transactions = Transaction.objects.filter(seller=user).order_by('-created_at')[:10]
+    seller_securetransactions = SecureTransaction.objects.filter(seller=user).order_by('-created_at')[:10]
     
     return render(request, 'core/dashboard.html', {
         'buyer_transactions': buyer_transactions,
         'seller_transactions': seller_transactions,
+        'seller_securetransactions': seller_securetransactions,
     })
 @login_required
 def all_purchases_view(request):
@@ -454,6 +519,46 @@ def delete_item_view(request, item_reference):
         return redirect('my_items')
     return render(request, 'core/confirm_delete.html', {'item': item})
 
+from django.contrib.auth.decorators import user_passes_test
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def reported_items_view(request):
+    reports = ItemReport.objects.select_related('item', 'reported_by', 'item__seller').order_by('-timestamp')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        report_id = request.POST.get('report_id')
+        report = get_object_or_404(ItemReport, id=report_id)
+
+        if action == 'delete_item':
+            item = report.item
+            item.delete()
+            report.reviewed = True
+            report.save()
+            messages.success(request, f"Item '{item.title}' deleted and report marked as reviewed.")
+
+        elif action == 'contact_users':
+            seller = report.item.seller
+            reporter = report.reported_by
+
+            # Example email logic (adjust as needed)
+            send_mail(
+                subject="Item Report Notice",
+                message=f"The item '{report.item.title}' was reported for the following reason: {report.reason}",
+                from_email=None,
+                recipient_list=[seller.email, reporter.email]
+            )
+            messages.success(request, "Emails sent to reporter and seller.")
+
+        elif action == 'mark_reviewed':
+            report.reviewed = True
+            report.save()
+            messages.success(request, "Report marked as reviewed.")
+
+        return redirect('reported_items')
+
+    return render(request, 'admin/reported_items.html', {'reports': reports})
+
 @login_required
 def update_profile(request):
     if request.method == 'POST':
@@ -466,28 +571,33 @@ def update_profile(request):
         form = UserProfileForm(instance=request.user)
 
     return render(request, 'core/update_profile.html', {'form': form})
-
+from django.db.models import BooleanField, ExpressionWrapper, Q
 
 def browse_view(request):
     category_filter = request.GET.get('category', '')
     query = request.GET.get('q', '')
-    
-    items = Item.objects.filter(is_available=True).order_by('-created_at')
-    
+
+    # Annotate each item with whether the seller is premium (True/False)
+    items = Item.objects.filter(is_available=True).annotate(
+        seller_is_premium=ExpressionWrapper(Q(seller__is_premium=True), output_field=BooleanField())
+    ).order_by('-seller_is_premium', '-created_at')  # Premium items appear first
+
     if category_filter:
         items = items.filter(category=category_filter)
     if query:
         items = items.filter(
             Q(title__icontains=query) | Q(description__icontains=query)
         )
+
     categories = Item.CATEGORY_CHOICES
-    
+
     return render(request, 'core/browse.html', {
         'items': items,
         'categories': categories,
         'selected_category': category_filter,
         'search_query': query,
     })
+
     
 def search_items(request):
     query = request.GET.get('q')
@@ -511,13 +621,10 @@ def search_items(request):
 def escrow_view(request):
     return render(request, 'core/escrow.html')
 
-
 @login_required
 def post_item_view(request):
-    
     user = request.user
 
-    # Check for essential profile fields
     required_fields = [
         user.national_id,
         user.phone_number,
@@ -531,33 +638,46 @@ def post_item_view(request):
     if not all(required_fields):
         messages.warning(request, "Please complete your profile before posting an item.")
         return redirect('update_profile') 
+
     if not user.is_verified:
         messages.warning(request, "Please wait for admin to verify your details or check your email for admin comments on your account.")
         return redirect('dashboard')
 
+    # Check current item count
+    active_count = Item.objects.filter(seller=user, is_available=True).count()
+    can_post = True
+    remaining_slots = None
+
+    if not user.is_premium:
+        remaining_slots = 5 - active_count
+        if active_count >= 5:
+            can_post = False
+
     if request.method == 'POST':
+        if not can_post:
+            messages.error(request, "Free users can only list up to 5 items. Upgrade to Premium to list more.")
+            return redirect('upgrade_to_premium')
+
         form = ItemForm(request.POST, request.FILES)
         files = request.FILES.getlist('images')
 
         if form.is_valid():
             item = form.save(commit=False)
-            item.seller = request.user
-            
-            if item.is_bulk and not request.user.is_premium:
+            item.seller = user
+
+            if item.is_bulk and not user.is_premium:
                 messages.error(request, "Bulk listings are only available to Premium sellers. Please uncheck 'bulk' or upgrade your account.")
-                return render(request, 'core/post-item.html', {'form': form})
-            
-            # Validate each file before saving
+                return render(request, 'core/post-item.html', {'form': form, 'can_post': can_post, 'remaining_slots': remaining_slots})
+
             for f in files:
-                if f.size > 5 * 1024 * 1024:  # 5MB limit
+                if f.size > 5 * 1024 * 1024:
                     messages.error(request, f"{f.name} is too large (max 5MB).")
-                    return render(request, 'core/post-item.html', {'form': form})
+                    return render(request, 'core/post-item.html', {'form': form, 'can_post': can_post, 'remaining_slots': remaining_slots})
                 if not f.content_type.startswith('image/'):
                     messages.error(request, f"{f.name} is not a valid image.")
-                    return render(request, 'core/post-item.html', {'form': form})
+                    return render(request, 'core/post-item.html', {'form': form, 'can_post': can_post, 'remaining_slots': remaining_slots})
 
             item.save()
-
             for f in files:
                 ItemImage.objects.create(item=item, image=f)
 
@@ -568,7 +688,11 @@ def post_item_view(request):
     else:
         form = ItemForm()
 
-    return render(request, 'core/post-item.html', {'form': form})
+    return render(request, 'core/post-item.html', {
+        'form': form,
+        'can_post': can_post,
+        'remaining_slots': remaining_slots,
+    })
 
 
 def item_detail(request, item_reference):   
@@ -665,12 +789,6 @@ def about_view(request):
 
 
 
-
-
-
-
-
-
 #hanling guest transaction
 @login_required
 def generate_transaction_out(request):
@@ -688,9 +806,16 @@ def generate_transaction_out(request):
      
 
 def external_transaction_detail(request, transaction_id):
-    transaction = get_object_or_404(SecureTransaction, id=transaction_id)
+    tx = get_object_or_404(SecureTransaction, id=transaction_id)
+    timeline = [
+        ("Paid",      tx.transaction_status in ["paid", "shipped", "delivered", "arrived"]),
+        ("Shipped",   tx.transaction_status in ["shipped", "delivered", "arrived"]),
+        ("Arrived", tx.transaction_status in ["delivered", "arrived"]),
+        ("Delivered", tx.transaction_status == "delivered"),
+    ]
     return render(request, 'core/external_transaction_detail.html', {
-        'transaction': transaction
+        'transaction': tx,
+        "timeline": timeline
     })
 
 
@@ -702,7 +827,7 @@ def initiate_payment(request, transaction_id):
         if not transaction.mpesa_reference:
             transaction.mpesa_reference = f"SD-{uuid.uuid4().hex[:10]}"
             transaction.save()
-
+        
         phone = transaction.buyer_phone
         amount = transaction.amount
 
@@ -711,7 +836,7 @@ def initiate_payment(request, transaction_id):
             phone_number=phone,
             amount=amount,
             account_reference=transaction.mpesa_reference,  # Pass here
-            transaction_desc=f"Payment for {transaction.item_reference}"
+            transaction_desc=f"Payment for {transaction.mpesa_reference}"
         )
 
         print("STK Push Response:", response)  # Optional debug
@@ -731,36 +856,111 @@ def create_secure_transaction(request):
     user = request.user
 
     if not user.is_verified:
-        messages.warning(request, "Your account awaits verification. Check your email for admin comments or you can contact support.")
+        messages.warning(
+            request,
+            "Your account awaits verification. Check your email for admin comments or contact support."
+        )
         return redirect('dashboard')
 
     if request.method == 'POST':
         form = SecureTransactionForm(request.POST)
+
         if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.seller = user
+            tx = form.save(commit=False)
+            tx.seller = user
 
             item_ref = form.cleaned_data.get('item_reference')
             if item_ref:
                 try:
-                    # Make sure the item belongs to the current user
                     item = Item.objects.get(item_reference=item_ref, seller=user)
-                    transaction.item_name = item.title
-                    transaction.amount = item.price
-                    transaction.description = item.description
-                except Item.DoesNotExist:
-                    form.add_error('item_reference', 'Invalid Item ID or this item does not belong to you.')
 
-            transaction.save()
-            return redirect('transaction_success', transaction_id=transaction.id)
+                    if not item.is_available:
+                        form.add_error('item_reference', 'This item is no longer available.')
+                        raise ValueError
+
+                    tx.item_name = item.title
+                    tx.amount = item.price
+                    tx.description = item.description
+
+                except Item.DoesNotExist:
+                    form.add_error('item_reference', 'Invalid reference—item not found for your account.')
+                    # fall through to re-render form
+                except ValueError:
+                    # already added a form error above
+                    pass
+
+            # Only save if no field errors were added
+            if not form.errors:
+                tx.save()
+                messages.success(request, 'Transaction created successfully!')
+                return redirect('transaction_success', transaction_id=tx.id)
+
     else:
-        initial_data = {}
+        # GET
+        initial = {}
         item_ref = request.GET.get('item_reference')
         if item_ref:
-            initial_data['item_reference'] = item_ref
-        form = SecureTransactionForm(initial=initial_data)
+            initial['item_reference'] = item_ref
+        form = SecureTransactionForm(initial=initial)
 
     return render(request, 'core/create_transaction.html', {'form': form})
+# core/views.py  (or wherever your view lives)
+import io, base64, qrcode
+from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
+
+@login_required
+def transaction_success(request, transaction_id):
+    transaction = get_object_or_404(
+        SecureTransaction,
+        id=transaction_id,
+        seller=request.user
+    )
+
+    secure_link = request.build_absolute_uri(transaction.get_secure_link())
+
+    # --- 1. generate QR code ---
+    qr = qrcode.make(secure_link)
+    buffer = io.BytesIO()
+    qr.save(buffer, format="PNG")
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+    # --- 2. email buyer with link + QR ---
+    subject = "Secure Purchase Link for your order via SafeDeal"
+    context = {
+        "buyer_name": transaction.buyer_name or "there",
+        "seller": request.user,
+        "item_name": transaction.item_name or "your item",
+        "amount": transaction.amount,
+        "secure_link": secure_link,
+    }
+
+    html_body = render_to_string(
+        "emails/secure_link_to_buyer.html", context
+    )
+    text_body = render_to_string(
+        "emails/secure_link_to_buyer.txt", context
+    )
+
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[transaction.buyer_email],
+    )
+    email.attach_alternative(html_body, "text/html")
+    email.send(fail_silently=True)   # swap to False in staging/dev
+
+    # --- 3. render success page for seller ---
+    return render(
+        request,
+        "core/transaction_success.html",
+        {
+            "transaction": transaction,
+            "secure_link": secure_link,
+            "qr_code": qr_base64,
+        },
+    )
 
 
 @login_required
@@ -965,39 +1165,35 @@ def mpesa_callback(request):
         # === 3. Notify for unmatched payments ===
         if not transaction_found and account_reference:
             try:
-                user = CustomUser.objects.get(national_id=account_reference)
+                    user = CustomUser.objects.get(national_id=account_reference)
 
-                # Activate premium on the user
-                user.is_premium = True
-                user.save()
+                    start_date = timezone.now()
+                    # expiry_date = start_date + timedelta(days=30)
 
-                start_date = timezone.now()
-                expiry_date = start_date + timedelta(days=30)
+                    sub, created = PremiumSubscription.objects.get_or_create(user=user)
+                    sub.paid_date = start_date
+                    # sub.expiry_date = expiry_date
+                    sub.status = 'pending'  # Awaiting admin approval
+                    sub.save()
 
-                sub, created = PremiumSubscription.objects.get_or_create(user=user)
-                sub.start_date = start_date
-                sub.expiry_date = expiry_date
-                sub.is_active = True
-                sub.save()
+                    # Email the admin team for manual review
+                    message = (
+                        f"PREMIUM APPLICATION RECEIVED:\n"
+                        f"User: {user.get_full_name()} ({user.email})\n"
+                        f"National ID: {account_reference}\n"
+                        f"Phone: {phone}\n"
+                        f"Amount: {amount}\n"
+                        f"Receipt: {mpesa_receipt}"
+                    )
+                    send_mail(
+                        subject=f"{account_reference} Premium Application via M-PESA",
+                        message=message,
+                        from_email=None,
+                        recipient_list=['mpesa@safedeal.co.ke'],
+                    )
+                    mpesa_logger.info(message)
 
-                # Log & email
-                message = (
-                    f"PREMIUM ACTIVATION:\n"
-                    f"User: {user.get_full_name()} ({user.email})\n"
-                    f"National ID: {account_reference}\n"
-                    f"Phone: {phone}\n"
-                    f"Amount: {amount}\n"
-                    f"Receipt: {mpesa_receipt}"
-                )
-                send_mail(
-                    subject=f"{account_reference} Premium Activated via M-PESA",
-                    message=message,
-                    from_email=None,
-                    recipient_list=['mpesa@safedeal.co.ke'],
-                )
-                mpesa_logger.info(message)
-
-                transaction_found = True  # So it doesn’t send unmatched warning
+                    transaction_found = True
             except CustomUser.DoesNotExist:
                 mpesa_logger.warning(f"National ID {account_reference} not found for premium activation.")
         else:
@@ -1134,33 +1330,93 @@ def check_payment_status(request, transaction_id):
 
 
 
-import qrcode
-import io
-import base64
-@login_required
-def transaction_success(request, transaction_reference):
-    transaction = SecureTransaction.objects.get(transaction_reference=transaction_reference, seller=request.user)
-    secure_link = request.build_absolute_uri(transaction.get_secure_link())
-
-    # Generate QR code image in memory
-    qr = qrcode.make(secure_link)
-    buffer = io.BytesIO()
-    qr.save(buffer, format='PNG')
-    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
-
-    return render(request, 'core/transaction_success.html', {
-        'transaction': transaction,
-        'secure_link': secure_link,
-        'qr_code': qr_base64,
-    })
-
-
-
-
 # # Admin views for handling disputes
+
 
 from django.contrib.admin.views.decorators import staff_member_required
 
+@staff_member_required
+def admin_premium_subscriptions(request):
+    pending_subs = PremiumSubscription.objects.filter(status='pending').select_related('user')
+
+    return render(request, 'admin/pending_premium_subscriptions.html', {
+        'pending_subs': pending_subs,
+        'current_time': now(),
+    })
+
+
+def is_admin(user):
+    return user.is_staff or user.is_superuser
+
+@login_required
+@user_passes_test(is_admin)
+def manage_support_tickets(request):
+    filter_status = request.GET.get('status', 'open')
+    filter_type = request.GET.get('issue_type', '')
+
+    tickets = SupportTicket.objects.all().order_by('-created_at')
+
+    if filter_status == 'open':
+        tickets = tickets.filter(is_resolved=False)
+    elif filter_status == 'resolved':
+        tickets = tickets.filter(is_resolved=True)
+
+    if filter_type:
+        tickets = tickets.filter(issue_type=filter_type)
+
+    if request.method == 'POST':
+        ticket_id = request.POST.get('ticket_id')
+        action = request.POST.get('action')
+        ticket = get_object_or_404(SupportTicket, id=ticket_id)
+
+        if action == 'resolve':
+            ticket.is_resolved = True
+            ticket.save()
+            messages.success(request, f"Ticket #{ticket.id} marked as resolved.")
+            return redirect('manage_support_tickets')
+
+    return render(request, 'admin/support_tickets.html', {
+        'tickets': tickets,
+        'filter_status': filter_status,
+        'filter_type': filter_type,
+        'issue_choices': SupportTicket.ISSUE_CHOICES,
+    })
+
+    
+@staff_member_required
+def approve_premium(request, sub_id):
+    sub = get_object_or_404(PremiumSubscription, pk=sub_id, status='pending')
+    start_date = timezone.now()
+    sub.status = 'active'
+    sub.user.is_premium = True    
+    sub.premium_start_date = start_date
+    sub.expiry_date = start_date + timedelta(days=30)
+    sub.user.save()
+    sub.save()
+    messages.success(request, f"{sub.user.get_full_name()} has been approved as a premium user.")
+    return redirect('admin_premium_subscriptions')
+
+
+from django.core.paginator import Paginator
+
+@staff_member_required
+def all_transactions_admin(request):
+    q = request.GET.get("q", "").strip()
+
+    tx_qs = Transaction.objects.all().select_related("buyer", "seller", "item").order_by("-created_at")
+    if q:
+        tx_qs = tx_qs.filter(transaction_reference__icontains=q)
+
+    paginator = Paginator(tx_qs, 30)          # 30 rows per page
+    page_obj  = paginator.get_page(request.GET.get("page"))
+
+    return render(request, "admin/all_transactions.html", {
+        "page_obj": page_obj,
+        "search_query": q,
+    })
+
+
+@staff_member_required
 def admin_close_dispute(request, transaction_id):
     dispute = get_object_or_404(TransactionDispute, transaction__id=transaction_id)
     transaction = dispute.transaction
@@ -1186,7 +1442,7 @@ def admin_close_dispute(request, transaction_id):
                 reason='Admin closed dispute, transaction restored to previous state'
             )
             send_custom_email(
-                subject='Dispute Raised',
+                subject='Dispute Closed by Admin',
                 template_name='emails/dispute_raised.html',
                 context={
                     'buyer': transaction.buyer,
@@ -1200,25 +1456,23 @@ def admin_close_dispute(request, transaction_id):
         return redirect('transaction_detail', transaction_id=transaction_id)
 
     return render(request, 'transactions/admin_close_dispute.html', {'dispute': dispute})
-
 @login_required
 def close_dispute(request, transaction_reference):
-    dispute = get_object_or_404(TransactionDispute, transaction_reference=transaction_reference)
+    dispute = get_object_or_404(TransactionDispute, transaction__transaction_reference=transaction_reference)
     transaction = dispute.transaction
 
     if request.method == 'POST':
-        notes = 'This dispute was closed by ',request.user
+        notes = f'This dispute was closed by {request.user}'
         dispute.status = 'closed'
         dispute.admin_notes = notes
         dispute.save()
 
         if transaction.status == 'disputed':
-            # Get the last status *before* it was marked as disputed
             previous_log = TransactionStatusLog.objects.filter(
                 transaction=transaction
             ).exclude(new_status='disputed').order_by('-timestamp').first()
 
-            restored_status = previous_log.new_status if previous_log else 'paid'  # default fallback
+            restored_status = previous_log.new_status if previous_log else 'paid'
 
             log_transaction_status_change(
                 transaction,
@@ -1227,20 +1481,21 @@ def close_dispute(request, transaction_reference):
                 reason='User closed the dispute, transaction restored to previous state'
             )
             send_custom_email(
-                subject='Dispute Raised',
-                template_name='emails/dispute_raised.html',
+                subject='Dispute Closed',
+                template_name='emails/dispute_closed.html',
                 context={
-                    'buyer': transaction.buyer,
+                    'seller': transaction.seller,
                     'item': transaction.item,
                     'reason': notes,
                 },
-                recipient_list=[transaction.buyer.email],
+                recipient_list=[transaction.seller.email],
             )
 
         messages.success(request, "Dispute closed successfully.")
         return redirect('dashboard')
 
     return render(request, 'core/close_dispute.html', {'dispute': dispute})
+
 
 
 from django.contrib.auth import get_user_model
@@ -1263,6 +1518,7 @@ def admin_dashboard(request):
         messages.warning(request, "Please complete your profile before posting an item.")
         return redirect('update_profile')
     disputes = TransactionDispute.objects.all().order_by('-created_at')
+    items = Item.objects.all().order_by('-created_at')
     open_disputes = disputes.filter(status='open')
     closed_disputes = disputes.filter(status='closed')
     all_transactions = Transaction.objects.all().order_by('-created_at') 
@@ -1291,6 +1547,7 @@ def admin_dashboard(request):
         'users': account_update_pending,
         'unverified_users': unverified_users,
         'inactive_users': inactive_users,
+        'items': items,
     })
     
     

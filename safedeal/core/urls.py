@@ -14,7 +14,8 @@ urlpatterns = [
     path('transactions/purchases/', views.all_purchases_view, name='all_purchases'),
     path('transactions/sales/', views.all_sales_view, name='all_sales'),
     path('profile/', views.profile_view, name='profile'),
-    path('browse/', views.browse_view, name='browse'),
+    path('browse/', views.browse_view, name='browse'),    
+    path("i/<str:item_reference>/", views.item_detail, name="item_shortlink"),
     path('item/<str:item_reference>/', views.item_detail, name='item_detail'),
     path('escrow/', views.escrow_view, name='escrow'),
     path('post_item/', views.post_item_view, name='post_item'),
@@ -52,12 +53,23 @@ urlpatterns = [
     path('transactions/<str:transaction_reference>/close-dispute/', views.close_dispute, name='close_dispute'),
     path('transactions/<str:transaction_reference>/request_refund/', views.request_refund, name='request_refund'),
     path('transactions/<str:transaction_reference>/request_funding/', views.request_funding, name='request_funding'),
+    path('transactions/<str:transaction_reference>/mark-arrived/', views.mark_arrived, name='mark_arrived'),
+
+
+    path("transactions/", views.all_transactions_admin, name="all_transactions_admin"),
+    path('admin/premium-subscriptions/<int:sub_id>/approve/', views.approve_premium, name='approve_premium'),
+    path('premium-subscriptions/', views.admin_premium_subscriptions, name='admin_premium_subscriptions'),
+    path('reported_items/', views.reported_items_view, name='reported_items'),
+    path('manage_support_tickets/', views.manage_support_tickets, name='manage_support_tickets'),
+    path("fundable-transactions/", views.fundable_transactions, name="fundable_transactions"),
+    path("fund-seller/<int:transaction_id>/", views.fund_seller, name="fund_seller"),
+    path("toggle-hold/<int:transaction_id>/", views.toggle_hold_payout, name="toggle_hold_payout"),
 
     
     path('generate_transaction_out/', views.generate_transaction_out, name='generate_transaction_out'),
     
     path('create-transaction/', views.create_secure_transaction, name='create_secure_transaction'),
-    path('transaction-success/<uuid:transaction_reference>/', views.transaction_success, name='transaction_success'),    
+    path('transaction-success/<uuid:transaction_id>/', views.transaction_success, name='transaction_success'),    
     path('secure-transaction/<uuid:transaction_id>/', views.external_transaction_detail, name='external_transaction_detail'),
     path('secure-transaction/<uuid:transaction_id>/confirm/', views.initiate_payment, name='initiate_payment'),
     

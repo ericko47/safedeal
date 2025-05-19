@@ -1,0 +1,83 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Support Tickets - Admin{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto p-6 bg-white shadow-md rounded-xl mt-6">
+    <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+        &larr; Go Back
+    </a>
+  <h2 class="text-2xl font-bold mb-4">Support Tickets</h2>
+
+  <form method="get" class="flex flex-wrap gap-4 mb-6">
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Status</label>
+      <select name="status" class="border border-gray-300 rounded px-3 py-2">
+        <option value="open" {% if filter_status == 'open' %}selected{% endif %}>Open</option>
+        <option value="resolved" {% if filter_status == 'resolved' %}selected{% endif %}>Resolved</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Issue Type</label>
+      <select name="issue_type" class="border border-gray-300 rounded px-3 py-2">
+        <option value="">All</option>
+        {% for key, label in issue_choices %}
+          <option value="{{ key }}" {% if filter_type == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex items-end">
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Filter</button>
+    </div>
+  </form>
+
+  {% if tickets %}
+    <ul class="space-y-6">
+      {% for ticket in tickets %}
+        <li class="border border-gray-300 p-4 rounded shadow-sm">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="text-lg font-semibold">
+              {{ ticket.get_issue_type_display }} – Ticket #{{ ticket.id }}
+            </h3>
+            {% if not ticket.is_resolved %}
+              <form method="POST" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                <input type="hidden" name="action" value="resolve">
+                <button type="submit" class="bg-green-600 text-white text-sm px-3 py-1 rounded hover:bg-green-700">Mark as Resolved</button>
+              </form>
+            {% else %}
+              <span class="text-sm text-green-600 font-medium">Resolved</span>
+            {% endif %}
+          </div>
+
+          <p class="text-sm text-gray-600"><strong>User:</strong> {{ ticket.user.username }} ({{ ticket.user.email }})</p>
+          <p class="text-sm text-gray-600"><strong>Phone:</strong> {{ ticket.user.phone_number }}</p>
+          {% if ticket.reference %}
+            <p class="text-sm text-gray-600"><strong>Reference:</strong> {{ ticket.reference }}</p>
+          {% endif %}
+          <p class="mt-2 text-gray-800"><strong>Message:</strong> {{ ticket.message }}</p>
+
+          {% if ticket.attachment %}
+            <p class="mt-2">
+              <a href="{{ ticket.attachment.url }}" target="_blank" class="text-blue-600 underline text-sm">Download Attachment</a>
+            </p>
+          {% endif %}
+
+          <div class="mt-4 flex space-x-4">
+            <a href="mailto:{{ ticket.user.email }}" class="text-sm text-blue-600 hover:underline">Email User</a>
+            <a href="tel:{{ ticket.user.phone_number }}" class="text-sm text-blue-600 hover:underline">Call User</a>
+          </div>
+
+          <p class="text-xs text-gray-400 mt-2">Created: {{ ticket.created_at|date:"M d, Y H:i" }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-gray-600">No tickets found for the selected filters.</p>
+  {% endif %}
+</section>
+{% endblock %}

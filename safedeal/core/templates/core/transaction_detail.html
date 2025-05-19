@@ -99,6 +99,18 @@
       <a href="{% url 'ship_item' transaction.transaction_reference %}"class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Ship the Item</a>
        
     {% endif %}
+
+
+    {% if user == transaction.seller %}
+    {% comment %} or user == transaction.delivery_agent.user %} {% endcomment %}
+      {% if transaction.status == 'shipped' %}
+        <form method="post" action="{% url 'mark_arrived' transaction.transaction_reference %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success">Mark as Arrived</button>
+        </form>
+      {% endif %}
+    {% endif %}
+
     {% if transaction.status == 'disputed' and request.user == transaction.buyer %}
     <a href="{% url 'start_conversation' transaction.item.item_reference %}" class="inline-block mt-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded">
       Engage in Conversation
@@ -129,7 +141,7 @@
     {% endif %}
 
     <!-- Admin Actions -->
-    {% if user.is_staff and transaction.dispute.status != 'closed' %}
+    {% if user.is_staff and transaction.dispute.status = 'open' %}
     <div>
       <a href="{% url 'admin_close_dispute' transaction.id %}" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Close Dispute (Admin)</a>
 

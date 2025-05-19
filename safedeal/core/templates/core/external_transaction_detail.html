@@ -1,42 +1,78 @@
-{% extends 'core/base.html' %}
+{% extends "core/base.html" %}
+{% load static %}
+{% block title %}Secure Purchase – SafeDeal{% endblock %}
+
 {% block content %}
 <div class="max-w-xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-2xl">
-    <h2 class="text-3xl font-semibold text-center mb-6">Secure Purchase Through Safedeal</h2>
-    <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
-        &larr; Go Back
-    </a>
-    <p class="text-center text-gray-600 mb-4">
-        To proceed with the purchase, please review the transaction details below. Ensure all information is correct before proceeding.
+  <h2 class="text-3xl font-semibold text-center mb-6">
+    Secure Purchase Through SafeDeal
+  </h2>
+  <p><strong>Hi, {{transaction.buyer_name}}</strong></p>
+  <br>
+  <a href="javascript:history.back()"
+     class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+    &larr; Go Back
+  </a>
+  <p>This link was created by <strong>{{transaction.seller}}</strong>, on your agreement to the Purchase of <strong>{{ transaction.item_name }}</strong>.</p>
+  <p class="text-center text-gray-600 mb-6">
+    Review the details below. Your money is held safely until delivery is confirmed.
+  </p>
+  <p class="text-center text-gray-600 mb-6">
+    You will be using this page to track the status of your transaction. Keep it safe and always check your email for updates.
+
+  </p>
+    <p><strong>Warning!</strong> Do not share this link with anyone else. It is meant for {{transaction.buyer_name}} only.</p>
+    <br><br>
+  <!-- Item details -->
+  <div class="mb-6 space-y-1 text-gray-700">
+    <p class="text-lg"><strong>Item:</strong> {{ transaction.item_name }}</p>
+    <p><strong>Description:</strong> {{ transaction.description }}</p>
+    <p><strong>Price:</strong> KES {{ transaction.amount }}</p>
+    <p><strong>Seller:</strong> {{ transaction.seller.username }}</p>
+    <p class="text-xs text-gray-500">Transaction ID: {{ transaction.id }}</p>
+  </div>
+
+  <!-- Status timeline -->
+<ol class="mb-6 space-y-2">
+    {% for label, reached in timeline %}
+      <li class="flex items-center">
+        <span class="h-3 w-3 rounded-full {{ reached|yesno:'bg-green-500,bg-gray-300' }} mr-3"></span>
+        <span class="{{ reached|yesno:'text-gray-800,text-gray-400' }}">{{ label }}</span>
+      </li>
+    {% endfor %}
+  </ol>
+  
+
+  <!-- Action area -->
+  {% if transaction.transaction_status == 'pending' %}
+    <form method="post" action="{% url 'initiate_payment' transaction.id %}">
+      {% csrf_token %}
+      <button type="submit"
+              class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl shadow">
+        Buy Now
+      </button>
+    </form>
+  {% else %}
+    <div class="bg-blue-50 text-blue-700 p-3 rounded-md text-center">
+      This transaction is currently <strong>{{ transaction.transaction_status|title }}</strong>.
+    </div>
+  {% endif %}
+
+  {% if transaction.transaction_status == "disputed" %}
+    <p class="mt-4 text-red-600 text-sm text-center">
+      The order is in dispute. SafeDeal support will contact both parties.
     </p>
-    <p class="text-center text-gray-600 mb-4">
-        <strong>Note:</strong> This transaction is secured by our platform. Please follow the instructions provided for a smooth transaction.
-    </p>    
+  {% endif %}
 
-    <div class="mb-4">
-        <p class="text-gray-700 text-lg"><span class="font-semibold">Item:</span> {{ transaction.item_name }}</p>
-        <p class="text-gray-700"><span class="font-semibold">Description:</span> {{ transaction.description }}</p>
-        <p class="text-gray-700"><span class="font-semibold">Price:</span> Ksh {{ transaction.amount }}</p>
-        <p class="text-gray-700"><span class="font-semibold">Seller:</span> {{ transaction.seller.username }}</p>
-        <p class="text-sm text-gray-500 mt-2">Transaction ID: {{ transaction.id }}</p>
-    </div>
+  {% if not user.is_authenticated %}
+    <a href="{% url 'register' %}?next={{ request.path }}"
+       class="mt-6 inline-block w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
+      Create a SafeDeal account for faster updates
+    </a>
+  {% endif %}
 
-    <div class="mt-6">
-        {% if transaction.transaction_status == 'pending' %}
-            <form method="POST" action="{% url 'initiate_payment' transaction.id %}">
-                {% csrf_token %}
-                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl shadow">
-                    Buy Now
-                </button>
-            </form>
-        {% else %}
-            <div class="bg-yellow-100 text-yellow-700 p-3 rounded-md text-center">
-                This transaction is currently <strong>{{ transaction.transaction_status|title }}</strong>.
-            </div>
-        {% endif %}
-    </div>
-
-    <div class="mt-8 text-center text-sm text-gray-400">
-        SafeDeal protects your money until the seller delivers.
-    </div>
+  <p class="mt-8 text-center text-xs text-gray-400">
+    SafeDeal protects your money until the seller delivers.
+  </p>
 </div>
 {% endblock %}

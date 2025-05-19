@@ -5,35 +5,34 @@
   <h1 class="text-3xl font-bold mb-6 text-center">SafeDeal Admin Dashboard</h1>
   <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
     &larr; Go Back
-</a>
-  {% comment %} <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-    <!-- Total Users -->
-    <div class="bg-white p-4 shadow rounded-xl">
-      <h2 class="text-xl font-semibold mb-3">Total Users</h2>
-      <p class="text-3xl font-bold">{{ total_users }}</p>
-    </div>
-
+  </a>
+  <div>
+    <nav class="flex flex-wrap gap-4 mt-4 text-sm">
+      <a href="{% url 'admin_premium_subscriptions' %}" class="text-blue-600 hover:underline font-semibold"> Manage Premium</a>
+      <a href="{% url 'reported_items' %}" class="text-blue-600 hover:underline font-semibold"> Reported Items</a>
+      <a href="{% url 'fundable_transactions' %}" class="text-blue-600 hover:underline font-semibold">Fundable transactions</a>
+      <a href="{% url 'support' %}" class="text-blue-600 hover:underline font-semibold">Seller funding</a>
+      <a href="{% url 'support' %}" class="text-blue-600 hover:underline font-semibold">Transaction statements</a>
+      <a href="{% url 'manage_support_tickets' %}" class="text-blue-600 hover:underline font-semibold">User support</a>
+    </nav>
+  </div><br>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">   
     <!-- Total Transactions -->
     <div class="bg-white p-4 shadow rounded-xl">
-      <h2 class="text-xl font-semibold mb-3">Total Transactions</h2>
-      <p class="text-3xl font-bold">{{ total_transactions }}</p>
+      <h2 class="text-xl font-semibold mb-3">Total Transactions: {{ all_transactions.count }}</h2>
+      <p class="text-3xl font-bold"></p>
     </div>
     <!-- Total Items -->
     <div class="bg-white p-4 shadow rounded-xl">
-      <h2 class="text-xl font-semibold mb-3">Total Items</h2>
-      <p class="text-3xl font-bold">{{ total_items }}</p>
+      <h2 class="text-xl font-semibold mb-3">Total Items: {{ items.count }}</h2>
+      <p class="text-3xl font-bold"></p>
     </div>
-    <!-- Total Disputes -->
-    <div class="bg-white p-4 shadow rounded-xl">
-      <h2 class="text-xl font-semibold mb-3">Total Disputes</h2>
-      <p class="text-3xl font-bold">{{ total_disputes }}</p>
-    </div>
-  </div> {% endcomment %}
+  </div> 
   <!-- Disputes Section -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
     <!-- Open Disputes -->
     <div class="bg-white p-4 shadow rounded-xl">
-      <h2 class="text-xl font-semibold mb-3">Open Disputes</h2>
+      <h2 class="text-xl font-semibold mb-3"> Total Open Disputes: {{open_disputes.count}}</h2>
       {% if open_disputes %}
         <ul class="space-y-3">
           {% for dispute in open_disputes %}
@@ -56,7 +55,7 @@
 
     <!-- Closed Disputes -->
     <div class="bg-white p-4 shadow rounded-xl">
-      <h2 class="text-xl font-semibold mb-3">Closed Disputes</h2>
+      <h2 class="text-xl font-semibold mb-3"> Total Closed Disputes: {{closed_disputes.count}}</h2>
       {% if closed_disputes %}
         <ul class="space-y-3">
           {% for dispute in closed_disputes %}
@@ -75,11 +74,12 @@
   <!-- Recent Transactions -->
   <div class="bg-white p-4 shadow rounded-xl mb-10">
     <h2 class="text-xl font-semibold mb-4">Recent Transactions</h2>
+    <a href="{% url 'all_transactions_admin' %}" class="text-blue-600 hover:underline">View All transactions</a>
     <div class="overflow-x-auto">
       <table class="min-w-full text-sm text-left text-gray-600">
         <thead class="bg-gray-100 font-medium text-gray-700">
           <tr>
-            <th class="px-4 py-2">ID</th>
+            <th class="px-4 py-2">Transaction ID</th>
             <th class="px-4 py-2">Item</th>
             <th class="px-4 py-2">Buyer</th>
             <th class="px-4 py-2">Seller</th>
@@ -89,16 +89,16 @@
           </tr>
         </thead>
         <tbody>
-          {% for transaction in all_transactions|slice:":10" %}
+          {% for transaction in all_transactions|slice:":5" %}
             <tr class="border-b hover:bg-gray-50">
-              <td class="px-4 py-2">#{{ transaction.id }}</td>
+              <td class="px-4 py-2">{{ transaction.transaction_reference }}</td>
               <td class="px-4 py-2">{{ transaction.item.title }}</td>
               <td class="px-4 py-2">{{ transaction.buyer.username }}</td>
               <td class="px-4 py-2">{{ transaction.seller.username }}</td>
               <td class="px-4 py-2 capitalize">{{ transaction.status }}</td>
               <td class="px-4 py-2">{{ transaction.created_at }}</td>
               <td class="px-4 py-2">
-                <a href="{% url 'transaction_detail' transaction.id %}" class="text-blue-600 hover:underline">View</a>
+                <a href="{% url 'transaction_detail' transaction.transaction_reference %}" class="text-blue-600 hover:underline">View</a>
               </td>
             </tr>
           {% endfor %}
@@ -227,30 +227,24 @@
         </tr>
       </thead>
       <tbody>
-        {% comment %} {% url 'admin_verify_user' user.id %} {% endcomment %}
-        {% comment %} {% url 'admin_toggle_user' user.id %} {% endcomment %}
-        {% comment %} <a href="mailto:{{ user.email }}" class="text-blue-600 font-bold">Message</a> {% endcomment %}
         {% for user in unverified_users %}
         <tr class="border">
           <td class="p-2">{{ user.username }}</td>
-          <td class="p-2">{{ user.get_full_name }}</td>
-          <td class="p-2">{{ user.profile.phone_number }}</td>
-          <td class="p-2">{{ user.profile.national_id }}</td>
+          <td class="p-2">{{ user.first_name }} {{ user.last_name }}</td>
+          <td class="p-2">{{ user.phone_number }}</td>
+          <td class="p-2">{{ user.national_id }}</td>
           <td class="p-2">
-            {% if user.profile.profile_picture %}
-              <img src="{{ user.profile.profile_picture.url }}" class="w-16 h-16 rounded-full" />
+            {% if user.profile_picture %}
+              <img src="{{ user.profile_picture.url }}" class="w-16 h-16 rounded-full" />
             {% else %} N/A {% endif %}
           </td>
           <td class="p-2">
-            {% if user.profile.id_picture %}
-              <img src="{{ user.profile.id_picture.url }}" class="w-16 h-16 rounded" />
+            {% if user.id_picture %}
+              <img src="{{ user.id_picture.url }}" class="w-16 h-16 rounded" />
             {% else %} N/A {% endif %}
           </td>
-          {% comment %} {% url 'admin_verify_user' user.id %} {% endcomment %}
           <td class="p-2 space-x-1">
             <a href="{% url 'admin_user_verification' user.id %}" class="text-indigo-600 hover:underline font-semibold">Review & Verify</a>
-            {% comment %} <a href="mailto:{{ user.email }}" class="text-blue-600 font-bold">Message</a> {% endcomment %}
-            {% comment %} <a href="{% url 'admin_toggle_user' user.id %}" class="text-red-600 font-bold">Deactivate</a> {% endcomment %}
           </td>
         </tr>
         {% empty %}

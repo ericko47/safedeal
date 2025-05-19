@@ -1,6 +1,9 @@
 {% extends 'core/base.html' %}
 {% block content %}
 <div class="max-w-2xl mx-auto p-6 bg-white rounded-xl shadow">
+  <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+    &larr; Go Back
+  </a>
   <h2 class="text-xl font-semibold mb-4">Upgrade to Premium</h2>
   {% if not user.national_id %}
     <p class="text-red-500">Please <a href="{% url 'update_profile' %}" class="underline">update your Account</a> before upgrading.</p>
@@ -26,13 +29,39 @@
       {% endfor %}
     </ul>
 
+    <p class="mt-4 text-sm text-gray-500">Note: You can apply for a premium upgrade once you meet the criteria.</p>
+    {% if status %}
+      <p class="text-sm text-gray-600 mb-1">
+        Current application status: <strong>{{ status.status|title }}</strong>
+      </p>
+
+      {% if status.expiry_date %}
+        <p class="text-sm text-gray-600 mb-4">
+          Subscription expiry: <strong>{{ status.expiry_date|date:"F j, Y" }}</strong>
+        </p>
+      {% endif %}
+    {% endif %}
+
     {% if user.account_type == 'premium' %}
-      <p class="mt-4 text-sm text-gray-500">You are currently a premium user. You can <a href="{% url 'downgrade_to_free' %}" class="underline">downgrade</a> at any time.</p>
+    
+    <p class="mt-4 text-sm text-gray-500">You are currently a premium user. You can <a href="{% url 'downgrade_to_free' %}" class="underline">downgrade</a> at any time.</p>
+    
+    {% elif status and status.status == 'pending' %}
+      <p class="mt-4 text-yellow-600 font-medium">
+        Your premium upgrade application is under review. You will be notified once approved.
+      </p>
+    
     {% else %}
       <form method="post">{% csrf_token %}
-        <button class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Upgrade for KES 699</button>
+        <button class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          Upgrade for KES 499
+        </button>
       </form>
-      <p class="mt-4 text-sm text-gray-500">Note: This is a one-time fee. You will not be charged again unless you choose to renew your premium status.</p>    {% endif%}
+      <p class="mt-4 text-sm text-gray-500">
+        Note: This is a one-time fee. You will not be charged again unless you choose to renew your premium status.
+      </p>
+    {% endif %}
+  
   {% endif %}
 </div>
 {% endblock %}

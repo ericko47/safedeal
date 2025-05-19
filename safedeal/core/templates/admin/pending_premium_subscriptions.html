@@ -1,0 +1,45 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-6 rounded shadow">
+    <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+        &larr; Go Back
+      </a>
+  <h1 class="text-2xl font-semibold mb-4">Pending Premium Applications</h1>
+
+  {% if pending_subs %}
+    <table class="w-full table-auto border">
+      <thead class="bg-gray-100 text-left">
+        <tr>
+          <th class="p-2 border">User</th>
+          <th class="p-2 border">Email</th>
+          <th class="p-2 border">National ID</th>
+          <th class="p-2 border">Applied On</th>
+          <th class="p-2 border">Expires</th>
+          <th class="p-2 border">Status</th>
+          <th class="p-2 border">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sub in pending_subs %}
+          <tr class="border-t">
+            <td class="p-2">{{ sub.user.get_full_name }}</td>
+            <td class="p-2">{{ sub.user.email }}</td>
+            <td class="p-2">{{ sub.user.national_id }}</td>
+            <td class="p-2">{{ sub.paid_date|date:"M j, Y" }}</td>
+            <td class="p-2">{{ sub.expiry_date|date:"M j, Y" }}</td>
+            <td class="p-2 text-yellow-600 font-semibold">{{ sub.status|title }}</td>
+            <td class="p-2">
+              <form method="post" action="{% url 'approve_premium' sub.pk %}">
+                {% csrf_token %}
+                <button class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm">Approve</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="text-gray-600">No pending premium applications at the moment.</p>
+  {% endif %}
+</div>
+{% endblock %}

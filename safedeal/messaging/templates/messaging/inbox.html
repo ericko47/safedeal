@@ -8,7 +8,7 @@
         <ul class="space-y-4">
             {% for thread in threads %}
                 <li class="border-b pb-2">
-                    <a href="{% url 'conversation_detail' thread.id %}" class="flex items-center justify-between">
+                    <a href="{% url 'conversation_detail' thread.conversation_reference %}" class="flex items-center justify-between">
                         <div>
                         
                             <p class="text-gray-800 font-medium">

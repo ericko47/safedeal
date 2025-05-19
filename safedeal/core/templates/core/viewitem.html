@@ -2,9 +2,16 @@
 {% load static %}
 
 {% block title %}{{ item.title }} - SafeDeal{% endblock %}
+{% block head %}
+  {{ block.super }}
+  <link rel="canonical" href="{% url 'item_shortlink' item_reference=item.item_reference %}">
+{% endblock %}
+
 
 {% block content %}
 <div class="max-w-5xl mx-auto bg-white mt-6 p-6 rounded-lg shadow">
+<link rel="canonical" href="{% url 'item_shortlink' item_reference=item.item_reference %}">
+
   <h1 class="text-3xl font-bold mb-4">Item Details</h1>
   <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
     &larr; Go Back
@@ -65,7 +72,6 @@
     <p><strong>Location:</strong> {{ item.seller.current_location|default:"Not Provided" }}</p>
     <p><strong>Posted on:</strong> {{ item.created_at|date:"M d, Y" }}</p>
   </div>
-
   <div class="mt-4">
     <p><strong>Description:</strong></p>
     <p class="text-gray-600 mt-1">{{ item.description }}</p>
