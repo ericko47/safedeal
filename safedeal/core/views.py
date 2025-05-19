@@ -289,10 +289,22 @@ def cancel_transaction(request, transaction_reference):
         return HttpResponseForbidden("You are not authorized to cancel this transaction.")
 
     if request.method == 'POST':
-        if transaction.status == 'pending':
-            transaction.status = 'cancelled'
-            transaction.save()
-            messages.success(request, "Transaction has been cancelled.")
+        if transaction.status == "pending":
+            transaction.status = "cancelled"
+            transaction.save(update_fields=["status"])
+
+            # release item back to listings
+            item = transaction.item
+            if not item.is_available:
+                item.is_available = True
+                item.save(update_fields=["is_available"])
+            send_custom_email(
+                subject="Buyer cancelled the order",
+                template_name="emails/tx_cancelled_by_buyer.html",
+                context={"transaction": transaction},
+                recipient_list=[transaction.seller.email],
+            )
+            messages.success(request, "Transaction cancelled successfully. Item is now available for sale again.")  
         else:
             messages.warning(request, "Only pending transactions can be cancelled.")
     return redirect('transaction_detail', transaction_reference=transaction.transaction_reference)
@@ -370,10 +382,6 @@ def raise_dispute(request, transaction_reference):
 @login_required
 def ship_item(request, transaction_reference):
     transaction = get_object_or_404(Transaction, transaction_reference=transaction_reference, seller=request.user)
-    transaction1 = get_object_or_404(SecureTransaction, mpesa_reference=transaction_reference, seller=request.user)
-    if transaction1.transaction_status == 'paid':
-        messages.error(request, "Hey, we are here testing.")
-        return redirect('dashboard')
     if transaction.status != 'paid':
         messages.error(request, "Item cannot be shipped in its current state.")
         return redirect('dashboard')
@@ -613,52 +621,88 @@ def update_profile(request):
         form = UserProfileForm(instance=request.user)
 
     return render(request, 'core/update_profile.html', {'form': form})
-from django.db.models import BooleanField, ExpressionWrapper, Q
 
+
+from django.db.models import Q, Exists, OuterRef, BooleanField, ExpressionWrapper
+BLOCKING_STATES = ["paid", "shipped", "arrived", "delivered", "completed"]
 def browse_view(request):
-    category_filter = request.GET.get('category', '')
-    query = request.GET.get('q', '')
+    
+    category_filter = request.GET.get("category", "")
+    query           = request.GET.get("q", "")
 
-    # Annotate each item with whether the seller is premium (True/False)
-    items = Item.objects.filter(is_available=True).annotate(
-        seller_is_premium=ExpressionWrapper(Q(seller__is_premium=True), output_field=BooleanField())
-    ).order_by('-seller_is_premium', '-created_at')  # Premium items appear first
+    # ── Sub-query: does this item have a blocking transaction? ────────────────
+    blocking_tx = Transaction.objects.filter(
+        item      = OuterRef("pk"),
+        status__in= BLOCKING_STATES,
+    )
 
+    # Base queryset
+    items = (
+        Item.objects
+            .filter(is_available=True)
+            .annotate(
+                seller_is_premium = ExpressionWrapper(
+                    Q(seller__is_premium=True), output_field=BooleanField()
+                ),
+                has_blocking_tx   = Exists(blocking_tx),
+            )
+            .filter(has_blocking_tx=False)            # 💡 hide blocked ones
+            .order_by("-seller_is_premium", "-created_at")
+    )
+
+    # Optional filters --------------------------------------------------------
     if category_filter:
         items = items.filter(category=category_filter)
+
     if query:
         items = items.filter(
             Q(title__icontains=query) | Q(description__icontains=query)
         )
 
-    categories = Item.CATEGORY_CHOICES
+    return render(
+        request,
+        "core/browse.html",
+        {
+            "items"            : items,
+            "categories"       : Item.CATEGORY_CHOICES,
+            "selected_category": category_filter,
+            "search_query"     : query,
+        },
+    )
 
-    return render(request, 'core/browse.html', {
-        'items': items,
-        'categories': categories,
-        'selected_category': category_filter,
-        'search_query': query,
-    })
+blocking_tx = Transaction.objects.filter(
+        item_id=OuterRef('pk'),
+        status__in=['paid', 'shipped', 'arrived', 'delivered']
+    )
 
-    
 def search_items(request):
-    query = request.GET.get('q')
-    exact_matches = []
-    keyword_matches = []
+    query = request.GET.get('q', '').strip()
+
+    # Base queryset: only items **without** a blocking transaction
+    safe_items = Item.objects.annotate(
+        has_blocking_tx=Exists(blocking_tx)
+    ).filter(
+        is_available=True,        # still unsold
+        has_blocking_tx=False     # not tied up in another deal
+    )
+
+    exact_matches   = safe_items.none()
+    keyword_matches = safe_items.none()
 
     if query:
-        exact_matches = Item.objects.filter(item_reference__iexact=query)
-        keyword_matches = Item.objects.filter(
+        exact_matches = safe_items.filter(item_reference__iexact=query)
+
+        keyword_matches = safe_items.filter(
             Q(title__icontains=query) |
             Q(description__icontains=query)
         ).exclude(item_reference__iexact=query)
 
     context = {
-        'query': query,
-        'exact_matches': exact_matches,
-        'keyword_matches': keyword_matches,
+        "query": query,
+        "exact_matches": exact_matches,
+        "keyword_matches": keyword_matches,
     }
-    return render(request, 'core/search_results.html', context)
+    return render(request, "core/search_results.html", context)
 
 def escrow_view(request):
     return render(request, 'core/escrow.html')
@@ -893,6 +937,12 @@ def initiate_payment(request, transaction_id):
     
 
 from .forms import SecureTransactionForm
+
+active_tx = Transaction.objects.filter(
+        item_id=OuterRef("pk"),
+        status__in=["paid", "shipped", "arrived", "delivered"]
+)
+
 @login_required
 def create_secure_transaction(request):
     user = request.user
@@ -902,50 +952,58 @@ def create_secure_transaction(request):
             request,
             "Your account awaits verification. Check your email for admin comments or contact support."
         )
-        return redirect('dashboard')
+        return redirect("dashboard")
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = SecureTransactionForm(request.POST)
 
         if form.is_valid():
             tx = form.save(commit=False)
             tx.seller = user
 
-            item_ref = form.cleaned_data.get('item_reference')
+            item_ref = form.cleaned_data.get("item_reference")
             if item_ref:
+                # fetch the seller’s item and annotate whether it’s ‘locked’
                 try:
-                    item = Item.objects.get(item_reference=item_ref, seller=user)
+                    item_qs = Item.objects.filter(
+                        item_reference=item_ref,
+                        seller=user
+                    ).annotate(has_active_tx=Exists(active_tx))
 
-                    if not item.is_available:
-                        form.add_error('item_reference', 'This item is no longer available.')
-                        raise ValueError
+                    item = item_qs.get()
+                    if (not item.is_available) or item.has_active_tx:
+                        form.add_error(
+                            "item_reference",
+                            "This item is currently not eligible for a new transaction."
+                        )
+                        raise ValueError  # jump to re-render form
 
-                    tx.item_name = item.title
-                    tx.amount = item.price
+                    # ✅ safe – populate details
+                    tx.item_name   = item.title
+                    tx.amount      = item.price
                     tx.description = item.description
 
                 except Item.DoesNotExist:
-                    form.add_error('item_reference', 'Invalid reference—item not found for your account.')
-                    # fall through to re-render form
+                    form.add_error(
+                        "item_reference",
+                        "Invalid reference — item not found in your inventory."
+                    )
                 except ValueError:
-                    # already added a form error above
-                    pass
+                    pass  # form already has an error, just re-render
 
-            # Only save if no field errors were added
+            # If no errors were injected, go ahead and save
             if not form.errors:
                 tx.save()
-                messages.success(request, 'Transaction created successfully!')
-                return redirect('transaction_success', transaction_id=tx.id)
+                messages.success(request, "Transaction link created successfully!")
+                return redirect("transaction_success", transaction_id=tx.id)
 
     else:
-        # GET
-        initial = {}
-        item_ref = request.GET.get('item_reference')
-        if item_ref:
-            initial['item_reference'] = item_ref
-        form = SecureTransactionForm(initial=initial)
+        # GET – pre-fill ref if it came via query-string
+        ref = request.GET.get("item_reference")
+        form = SecureTransactionForm(initial={"item_reference": ref} if ref else None)
 
-    return render(request, 'core/create_transaction.html', {'form': form})
+    return render(request, "core/create_transaction.html", {"form": form})
+
 # core/views.py  (or wherever your view lives)
 import io, base64, qrcode
 from django.template.loader import render_to_string
@@ -1657,7 +1715,7 @@ def promote_to_staff(request, user_id):
         messages.success(request, f"{user.get_full_name()} is now staff.")
     else:
         messages.info(request, f"{user.get_full_name()} is already staff.")
-    return redirect("manage_users")
+    return redirect("admin_user_list")
 @staff_member_required
 def demote_to_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
@@ -1667,6 +1725,6 @@ def demote_to_user(request, user_id):
         messages.success(request, f"{user.get_full_name()} is demoted to a regular user.")
     else:
         messages.info(request, f"{user.get_full_name()} is already a regular user.")
-    return redirect("manage_users")
+    return redirect("admin_user_list")
 
 
