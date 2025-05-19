@@ -39,6 +39,8 @@ urlpatterns = [
     path('admin_delete_user/delete/<int:user_id>/', views.admin_delete_user, name='admin_delete_user'),
     path('admin_verify_user/<int:user_id>/', views.admin_verify_user, name='admin_verify_user'),
     path('admin_user_verification_view/<int:user_id>/', views.admin_user_verification_view, name='admin_user_verification'),
+    path('promote_to_staff/<int:user_id>/', views.promote_to_staff, name='promote_to_staff'),
+    path('demote_to_user/<int:user_id>/', views.demote_to_user, name='demote_to_user'),
 
 
     path('order/<str:item_reference>/', views.place_order, name='place_order'),
@@ -49,6 +51,7 @@ urlpatterns = [
     path('transaction/<str:transaction_reference>/confirm/', views.confirm_delivery, name='confirm_delivery'),
     path('transaction/<str:transaction_reference>/dispute/', views.raise_dispute, name='raise_dispute'),
     path('transaction/<str:transaction_reference>/ship/', views.ship_item, name='ship_item'),
+    path('secure-tx/<str:mpesa_reference>/ship/', views.ship_item_by_mpesa, name='ship_item_mpesa'),
     path('transactions/<int:transaction_id>/close-dispute/', views.admin_close_dispute, name='admin_close_dispute'),
     path('transactions/<str:transaction_reference>/close-dispute/', views.close_dispute, name='close_dispute'),
     path('transactions/<str:transaction_reference>/request_refund/', views.request_refund, name='request_refund'),
@@ -86,6 +89,8 @@ urlpatterns = [
    
     path('change-password/', auth_views.PasswordChangeView.as_view(template_name='accounts/change_password.html'), name='change_password'),
     path('change-password/done/', auth_views.PasswordChangeDoneView.as_view(template_name='accounts/change_password_done.html'), name='password_change_done'),
+   
+    path("secure-tx/<str:mpesa_reference>/ship/", views.ship_item_by_mpesa, name="ship_item_mpesa",)
 
 
 ]

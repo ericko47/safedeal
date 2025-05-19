@@ -283,12 +283,12 @@ class SecureTransaction(models.Model):
 
     # Link to internal item (optional)
     item_reference = models.CharField(max_length=20, null=True, blank=True)
-    # This can later be used to do a lookup like: Item.objects.get(item_reference=transaction.item_reference)
 
     # Transaction details
     transaction_status = models.CharField(max_length=20, choices=TRANSACTION_STATUS, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    shipped_at = models.DateTimeField(null=True, blank=True)
     mpesa_reference = models.CharField(max_length=100, blank=True, null=True, unique=True)
 
     def get_secure_link(self):

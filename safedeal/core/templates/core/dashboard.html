@@ -181,14 +181,13 @@
             </p>
 
             <div class="flex flex-wrap gap-2 mt-4">
-              {% if txn.status == "paid" %}
-              <a href="{% url 'ship_item' txn.mpesa_reference %}"
-                  class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">
-                  Ship the Item
-              </a>   
-              
+              {% if txn.transaction_status == "paid" %}
+              <a href="{% url 'ship_item_mpesa' txn.mpesa_reference %}"
+                class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">
+                Ship the Item
+              </a>               
               {% endif %}
-              {% if txn.status == "shipped" %}
+              {% if txn.transaction_status == "shipped" %}
               <form method="post" action="{% url 'confirm_delivery' txn.mpesa_reference %}">
                 {% csrf_token %}
                 <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Request Payment</button>

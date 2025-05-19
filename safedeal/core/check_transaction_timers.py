@@ -61,3 +61,26 @@ class Command(BaseCommand):
                 )
 
         self.stdout.write("✅  Timer checks complete.")
+
+curl -Method POST http://127.0.0.1:8000/mpesa/callback/ `
+     -Headers @{ "Content-Type" = "application/json" } `
+     -Body @'
+{
+  "Body": {
+    "stkCallback": {
+      "MerchantRequestID": "e35e",
+      "CheckoutRequestID": "67890",
+      "ResultCode": 0,
+      "ResultDesc": "Success",
+      "CallbackMetadata": {
+        "Item": [
+          { "Name": "Amount", "Value": 50000 },
+          { "Name": "MpesaReceiptNumber", "Value": "ABC1DQ456" },
+          { "Name": "PhoneNumber", "Value": 254740364413 },
+          { "Name": "AccountReference", "Value": "SD-09351bba77" }
+        ]
+      }
+    }
+  }
+}
+'@

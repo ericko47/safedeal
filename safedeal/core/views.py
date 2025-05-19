@@ -370,7 +370,10 @@ def raise_dispute(request, transaction_reference):
 @login_required
 def ship_item(request, transaction_reference):
     transaction = get_object_or_404(Transaction, transaction_reference=transaction_reference, seller=request.user)
-
+    transaction1 = get_object_or_404(SecureTransaction, mpesa_reference=transaction_reference, seller=request.user)
+    if transaction1.transaction_status == 'paid':
+        messages.error(request, "Hey, we are here testing.")
+        return redirect('dashboard')
     if transaction.status != 'paid':
         messages.error(request, "Item cannot be shipped in its current state.")
         return redirect('dashboard')
@@ -399,6 +402,45 @@ def ship_item(request, transaction_reference):
         form = ShippingForm(instance=transaction)
 
     return render(request, 'core/ship_item.html', {'form': form, 'transaction': transaction})
+
+@login_required
+def ship_item_by_mpesa(request, mpesa_reference):
+    tx = get_object_or_404(
+        SecureTransaction,
+        mpesa_reference=mpesa_reference,
+        seller=request.user,
+    )
+
+    # guard clauses ----------------------------------------------------------------
+    if tx.transaction_status != "paid":
+        messages.error(
+            request,
+            "This order is not in a state that can be marked as 'shipped'.",
+        )
+        return redirect("dashboard")
+
+    # POST  -------------------------------------------------------------------------
+    if request.method == "POST":
+        # update
+        tx.transaction_status = "shipped"
+        tx.shipped_at = timezone.now()
+        tx.save(update_fields=["transaction_status", "shipped_at", "updated_at"])
+
+        # notify buyer
+        send_custom_email(
+            subject="Your item has been shipped!",
+            template_name="emails/item_shipped_external.html",
+            context={"transaction": tx},
+            recipient_list=[tx.buyer_email],
+        )
+
+        messages.success(request, "Item marked as shipped and buyer notified.")
+        return redirect("dashboard")
+    return render(
+        request,
+        "core/confirm_ship_external.html",
+        {"transaction": tx},
+    )
 
 
 
@@ -1606,6 +1648,25 @@ def admin_user_verification_view(request, user_id):
     user = get_object_or_404(User, id=user_id)
     return render(request, 'admin/admin_user_verification.html', {'user_obj': user})
 
-
+@staff_member_required
+def promote_to_staff(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    if not user.is_staff:
+        user.is_staff = True
+        user.save(update_fields=["is_staff"])
+        messages.success(request, f"{user.get_full_name()} is now staff.")
+    else:
+        messages.info(request, f"{user.get_full_name()} is already staff.")
+    return redirect("manage_users")
+@staff_member_required
+def demote_to_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    if not user.is_staff:
+        user.is_staff = False
+        user.save(update_fields=["is_staff"])
+        messages.success(request, f"{user.get_full_name()} is demoted to a regular user.")
+    else:
+        messages.info(request, f"{user.get_full_name()} is already a regular user.")
+    return redirect("manage_users")
 
 

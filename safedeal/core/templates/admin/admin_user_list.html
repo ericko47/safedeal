@@ -55,14 +55,34 @@
           {% endif %}
         </td>
         <td class="px-4 py-2 space-x-2">
-          {% if user != request.user %}
-            <a href="{% url 'admin_toggle_user' user.id %}" class="text-blue-600 hover:underline">
-              {% if user.is_active %}Deactivate{% else %}Activate{% endif %}
-            </a>
-            <a href="{% url 'admin_delete_user' user.id %}" class="text-red-500 hover:underline" onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
+          {% if request.user.is_superuser and user != request.user %}
+              <a href="{% url 'admin_toggle_user' user.id %}" class="text-blue-600 hover:underline">
+                {% if user.is_active %}Deactivate{% else %}Activate{% endif %}
+              </a>
+              <a href="{% url 'admin_delete_user' user.id %}"
+                class="text-red-500 hover:underline"
+                onclick="return confirm('Are you sure you want to delete this user?');">
+                Delete
+              </a>
+
+              {% if not user.is_staff %}
+                  <a href="{% url 'promote_to_staff' user.id %}"
+                    class="text-blue-600 hover:underline">
+                    Promote
+                  </a>
+              {% endif %}
           {% else %}
-            <span class="text-gray-500 italic">You</span>
+              <span class="text-gray-500 italic">
+                  {% if user == request.user %}You{% else %}—{% endif %}
+              </span>
           {% endif %}
+          {% if user.is_staff %}
+              <a href="{% url 'demote_to_user' user.id %}"
+                class="text-blue-600 hover:underline">
+                Demote
+              </a>
+          {% endif %}
+
         </td>
       </tr>
       {% endfor %}

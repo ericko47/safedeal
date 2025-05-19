@@ -11,22 +11,14 @@
     </div>
     <h2 style="font-size: 20px; font-weight: 600; color: #1f2937;">Your item has been shipped!</h2>
     <p style="margin-top: 16px; line-height: 1.6;">
-      Hello {{ buyer }},
+      Hello {{ tx.buyer_name }},
     </p>
     <p style="line-height: 1.6;">
-      The seller has marked your Item number: <strong>#{{ item.item_reference }}</strong> for <strong>{{ item.title }}</strong> as shipped.
-    </p>
-    <div>
-      <img src="{{ shipping_evidence}}" alt="{{ shipping_evidence}}">
-    </div>
-    <p style="line-height: 1.6;">
-      Delivery Method: <strong>{{ delivery_mode_display }}</strong><br>
-      {% if delivery_agent %}
-      Assigned Agent: <strong>{{ delivery_agent }}</strong><br>
-      {% endif %}
-    </p>
+      The seller has marked your Item number: <strong>#{{ tx.item_reference }}</strong> for <strong>{{ tx.item_name }}</strong> as shipped.
+    </p >
+    <p style="line-height: 1.6;">You are requested to keep Intouch with the seller until you confirm delivery. Safedeal will call you to confirm delivery before funds are released</p>
     <p style="margin-top: 20px; line-height: 1.6;">
-      You can track this transaction by logging into safedeal, in at the dashboard.
+      For better tracking, you can create a account with safedeal and track your transaction from the dashboard in future.
     </p>
     <p style="margin-top: 40px; font-size: 14px; color: #6b7280;">
       Thanks for using SafeDeal.
