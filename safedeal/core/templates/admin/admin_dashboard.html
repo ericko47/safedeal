@@ -11,23 +11,11 @@
       <a href="{% url 'admin_premium_subscriptions' %}" class="text-blue-600 hover:underline font-semibold"> Manage Premium</a>
       <a href="{% url 'reported_items' %}" class="text-blue-600 hover:underline font-semibold"> Reported Items</a>
       <a href="{% url 'fundable_transactions' %}" class="text-blue-600 hover:underline font-semibold">Fundable transactions</a>
-      <a href="{% url 'support' %}" class="text-blue-600 hover:underline font-semibold">Seller funding</a>
-      <a href="{% url 'support' %}" class="text-blue-600 hover:underline font-semibold">Transaction statements</a>
+      <a href="{% url 'support' %}" class="text-blue-600 hover:underline font-semibold">Refund Requests</a>
+      <a href="{% url 'all_items' %}" class="text-blue-600 hover:underline font-semibold">Items</a>
       <a href="{% url 'manage_support_tickets' %}" class="text-blue-600 hover:underline font-semibold">User support</a>
     </nav>
   </div><br>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">   
-    <!-- Total Transactions -->
-    <div class="bg-white p-4 shadow rounded-xl">
-      <h2 class="text-xl font-semibold mb-3">Total Transactions: {{ all_transactions.count }}</h2>
-      <p class="text-3xl font-bold"></p>
-    </div>
-    <!-- Total Items -->
-    <div class="bg-white p-4 shadow rounded-xl">
-      <h2 class="text-xl font-semibold mb-3">Total Items: {{ items.count }}</h2>
-      <p class="text-3xl font-bold"></p>
-    </div>
-  </div> 
   <!-- Disputes Section -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
     <!-- Open Disputes -->
@@ -73,7 +61,7 @@
 
   <!-- Recent Transactions -->
   <div class="bg-white p-4 shadow rounded-xl mb-10">
-    <h2 class="text-xl font-semibold mb-4">Recent Transactions</h2>
+    <h2 class="text-xl font-semibold mb-4">Disputed Transactions</h2>
     <a href="{% url 'all_transactions_admin' %}" class="text-blue-600 hover:underline">View All transactions</a>
     <div class="overflow-x-auto">
       <table class="min-w-full text-sm text-left text-gray-600">
@@ -89,7 +77,8 @@
           </tr>
         </thead>
         <tbody>
-          {% for transaction in all_transactions|slice:":5" %}
+          {% for transaction in all_transactions %}
+          {% comment %} |slice:":5" {% endcomment %}
             <tr class="border-b hover:bg-gray-50">
               <td class="px-4 py-2">{{ transaction.transaction_reference }}</td>
               <td class="px-4 py-2">{{ transaction.item.title }}</td>

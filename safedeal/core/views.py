@@ -1498,21 +1498,42 @@ def approve_premium(request, sub_id):
 
 
 from django.core.paginator import Paginator
+from itertools import chain
+from operator import attrgetter
 
 @staff_member_required
 def all_transactions_admin(request):
     q = request.GET.get("q", "").strip()
 
-    tx_qs = Transaction.objects.all().select_related("buyer", "seller", "item").order_by("-created_at")
+    tx_qs = Transaction.objects.all().select_related("buyer", "seller", "item")
+    secure_qs = SecureTransaction.objects.all().select_related("seller")
+
     if q:
         tx_qs = tx_qs.filter(transaction_reference__icontains=q)
+        secure_qs = secure_qs.filter(mpesa_reference__icontains=q)
 
-    paginator = Paginator(tx_qs, 30)          # 30 rows per page
-    page_obj  = paginator.get_page(request.GET.get("page"))
+    # Mark type so we can distinguish in the template if needed
+    for tx in tx_qs:
+        tx.tx_type = 'regular'
+    for tx in secure_qs:
+        tx.tx_type = 'secure'
+
+    # Combine and sort by creation date
+    combined = sorted(
+        chain(tx_qs, secure_qs),
+        key=attrgetter('created_at'),
+        reverse=True
+    )
+
+    # Manual pagination
+    paginator = Paginator(combined, 30)
+    page_obj = paginator.get_page(request.GET.get("page"))
 
     return render(request, "admin/all_transactions.html", {
         "page_obj": page_obj,
         "search_query": q,
+        "trans":tx_qs,
+        "secure":secure_qs,
     })
 
 
@@ -1618,10 +1639,9 @@ def admin_dashboard(request):
         messages.warning(request, "Please complete your profile before posting an item.")
         return redirect('update_profile')
     disputes = TransactionDispute.objects.all().order_by('-created_at')
-    items = Item.objects.all().order_by('-created_at')
     open_disputes = disputes.filter(status='open')
     closed_disputes = disputes.filter(status='closed')
-    all_transactions = Transaction.objects.all().order_by('-created_at') 
+    all_transactions = Transaction.objects.filter(status='disputed').order_by('-created_at') 
     unverified_users = User.objects.filter(is_verified=False).order_by('-date_joined')
     inactive_users = User.objects.filter(is_active=False).order_by('-date_joined')
     account_update_pending = User.objects.filter(is_active=True,
@@ -1647,7 +1667,6 @@ def admin_dashboard(request):
         'users': account_update_pending,
         'unverified_users': unverified_users,
         'inactive_users': inactive_users,
-        'items': items,
     })
     
     
@@ -1727,4 +1746,11 @@ def demote_to_user(request, user_id):
         messages.info(request, f"{user.get_full_name()} is already a regular user.")
     return redirect("admin_user_list")
 
+@staff_member_required
+def all_items_view(request):
+    items = Item.objects.all().order_by('-created_at')
+    paginator = Paginator(items, 20)  # Show 20 items per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
+    return render(request, 'admin/all_items.html', {'page_obj': page_obj, 'items': items})

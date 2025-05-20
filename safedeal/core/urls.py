@@ -90,7 +90,7 @@ urlpatterns = [
     path('change-password/', auth_views.PasswordChangeView.as_view(template_name='accounts/change_password.html'), name='change_password'),
     path('change-password/done/', auth_views.PasswordChangeDoneView.as_view(template_name='accounts/change_password_done.html'), name='password_change_done'),
    
-    path("secure-tx/<str:mpesa_reference>/ship/", views.ship_item_by_mpesa, name="ship_item_mpesa",)
-
+    path("secure-tx/<str:mpesa_reference>/ship/", views.ship_item_by_mpesa, name="ship_item_mpesa"),
+    path('items/', views.all_items_view, name='all_items'),
 
 ]

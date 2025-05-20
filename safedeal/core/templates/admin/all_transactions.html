@@ -5,7 +5,7 @@
         &larr; Go Back
     </a>
 
-  <h2 class="text-2xl font-semibold mb-4">All Transactions</h2>
+  <h2 class="text-2xl font-semibold mb-4">All Transactions: Total = {{ trans.count }} + {{ secure.count }}</h2>
 
   <form method="get" class="mb-4 flex gap-2">
     <input type="text" name="q" value="{{ search_query }}" placeholder="Search by reference"
@@ -29,19 +29,67 @@
     <tbody>
       {% for tx in page_obj %}
       <tr class="border-t">
-        <td class="px-3 py-2">{{ tx.transaction_reference }}</td>
-        <td>{{ tx.item.title|truncatechars:25 }}</td>
-        <td>{{ tx.buyer.username }}</td>
+        <td class="px-3 py-2">
+          {% if tx.tx_type == "secure" %}
+            {{ tx.mpesa_reference }}
+          {% else %}
+            {{ tx.transaction_reference }}
+          {% endif %}
+        </td>
+
+        <td>
+          {% if tx.tx_type == "secure" %}
+            {{ tx.item_name|truncatechars:25 }}
+          {% else %}
+            {{ tx.item.title|truncatechars:25 }}
+          {% endif %}
+        </td>
+
+        <td>
+          {% if tx.tx_type == "secure" %}
+            {{ tx.buyer_email }}
+          {% else %}
+            {{ tx.buyer.username }}
+          {% endif %}
+        </td>
+
         <td>{{ tx.seller.username }}</td>
-        <td>{{ tx.status }}</td>
-        <td>KES {{ tx.amount }}</td>
-        <td>{% if tx.is_funded %}✅{% else %}❌{% endif %}</td>
+
+        <td>
+          {% if tx.tx_type == "secure" %}
+            {{ tx.transaction_status }}
+          {% else %}
+            {{ tx.status }}
+          {% endif %}
+        </td>
+
+        <td>
+          KES {{ tx.amount }}
+        </td>
+
+        <td>
+          {% if tx.tx_type == "secure" %}
+            {% if tx.funded_at %}✅{% else %}❌{% endif %}
+          {% else %}
+            {% if tx.is_funded %}✅{% else %}❌{% endif %}
+          {% endif %}
+        </td>
+
         <td>{{ tx.created_at|date:"Y-m-d H:i" }}</td>
+
+        <td class="px-4 py-2">
+          {% if tx.tx_type == "secure" %}
+            <a href="{% url 'external_transaction_detail' tx.id %}" class="text-blue-600 hover:underline">View</a>
+          {% else %}
+            <a href="{% url 'transaction_detail' tx.transaction_reference %}" class="text-blue-600 hover:underline">View</a>
+          {% endif %}
+        </td>
       </tr>
       {% empty %}
-      <tr><td colspan="8" class="text-center py-4">No transactions found.</td></tr>
+      <tr><td colspan="9" class="text-center py-4">No transactions found.</td></tr>
       {% endfor %}
     </tbody>
+
   </table>
 
   <!-- Pagination -->

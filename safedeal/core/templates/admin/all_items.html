@@ -1,0 +1,60 @@
+{% extends "core/base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto mt-8">
+  <h2 class="text-2xl font-semibold mb-4">All Items in System: Total={{ items.count }}</h2>
+  <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+    &larr; Go Back
+  </a>
+  <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+    <thead>
+      <tr class="bg-gray-100 text-left text-sm uppercase text-gray-600">
+        <th class="px-4 py-3">Title</th>
+        <th class="px-4 py-3">Seller</th>
+        <th class="px-4 py-3">Status</th>
+        <th class="px-4 py-3">Item_ID</th>
+        <th class="px-4 py-3">In bulk</th>
+        <th class="px-4 py-3">Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in page_obj %}
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-4 py-2">{{ item.title }}</td>
+          <td class="px-4 py-2">{{ item.seller.username }}</td>
+          <td class="px-4 py-2">
+            {% if item.is_available %}
+              <span class="text-green-600 font-medium">Available</span>
+            {% else %}
+              <span class="text-red-600 font-medium">Unavailable</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-2">{{ item.item_reference }}</td>
+          <td class="px-4 py-2">{{ item.is_bulk }}</td>
+          <td class="px-4 py-2">{{ item.created_at|date:"M d, Y" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="px-4 py-2 text-center text-gray-500">No items found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  <div class="mt-4">
+    {% if page_obj.has_other_pages %}
+      <div class="flex justify-between">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}" class="text-blue-600 hover:underline">Previous</a>
+        {% else %}
+          <span></span>
+        {% endif %}
+        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}" class="text-blue-600 hover:underline">Next</a>
+        {% else %}
+          <span></span>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
