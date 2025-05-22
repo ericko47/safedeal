@@ -122,7 +122,7 @@ class Transaction(models.Model):
     platform_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     seller_payout = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_funded = models.BooleanField(default=False)    
-    hold_payout = models.BooleanField(default=False)  # NEW FIELD
+    hold_payout = models.BooleanField(default=False)  
     checkout_request_id = models.CharField(max_length=100, null=True, blank=True)
 
     def can_buyer_request_refund(self):

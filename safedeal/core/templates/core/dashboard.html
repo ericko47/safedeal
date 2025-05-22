@@ -82,17 +82,19 @@
               </span>
             </p>
             <div class="flex flex-wrap gap-2 mt-4">
-              {% if txn.status == "shipped" %}
+              {% if txn.status in "shipped arrived" %}
               <form method="post" action="{% url 'confirm_delivery' txn.transaction_reference %}">
                 {% csrf_token %}
                 <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Confirm Delivery</button>
               </form>
-              {% elif txn.status == "pending" %}
+              {% endif %}
+              {% if txn.status == "pending" %}
               <form method="post" action="{% url 'cancel_transaction' txn.transaction_reference %}">
                 {% csrf_token %}
                 <button type="submit" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Cancel Order</button>
               </form>
-              {% elif txn.status in "paid shipped" %}
+              {% endif %}
+              {% if txn.status in "paid arrived" %}
               <form method="post" action="{% url 'raise_dispute' txn.transaction_reference %}">
                 {% csrf_token %}
                 <button type="submit" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Raise Dispute</button>
@@ -141,7 +143,10 @@
               </a>   
               
               {% endif %}
-              {% if txn.status == "shipped" %}
+              {% if txn.status == "shipped" %}              
+              <a href="{% url 'mark_arrived' txn.transaction_reference %}" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Mark_arrived</a>
+              {% endif %}
+              {% if txn.status == "arrived" %}
               <form method="post" action="{% url 'confirm_delivery' txn.transaction_reference %}">
                 {% csrf_token %}
                 <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Request Payment</button>
@@ -191,6 +196,9 @@
               </a>               
               {% endif %}
               {% if txn.transaction_status == "shipped" %}
+              <a href="{% url 'mark_securearrived' txn.mpesa_reference %}" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Mark_arrived</a>
+              {% endif %}
+              {% if txn.transaction_status == "arrived" %}
               <form method="post" action="{% url 'confirm_delivery' txn.mpesa_reference %}">
                 {% csrf_token %}
                 <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Request Payment</button>

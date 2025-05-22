@@ -3,7 +3,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Delivery Confirmed</title>
+  <title>Irrival Confirmed</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -38,20 +38,21 @@
 </head>
 <body>
   <div class="container">
-    <div class="header">Delivery Confirmed</div>
+    <div class="header">Irrival Confirmed</div>
         <div class="content">
-            <p>Hello {{ transaction.buyer.first_name }},</p>
+            <p>Hello {{ transaction.buyer.first_name }} {{transaction.buyer_name}},</p>
 
-            <p>The buyer <strong>{{ transaction.seller.username }}</strong> has confirmed the arrival of the item:</p>
+            <p>The seller <strong>{{ transaction.seller.username }}</strong> has confirmed the arrival of the item:</p>
             <ul>
-                <li><strong>Item:</strong> {{ transaction.item.title }}</li>
-                <li><strong>Transaction ID:</strong> {{ transaction.transaction_reference }}</li>
+                <li><strong>Item:</strong> {{ transaction.item.title }} {{transaction.item_name}}</li>
+                <li><strong>Item_ID:</strong> {{ transaction.item.item_reference }} {{transaction.item_reference}}</li>
+                <li><strong>Transaction ID:</strong> {{ transaction.transaction_reference }} {{transaction.mpesa_reference}}</li>
                 <li><strong>Amount:</strong> KES {{ transaction.amount }}</li>
                 <li><strong>Arrived at:</strong> {{ transaction.updated_at|date:"M d, Y H:i" }}</li>
             </ul>
-
+            <p>To confirm receipt of the item, please log in to your SafeDeal account and click on the <strong>Confirm Receipt</strong> button.</p>
             <p>Please confirm receipt within 48 hours to release payment to the seller, or raise a dispute if there are issues.</p>
-
+            <p>If you don't a SafeDeal account, you can <strong>Raise Dispute</strong> through our support team at support@safedeal.co.ke stating the <strong>reason, the Item_ID and the Transaction_ID</strong>  </p>
             <p>For any questions, please contact our support team.</p>
             <br><br>
             <p>Thank you for using SafeDeal.</p>

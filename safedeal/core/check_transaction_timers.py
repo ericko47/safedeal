@@ -24,7 +24,7 @@ class Command(BaseCommand):
 
         with db_tx.atomic():
 
-            # 1️⃣  Seller late to mark 'arrived'  ➜ fine 2 %
+            # 1️⃣  Seller late to mark 'shipped'  ➜ fine 2 %
             late_shipments = Transaction.objects.filter(
                 status="shipped",
                 shipped_at__lte=now - timedelta(hours=SELLER_DELAY_HOURS),
@@ -47,7 +47,7 @@ class Command(BaseCommand):
             updated = arrived_48h.update(status="delivered")     # auto-deliver
             if updated:
                 self.stdout.write(f"✅  Auto-delivered {updated} transaction(s)")
-
+                #email
             # 3️⃣  Paid > 48 h with no shipment  ➜ buyer may refund
             unpaid_ship = Transaction.objects.filter(
                 status="paid",
@@ -62,13 +62,13 @@ class Command(BaseCommand):
 
         self.stdout.write("✅  Timer checks complete.")
 
-curl -Method POST http://127.0.0.1:8000/mpesa/callback/ `
+curl -Method POST http://127.0.0.1:8000//mpesa/callback/ `
      -Headers @{ "Content-Type" = "application/json" } `
      -Body @'
 {
   "Body": {
     "stkCallback": {
-      "MerchantRequestID": "e35e",
+      "MerchantRequestID": "Testwithshem",
       "CheckoutRequestID": "67890",
       "ResultCode": 0,
       "ResultDesc": "Success",
@@ -77,7 +77,7 @@ curl -Method POST http://127.0.0.1:8000/mpesa/callback/ `
           { "Name": "Amount", "Value": 50000 },
           { "Name": "MpesaReceiptNumber", "Value": "ABC1DQ456" },
           { "Name": "PhoneNumber", "Value": 254740364413 },
-          { "Name": "AccountReference", "Value": "SD-09351bba77" }
+          { "Name": "AccountReference", "Value": "971c7da403df" }
         ]
       }
     }

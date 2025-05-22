@@ -228,7 +228,7 @@ def fund_seller(request, transaction_id):
 @login_required
 def request_funding(request, transaction_reference):
     tx = get_object_or_404(Transaction, transaction_reference=transaction_reference, seller=request.user)
-
+  
     if not tx.can_seller_request_funding():
         messages.error(request, "You’re not yet eligible to request payout.")
         return redirect('transaction_detail', transaction_reference=transaction_reference)
@@ -279,7 +279,33 @@ def mark_arrived(request, transaction_reference):
 
     return redirect('transaction_detail', transaction_reference=transaction_reference)
 
+def mark_securearrived(request, mpesa_reference):
+    transaction = get_object_or_404(SecureTransaction, mpesa_reference=mpesa_reference)
 
+    if request.user != transaction.seller and request.user != transaction.delivery_agent.user:
+        return HttpResponseForbidden("You are not authorized to mark this item as arrived.")
+
+    if transaction.transaction_status != 'shipped':
+        messages.warning(request, "This transaction is not in a 'shipped' state.")
+        return redirect('external_transaction_detail', mpesa_reference=mpesa_reference)
+
+    transaction.transaction_status = 'arrived'
+    transaction.arrived_at = timezone.now()
+    transaction.save()
+
+    messages.success(request, "Item marked as arrived. Buyer will be contacted shortly.")
+
+    send_custom_email(
+        subject='Item Arrival Notification',
+        template_name='emails/item_arrived.html',
+        context={
+            'transaction': transaction,
+            'year': timezone.now().year,
+        },
+        recipient_list=[transaction.buyer_email],
+    )
+
+    return redirect('dashboard')
 
 @login_required
 def cancel_transaction(request, transaction_reference):

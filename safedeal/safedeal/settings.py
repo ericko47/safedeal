@@ -172,15 +172,19 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 )
+ACCOUNT_LOGIN_METHOD = 'username'                        # Login by username
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username', 'password1', 'password2']  # email required + verified
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'                # Enforce verification
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
 LOGIN_REDIRECT_URL = '/dashboard/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/login/'
-ACCOUNT_SIGNUP_FIELDS = {
-    'email': {'required': True},
-    # You can define other fields too like:
-    'username': {'required': True},
-}
 
+# ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
+# LOGIN_REDIRECT_URL = '/dashboard/'
+# ACCOUNT_LOGOUT_REDIRECT_URL = '/login/'
+# ACCOUNT_LOGIN_METHOD = 'username'
+# ACCOUNT_SIGNUP_FIELDS = ['email', 'username', 'password1', 'password2']
+# ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

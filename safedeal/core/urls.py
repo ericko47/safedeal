@@ -57,6 +57,7 @@ urlpatterns = [
     path('transactions/<str:transaction_reference>/request_refund/', views.request_refund, name='request_refund'),
     path('transactions/<str:transaction_reference>/request_funding/', views.request_funding, name='request_funding'),
     path('transactions/<str:transaction_reference>/mark-arrived/', views.mark_arrived, name='mark_arrived'),
+    path('transactions/<str:mpesa_reference>/mark_securelyarrived/', views.mark_securearrived, name='mark_securearrived'),
 
 
     path("transactions/", views.all_transactions_admin, name="all_transactions_admin"),
