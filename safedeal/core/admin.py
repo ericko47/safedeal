@@ -9,8 +9,23 @@ from datetime import timedelta
 from decimal import Decimal
 from django.utils.html import format_html
 
-from .models import TransactionDispute
+from .models import TransactionDispute, DeliveryAgent, DeliveryOrganization
 from django.contrib.auth.admin import UserAdmin
+
+# admin.py
+
+@admin.register(DeliveryOrganization)
+class DeliveryOrganizationAdmin(admin.ModelAdmin):
+    list_display = ["name", "registration_number", "is_approved", "contact_email", "created_at"]
+    search_fields = ["name", "registration_number", "contact_email"]
+    list_filter = ["is_approved"]
+
+@admin.register(DeliveryAgent)
+class DeliveryAgentAdmin(admin.ModelAdmin):
+    list_display = ["user", "agent_type", "organization", "is_verified", "is_active", "created_at"]
+    search_fields = ["user__username", "phone_number", "license_number", "vehicle_registration_number"]
+    list_filter = ["agent_type", "is_verified", "is_active"]
+
 
 
 @admin.register(MpesaPaymentLog)

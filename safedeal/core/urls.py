@@ -70,6 +70,7 @@ urlpatterns = [
     path("toggle-hold/<int:transaction_id>/", views.toggle_hold_payout, name="toggle_hold_payout"),
 
     
+    path('register_delivery_agent/', views.register_delivery_agent, name='register_delivery_agent'),
     path('generate_transaction_out/', views.generate_transaction_out, name='generate_transaction_out'),
     
     path('create-transaction/', views.create_secure_transaction, name='create_secure_transaction'),

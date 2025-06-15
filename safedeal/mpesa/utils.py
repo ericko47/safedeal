@@ -7,7 +7,7 @@ from datetime import datetime
 def get_access_token():
     consumer_key = settings.MPESA_CONSUMER_KEY
     consumer_secret = settings.MPESA_CONSUMER_SECRET
-    url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+    url = "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
 
     r = requests.get(url, auth=HTTPBasicAuth(consumer_key, consumer_secret))
     access_token = r.json().get('access_token')
@@ -30,7 +30,7 @@ def lipa_na_mpesa(phone_number, amount, account_reference="SafeDeal", transactio
     
     access_token = get_access_token()
     formatted_phone = format_phone(phone_number)
-    api_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+    api_url = "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest" #"https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
 
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     business_short_code = settings.MPESA_SHORTCODE
@@ -44,7 +44,7 @@ def lipa_na_mpesa(phone_number, amount, account_reference="SafeDeal", transactio
         "Timestamp": timestamp,
         "TransactionType": "CustomerPayBillOnline",
         "Amount": int(float(amount)),  
-        "PartyA": phone_number,
+        "PartyA": formatted_phone,
         "PartyB": business_short_code,
         "PhoneNumber": formatted_phone,
         "CallBackURL": settings.MPESA_CALLBACK_URL,
@@ -58,7 +58,7 @@ def lipa_na_mpesa(phone_number, amount, account_reference="SafeDeal", transactio
 
 def initiate_b2c_payment(phone_number, amount, transaction_reference):
     access_token = get_access_token()
-    b2c_url = "https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest"
+    b2c_url = " https://api.safaricom.co.ke/mpesa/b2c/v3/paymentrequest" #"https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
@@ -82,7 +82,7 @@ def initiate_b2c_payment(phone_number, amount, transaction_reference):
 
 def query_stk_status(checkout_request_id):
     access_token = get_access_token()
-    url = "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query"
+    url = "https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query" #"https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query"
 
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     password = base64.b64encode(

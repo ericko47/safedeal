@@ -31,6 +31,7 @@
       {% if user.is_superuser %}<a href="{% url 'admin:index' %}" class="text-blue-600 hover:underline">Senior Admin</a>{% endif %}
       {% if user.is_staff %}<a href="{% url 'admindashboard' %}" class="text-blue-600 hover:underline">Admin Dashboard</a>{% endif %}
       <a href="{% url 'view_wishlist' %}" class="text-blue-600 hover:underline">Wishlist</a>
+      <a href="{% url 'register_delivery_agent' %}" class="text-blue-600 hover:underline font-semibold">Register as delivery agent</a>
       <a href="{% url 'support' %}" class="text-blue-600 hover:underline font-semibold">Support</a>
     </nav>
   </div>
@@ -67,6 +68,7 @@
         {% if buyer_transactions %}
         <ul class="space-y-4">
           {% for txn in buyer_transactions %}
+          {% if txn.status != 'cancelled'%}
           <li class="border rounded-md p-4">
             <p class="text-gray-700"><strong>Item:</strong> {{ txn.item.title }}</p>
             <p><strong>Item ID:</strong> {{ txn.item.item_reference }}</p>
@@ -104,6 +106,7 @@
             </div>
             
           </li>
+          {% endif %}
           {% endfor %}
         </ul>
         {% else %}
@@ -120,6 +123,7 @@
         {% if seller_transactions %}
         <ul class="space-y-4">
           {% for txn in seller_transactions %}
+          {% if txn.status != 'cancelled'%}
           <li class="border rounded-md p-4">
             <p class="text-gray-700"><strong>Item:</strong> {{ txn.item.title }}</p>
             <p><strong>Item ID:</strong> {{ txn.item.item_reference }}</p>
@@ -155,6 +159,7 @@
               <a href="{% url 'transaction_detail' txn.transaction_reference %}" class="text-sm text-blue-600 hover:underline mt-2 inline-block">View Details</a>
             </div>
           </li>
+          {% endif %}
           {% endfor %}
         </ul>
         {% else %}
@@ -170,6 +175,7 @@
         {% if seller_securetransactions %}
         <ul class="space-y-4">
           {% for txn in seller_securetransactions %}
+          {% if txn.status != 'cancelled'%}
           <li class="border rounded-md p-4">
             <p class="text-gray-700"><strong>Item:</strong> {{ txn.item_name }}</p>
             <p><strong>Item ID:</strong> {{ txn.item_reference }}</p>
@@ -206,6 +212,7 @@
               {% endif %}              
             </div>
           </li>
+          {% endif %}
           {% endfor %}
         </ul>
         {% else %}

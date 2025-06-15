@@ -29,6 +29,76 @@ from .models import PremiumSubscription
 
 from django.contrib.admin.views.decorators import staff_member_required
 from .utils import check_premium_eligibility 
+from .forms import DeliveryAgentForm, DeliveryOrganizationForm
+from .models import DeliveryOrganization, DeliveryAgent
+
+from django.db import IntegrityError
+
+def register_delivery_agent(request):
+    if request.method == "POST":
+        agent_form = DeliveryAgentForm(request.POST, request.FILES)
+        org_form = DeliveryOrganizationForm(request.POST, request.FILES)
+
+        registering_as = request.POST.get('registering_as')
+
+        # Check if the user already has an agent profile
+        if DeliveryAgent.objects.filter(user=request.user).exists():
+            messages.error(
+                request,
+                "You already have a delivery agent profile. If you'd like to register as an organization instead, please contact support for assistance."
+            )
+            return redirect('dashboard')  # or stay on the same page
+
+        if registering_as == "individual" and agent_form.is_valid():
+            # Save individual agent
+            agent = agent_form.save(commit=False)
+            agent.user = request.user
+            agent.agent_type = "individual"
+            agent.save()
+            messages.success(request, "You have successfully registered as an Individual Delivery Agent.")
+            return redirect('dashboard')
+
+        elif registering_as == "organization" and org_form.is_valid() and agent_form.is_valid():
+            # Check if organization exists
+            org_name = org_form.cleaned_data['name']
+            if DeliveryOrganization.objects.filter(name__iexact=org_name).exists():
+                messages.error(request, "An organization with that name already exists.")
+            else:
+                try:
+                    # Save organization
+                    organization = org_form.save()
+
+                    # Save first agent linked to org
+                    agent = agent_form.save(commit=False)
+                    agent.user = request.user
+                    agent.agent_type = "organization"
+                    agent.organization = organization
+                    agent.save()
+
+                    messages.success(
+                        request,
+                        f"Organization '{organization.name}' created and linked to your agent profile."
+                    )
+                    return redirect('dashboard')
+
+                except IntegrityError:
+                    messages.error(
+                        request,
+                        "There was a problem creating your agent profile. You may already have an existing one."
+                    )
+                    return redirect('dashboard')
+
+    else:
+        agent_form = DeliveryAgentForm()
+        org_form = DeliveryOrganizationForm()
+
+    context = {
+        'agent_form': agent_form,
+        'org_form': org_form
+    }
+    return render(request, 'delivery/register_delivery_agent.html', context)
+
+
 
 @login_required
 def upgrade_to_premium(request):
@@ -1130,7 +1200,7 @@ def place_order(request, item_reference):
         phone = request.user.phone_number  # Ensure this exists
         response = lipa_na_mpesa(
             phone_number=phone,
-            amount=item.price,
+            amount=10, #item.price,
             account_reference=transaction_ref,
             transaction_desc=f"Purchase {item.item_reference}"
         )
@@ -1138,11 +1208,16 @@ def place_order(request, item_reference):
             transaction.checkout_request_id = response.get("CheckoutRequestID")
             transaction.save()
             messages.success(request, "Payment request sent. Check your phone.")
+            
+            return redirect('transaction_detail', transaction.transaction_reference)
 
         else:
-            messages.error(request, "Failed to initiate payment. Try again.")
+            #messages.error(request, "Failed to initiate payment. Try again.")
+            # Add this debug print or message
+            messages.error(request, f"Failed to initiate payment: {response}")
+            # Optional: print to console or log
+            print("STK Push response:", response)
 
-        return redirect('transaction_detail', transaction.transaction_reference)
 
     return redirect('item_detail', item_reference=item_reference)
 

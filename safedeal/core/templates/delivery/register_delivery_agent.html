@@ -1,0 +1,139 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Delivery Agent Registration - SafeDeal{% endblock %}
+
+{% block meta %}
+    <meta name="description" content="Register as a Delivery Agent on SafeDeal. Individuals and organizations welcome. Join our trusted delivery network.">
+    <meta name="keywords" content="SafeDeal, Delivery Agent Registration, Delivery Organization, Individual Courier">
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto bg-white shadow-md rounded-lg p-6 mt-8">
+    <h2 class="text-2xl font-semibold text-center mb-6 text-gray-800">Become a Delivery Agent</h2>
+    <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+        &larr; Go Back
+    </a>
+
+    <p class="text-center text-gray-600 mb-4">
+        Join our trusted delivery network. Register as an individual or an organization. Organizations can manage multiple delivery agents.
+    </p>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-4">
+        {% csrf_token %}
+
+        <!-- Registering as -->
+        {% comment %} <div>
+            <label for="{{ agent_form.registering_as.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Registering As:</label>
+            <input type="radio" name="registering_as" value="individual"><br>
+            <input type="radio" name="registering_as" value="organization">
+
+
+        </div> {% endcomment %}
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Registering As:</label>
+        
+            <div class="flex items-start gap-4">
+                <label class="flex items-center space-x-2">
+                    <input type="radio" name="registering_as" value="individual" class="text-blue-600 focus:ring-blue-500">
+                    <span class="text-gray-700">
+                        Individual
+                        <span class="block text-sm text-gray-500">You're signing up as a single delivery person.</span>
+                    </span>
+                </label>
+        
+                <label class="flex items-center space-x-2">
+                    <input type="radio" name="registering_as" value="organization" class="text-blue-600 focus:ring-blue-500">
+                    <span class="text-gray-700">
+                        Organization
+                        <span class="block text-sm text-gray-500">You're registering a company that manages agents.</span>
+                    </span>
+                </label>
+            </div>
+        </div>
+        
+
+        <!-- Delivery Agent Basic Fields -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for field in agent_form %}
+                {% if field.name != 'registering_as' %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+                        {{ field|add_class:"w-full border-b border-gray-300 focus:outline-none focus:border-gray-600 placeholder-gray-400 py-2 bg-transparent transition-all duration-200" }}
+                        
+                        {% if field.help_text %}
+                            <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+                        {% endif %}
+                        
+                        {% if field.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ field.errors|striptags }}</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Organization Fields -->
+        <div id="organizationFields" class="hidden mt-6 border-t pt-4" aria-hidden="true">
+
+            <h3 class="text-xl font-semibold mb-4 text-gray-800">Organization Details</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for field in org_form %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+                        {{ field|add_class:"w-full border-b border-gray-300 focus:outline-none focus:border-gray-600 placeholder-gray-400 py-2 bg-transparent transition-all duration-200" }}
+
+                        {% if field.help_text %}
+                            <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+                        {% endif %}
+                        
+                        {% if field.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ field.errors|striptags }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="pt-4">
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
+                Submit Registration
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Simple JS to toggle org fields -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const registeringRadios = document.querySelectorAll('input[name="registering_as"]');
+        const orgFields = document.getElementById('organizationFields');
+        const orgInputs = orgFields.querySelectorAll('input, select, textarea');
+
+        function toggleOrgFields() {
+            const selected = document.querySelector('input[name="registering_as"]:checked');
+            if (selected && selected.value === 'organization') {
+                orgFields.classList.remove('hidden');
+                orgFields.setAttribute('aria-hidden', 'false');
+                orgInputs.forEach(el => el.removeAttribute('disabled'));
+            } else {
+                orgFields.classList.add('hidden');
+                orgFields.setAttribute('aria-hidden', 'true');
+                orgInputs.forEach(el => el.setAttribute('disabled', 'disabled'));
+            }
+        }
+
+        // Run once on page load
+        toggleOrgFields();
+
+        // Watch for changes on radio buttons
+        registeringRadios.forEach(radio => {
+            radio.addEventListener('change', toggleOrgFields);
+        });
+    });
+</script>
+
+{% endblock %}
