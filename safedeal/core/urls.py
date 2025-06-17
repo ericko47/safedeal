@@ -58,6 +58,7 @@ urlpatterns = [
     path('transactions/<str:transaction_reference>/request_funding/', views.request_funding, name='request_funding'),
     path('transactions/<str:transaction_reference>/mark-arrived/', views.mark_arrived, name='mark_arrived'),
     path('transactions/<str:mpesa_reference>/mark_securelyarrived/', views.mark_securearrived, name='mark_securearrived'),
+    path('transactions/<str:mpesa_reference>/mark_securedelivered/', views.mark_securedelivered, name='mark_securedelivered'),
 
 
     path("transactions/", views.all_transactions_admin, name="all_transactions_admin"),
@@ -66,13 +67,20 @@ urlpatterns = [
     path('reported_items/', views.reported_items_view, name='reported_items'),
     path('manage_support_tickets/', views.manage_support_tickets, name='manage_support_tickets'),
     path("fundable-transactions/", views.fundable_transactions, name="fundable_transactions"),
+    path("held-transactions/", views.held_transactions, name="held_transactions"),
+    path("fund_seller_external/<str:transaction_id>/", views.fund_seller_external, name="fund_seller_external"),
     path("fund-seller/<int:transaction_id>/", views.fund_seller, name="fund_seller"),
     path("toggle-hold/<int:transaction_id>/", views.toggle_hold_payout, name="toggle_hold_payout"),
+    path("toggle-hold2/<str:transaction_id>/", views.toggle_hold_payout2, name="toggle_hold_payout2"),
+    path("hold/<int:transaction_id>/", views.hold_payout, name="hold_payout"),
+    path("hold2/<str:transaction_id>/", views.hold_payout2, name="hold_payout2"),
 
     
     path('register_delivery_agent/', views.register_delivery_agent, name='register_delivery_agent'),
     path('generate_transaction_out/', views.generate_transaction_out, name='generate_transaction_out'),
-    
+    path('my_delivery_jobs/', views.my_delivery_jobs, name='my_delivery_jobs'),
+    path('verify-agents/', views.verify_agents_view, name='verify_agents'),
+
     path('create-transaction/', views.create_secure_transaction, name='create_secure_transaction'),
     path('transaction-success/<uuid:transaction_id>/', views.transaction_success, name='transaction_success'),    
     path('secure-transaction/<uuid:transaction_id>/', views.external_transaction_detail, name='external_transaction_detail'),

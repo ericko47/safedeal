@@ -11,7 +11,6 @@
       &larr; Go Back
     </a>
     <p class="text-gray-600">You're logged in as a <strong>{{ user.account_type|capfirst }}</strong>.</p>
-    <p class="text-gray-600">Your account was created on <strong>{{ user.date_joined|date:"F j, Y" }}</strong> .</p>
     <p class="text-gray-600">Your account is currently <strong>{{ user.is_active|yesno:"active,inactive" }}</strong> .</p>
     {% if user.is_verified %}
     <p class="text-green-600">Your account is verified.</p>
@@ -33,6 +32,8 @@
       <a href="{% url 'view_wishlist' %}" class="text-blue-600 hover:underline">Wishlist</a>
       <a href="{% url 'register_delivery_agent' %}" class="text-blue-600 hover:underline font-semibold">Register as delivery agent</a>
       <a href="{% url 'support' %}" class="text-blue-600 hover:underline font-semibold">Support</a>
+      {% if agent_transactions %}<a href="{% url 'my_delivery_jobs' %}" class="text-blue-600 underline">Go to My Delivery Jobs</a> {% endif %}
+
     </nav>
   </div>
 
@@ -205,7 +206,7 @@
               <a href="{% url 'mark_securearrived' txn.mpesa_reference %}" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Mark_arrived</a>
               {% endif %}
               {% if txn.transaction_status == "arrived" %}
-              <form method="post" action="{% url 'confirm_delivery' txn.mpesa_reference %}">
+              <form method="post" action="{% url 'mark_securedelivered' txn.mpesa_reference %}">
                 {% csrf_token %}
                 <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Request Payment</button>
               </form>
@@ -221,7 +222,6 @@
       </div>
     </div>
   </div>
-  
 
   <!-- Seller Section -->
   {% if user.account_type == 'seller' or user.account_type == 'both' %}

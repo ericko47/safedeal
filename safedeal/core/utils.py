@@ -4,6 +4,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
 from .models import PremiumSubscription, Transaction
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.utils import timezone
 # from reviews.models import Rating  # adjust if different
@@ -83,11 +84,23 @@ def log_transaction_status_change(transaction, new_status, user=None, reason="")
         transaction.status = new_status
         transaction.save()
         
-def calculate_fees(amount, fee_percent=5):
-    """Calculate platform fee and final payout"""
-    fee = (fee_percent / 100) * amount
-    payout = amount - fee
-    return round(fee, 2), round(payout, 2)
+
+def calculate_fees(amount, fee_percent=5, fine_percent=0, apply_fine=False):
+ 
+    amount = Decimal(amount)
+
+    fee = (Decimal(fee_percent) / 100) * amount
+    fine = (Decimal(fine_percent) / 100) * amount if apply_fine else Decimal('0.00')
+
+    platform_fee = fee + fine
+    payout = amount - platform_fee
+
+    # Round all to 2 decimal places
+    platform_fee = platform_fee.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    fine = fine.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    payout = payout.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    return platform_fee, fine, payout
 
 def notify_funding(transaction):
     send_custom_email(

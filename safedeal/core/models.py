@@ -221,11 +221,11 @@ class DeliveryAgent(models.Model):
         blank=True,
         help_text="Required if registering as organization agent"
     )
-    license_number = models.CharField(max_length=100, blank=True, null=True)
+    license_number = models.CharField(max_length=100, blank=True, null=True, unique=True)
     license_document = models.FileField(upload_to='delivery_agent_license/', null=True)
     police_clearance_certificate = models.FileField(upload_to='agent_police_clearances/', blank=True, null=True)
     vehicle_type = models.CharField(max_length=50, choices=[('bike', 'Bike'), ('car', 'Car'), ('van', 'Van'), ('foot', 'On Foot'), ('truck', 'Truck')], null=True)
-    vehicle_plate_number = models.CharField(max_length=50, blank=True, null=True)
+    vehicle_plate_number = models.CharField(max_length=50, blank=True, null=True, unique=True)
     region_of_operation = models.CharField(max_length=100)
     mpesa_phone_number = models.CharField(max_length=15, validators=[RegexValidator(regex=r'^\+?1?\d{9,15}$', message='Invalid phone number')], blank=True, null=True)    
     is_verified = models.BooleanField(default=False)
@@ -339,6 +339,9 @@ class SecureTransaction(models.Model):
     item_name = models.CharField(max_length=255, null=True, blank=True)
     description = models.TextField(blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    platform_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    seller_payout = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    funded_at = models.DateTimeField(null=True, blank=True)  
 
     # Link to internal item (optional)
     item_reference = models.CharField(max_length=20, null=True, blank=True)
@@ -348,6 +351,8 @@ class SecureTransaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
+    is_funded = models.BooleanField(default=False)    
+    hold_payout = models.BooleanField(default=True)  
     mpesa_reference = models.CharField(max_length=100, blank=True, null=True, unique=True)
 
     def get_secure_link(self):

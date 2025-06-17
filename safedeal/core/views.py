@@ -192,7 +192,7 @@ def confirm_delivery(request, transaction_reference):
         return HttpResponseForbidden("You are not authorized to confirm this delivery.")
 
     if request.method == 'POST':
-        if transaction.status == 'shipped':
+        if transaction.status == 'shipped' or 'arrived':
             transaction.status = 'delivered'
             transaction.save()
 
@@ -212,20 +212,47 @@ def confirm_delivery(request, transaction_reference):
                 recipient_list=[transaction.seller.email],
             )
         else:
-            messages.warning(request, "This transaction is not in a 'shipped' state.")
+            messages.warning(request, "This transaction is not in a 'shipped' or 'arrived' state.")
 
     return redirect('transaction_detail', transaction_reference=transaction.transaction_reference)
 
 @staff_member_required
+def held_transactions(request):
+    transactions = Transaction.objects.filter(
+        status="delivered",
+        is_funded=False,
+        hold_payout=True
+    ).order_by("-created_at")
+    
+    transactions2 = SecureTransaction.objects.filter(
+        transaction_status="delivered",
+        is_funded=False,
+        hold_payout=True
+    ).order_by("-created_at")
+
+    return render(request, "admin/payments_on_hold.html", {
+        "transactions": transactions,
+        "transactions2": transactions2,
+    })
+    
+@staff_member_required
+    
 def fundable_transactions(request):
     transactions = Transaction.objects.filter(
         status="delivered",
         is_funded=False,
         hold_payout=False
     ).order_by("-created_at")
+    
+    transactions2 = SecureTransaction.objects.filter(
+        transaction_status="delivered",
+        is_funded=False,
+        hold_payout=False
+    ).order_by("-created_at")
 
     return render(request, "admin/fundable_transactions.html", {
-        "transactions": transactions
+        "transactions": transactions,
+        "transactions2": transactions2,
     })
 @staff_member_required
 def toggle_hold_payout(request, transaction_id):
@@ -236,6 +263,36 @@ def toggle_hold_payout(request, transaction_id):
     state = "paused" if tx.hold_payout else "resumed"
     messages.info(request, f"Payout {state} for TX #{tx.transaction_reference}.")
     return redirect("fundable_transactions")
+
+@staff_member_required
+def toggle_hold_payout2(request, transaction_id):
+    tx = get_object_or_404(SecureTransaction, id=transaction_id)
+    tx.hold_payout = not tx.hold_payout
+    tx.save(update_fields=["hold_payout"])
+
+    state = "paused" if tx.hold_payout else "resumed"
+    messages.info(request, f"Payout {state} for TX #{tx.mpesa_reference}.")
+    return redirect("fundable_transactions")
+@staff_member_required
+def hold_payout(request, transaction_id):
+    tx = get_object_or_404(Transaction, id=transaction_id)
+    tx.hold_payout = tx.hold_payout
+    tx.save(update_fields=["hold_payout"])
+
+    state = "paused" if tx.hold_payout else "resumed"
+    messages.info(request, f"Payout {state} for TX #{tx.transaction_reference}.")
+    return redirect("fundable_transactions")
+
+@staff_member_required
+def hold_payout2(request, transaction_id):
+    tx = get_object_or_404(SecureTransaction, id=transaction_id)
+    tx.hold_payout = tx.hold_payout
+    tx.save(update_fields=["hold_payout"])
+
+    state = "paused" if tx.hold_payout else "resumed"
+    messages.info(request, f"Payout {state} for TX #{tx.mpesa_reference}.")
+    return redirect("fundable_transactions")
+
 @login_required
 def request_refund(request, transaction_id):
     transaction = get_object_or_404(Transaction, id=transaction_id, buyer=request.user)
@@ -274,11 +331,13 @@ def fund_seller(request, transaction_id):
         messages.warning(request, "This transaction is not eligible for funding.")
         return redirect("fundable_transactions")
 
-    fee, payout = calculate_fees(tx.amount)
+    platform_fee, fine, payout = calculate_fees(tx.amount)
     
     # Save these before sending payment
-    tx.platform_fee = fee
+    
+    tx.platform_fee = platform_fee
     tx.seller_payout = payout
+    
     response = initiate_b2c_payment(
         phone_number=tx.seller.phone_number,
         amount=tx.seller_payout,
@@ -288,8 +347,39 @@ def fund_seller(request, transaction_id):
     if response.get("ResultCode") == 0:
         tx.is_funded = True
         tx.funded_at = timezone.now()
-        tx.save(update_fields=["is_funded", "funded_at"])
+        tx.save(update_fields=["is_funded", "funded_at","platform_fee", "seller_payout"])
         messages.success(request, f"Successfully funded seller for TX #{tx.transaction_reference}.")
+    else:
+        messages.error(request, f"Failed to fund: {response.get('ResultDesc')}")
+
+    return redirect("fundable_transactions")
+
+@staff_member_required
+def fund_seller_external(request, transaction_id):
+    tx = get_object_or_404(SecureTransaction, id=transaction_id)
+
+    if not tx.status == "delivered" or tx.is_funded or tx.hold_payout:
+        messages.warning(request, "This transaction is not eligible for funding.")
+        return redirect("fundable_transactions")
+
+    platform_fee, fine, payout = calculate_fees(tx.amount)
+    
+    # Save these before sending payment
+    
+    tx.platform_fee = platform_fee
+    tx.seller_payout = payout
+    
+    response = initiate_b2c_payment(
+        phone_number=tx.seller.phone_number,
+        amount=tx.seller_payout,
+        mpesa_reference=tx.mpesa_reference
+    )
+
+    if response.get("ResultCode") == 0:
+        tx.is_funded = True
+        tx.funded_at = timezone.now()
+        tx.save(update_fields=["is_funded", "funded_at","platform_fee", "seller_payout"])
+        messages.success(request, f"Successfully funded seller for TX #{tx.mpesa_reference}.")
     else:
         messages.error(request, f"Failed to fund: {response.get('ResultDesc')}")
 
@@ -349,6 +439,22 @@ def mark_arrived(request, transaction_reference):
 
     return redirect('transaction_detail', transaction_reference=transaction_reference)
 
+@login_required
+def agent_deliveries(request):
+    if not hasattr(request.user, 'deliveryagent'):
+        return redirect('dashboard')  # or raise permission error
+
+    agent = request.user.deliveryagent
+    deliveries = Transaction.objects.filter(
+        delivery_agent=agent,
+        status='shipped'
+    ).order_by('-shipped_at')
+
+    return render(request, 'core/agent_deliveries.html', {
+        'deliveries': deliveries
+    })
+
+
 def mark_securearrived(request, mpesa_reference):
     transaction = get_object_or_404(SecureTransaction, mpesa_reference=mpesa_reference)
 
@@ -368,6 +474,33 @@ def mark_securearrived(request, mpesa_reference):
     send_custom_email(
         subject='Item Arrival Notification',
         template_name='emails/item_arrived.html',
+        context={
+            'transaction': transaction,
+            'year': timezone.now().year,
+        },
+        recipient_list=[transaction.buyer_email],
+    )
+
+    return redirect('dashboard')
+
+def mark_securedelivered(request, mpesa_reference):
+    transaction = get_object_or_404(SecureTransaction, mpesa_reference=mpesa_reference)
+
+    if request.user != transaction.seller and request.user != transaction.delivery_agent.user:
+        return HttpResponseForbidden("You are not authorized to mark this item as arrived.")
+
+    if transaction.transaction_status != 'arrived':
+        messages.warning(request, "This transaction is not in a 'arrived' state.")
+        return redirect('external_transaction_detail', mpesa_reference=mpesa_reference)
+
+    transaction.transaction_status = 'delivered'
+    transaction.save()
+
+    messages.success(request, "Request submitted successfully, your money will be disbursed within 24hrs.")
+
+    send_custom_email(
+        subject='Delivery Confirmed Notification',
+        template_name='emails/delivered.html',
         context={
             'transaction': transaction,
             'year': timezone.now().year,
@@ -502,6 +635,8 @@ def ship_item(request, transaction_reference):
             )
             messages.success(request, "Item marked as shipped.")
             return redirect('dashboard')
+        else:
+            messages.error(request, "There were errors in the shipping form. Please correct them and try again.")   
     else:
         form = ShippingForm(instance=transaction)
 
@@ -514,8 +649,7 @@ def ship_item_by_mpesa(request, mpesa_reference):
         mpesa_reference=mpesa_reference,
         seller=request.user,
     )
-
-    # guard clauses ----------------------------------------------------------------
+    print("Transaction:", tx.transaction_status)
     if tx.transaction_status != "paid":
         messages.error(
             request,
@@ -624,15 +758,80 @@ def login_view(request):
 @login_required
 def dashboard_view(request):
     user = request.user
+
+    # Standard buyer/seller context
     buyer_transactions = Transaction.objects.filter(buyer=user).order_by('-created_at')[:10]
     seller_transactions = Transaction.objects.filter(seller=user).order_by('-created_at')[:10]
     seller_securetransactions = SecureTransaction.objects.filter(seller=user).order_by('-created_at')[:10]
-    
+
+    # Delivery agent logic (individual or org-affiliated)
+    agent_transactions = []
+    if hasattr(user, 'deliveryagent'):
+        agent = user.deliveryagent
+        agent_transactions = Transaction.objects.filter(delivery_agent=agent).order_by('-created_at')[:10]
+
+    # Delivery organization logic (admin who manages agents)
+    managed_agents = []
+    company_transactions = []
+    try:
+        organization = DeliveryOrganization.objects.get(contact_email=user.email)
+        managed_agents = DeliveryAgent.objects.filter(organization=organization)
+        company_transactions = Transaction.objects.filter(delivery_agent__in=managed_agents).order_by('-created_at')[:10]
+    except DeliveryOrganization.DoesNotExist:
+        organization = None  # Not an organization admin
+
     return render(request, 'core/dashboard.html', {
         'buyer_transactions': buyer_transactions,
         'seller_transactions': seller_transactions,
         'seller_securetransactions': seller_securetransactions,
+        'agent_transactions': agent_transactions,
+        'company_transactions': company_transactions,
+        'managed_agents': managed_agents,
+        'delivery_org': organization,
     })
+
+@login_required
+def my_delivery_jobs(request):
+    if not hasattr(request.user, 'deliveryagent'):
+        return HttpResponseForbidden("You are not a registered delivery agent.")
+
+    agent = request.user.deliveryagent
+    status_filter = request.GET.get('status')
+    transactions = Transaction.objects.filter(delivery_agent=agent).order_by('-created_at')
+
+    if status_filter in ['shipped', 'arrived', 'delivered']:
+        transactions = transactions.filter(status=status_filter)
+
+    return render(request, 'delivery/my_jobs.html', {
+        'transactions': transactions,
+        'status_filter': status_filter,
+    })
+
+@staff_member_required
+def verify_agents_view(request):
+    agents = DeliveryAgent.objects.filter(is_verified=False)
+
+    if request.method == 'POST':
+        agent_id = request.POST.get('agent_id')
+        action = request.POST.get('action')
+
+        agent = get_object_or_404(DeliveryAgent, id=agent_id)
+
+        if action == 'verify':
+            agent.is_verified = True
+            agent.is_active = True
+            agent.save()
+            messages.success(request, f"{agent.user.get_full_name()} has been verified.")
+        elif action == 'reject':
+            agent.is_verified = False
+            agent.is_active = False
+            agent.save()
+            messages.warning(request, f"{agent.user.get_full_name()} has been rejected.")
+
+        return redirect('verify_agents')
+
+    return render(request, 'admin/verify_agents.html', {'agents': agents})
+ 
 @login_required
 def all_purchases_view(request):
     transactions = Transaction.objects.filter(buyer=request.user).order_by('-created_at')
@@ -1074,7 +1273,6 @@ def create_secure_transaction(request):
                         )
                         raise ValueError  # jump to re-render form
 
-                    # ✅ safe – populate details
                     tx.item_name   = item.title
                     tx.amount      = item.price
                     tx.description = item.description

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Delivery Confirmed</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      color: #333333;
+      background-color: #f7f7f7;
+      padding: 20px;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .header {
+      color: #1d4ed8;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .content {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #777777;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">Delivery Confirmed</div>
+    <div class="content">
+      <p>Hello {{ transaction.buyer }},</p>
+
+      <p>The seller <strong>{{ transaction.seller }}</strong> has confirmed the item delivered and requested for his payment:</p>
+        <p>The payment will be made within 12hrs if don't submit objections. You can make objections through our contact lines.</p>
+      <ul>
+        <li><strong>Item:</strong> {{ transaction.item_name }}</li>
+        <li><strong>Transaction ID:</strong> {{ transaction.mpesa_reference }}</li>
+        <li><strong>Amount:</strong> KES {{ transaction.amount }}</li>
+      </ul>
+
+
+      <p>Thank you for using SafeDeal.</p>
+    </div>
+
+    <div class="footer">
+      &copy; {{ year }} SafeDeal. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
