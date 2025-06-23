@@ -4,7 +4,9 @@
 
 <div class="max-w-4xl mx-auto px-4 py-8">
   <h2 class="text-2xl font-semibold mb-6 text-center text-blue-700">Submit a Support Ticket</h2>
-
+  <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
+      &larr; Go Back
+  </a>
   <form method="POST" enctype="multipart/form-data" class="bg-white shadow-md rounded-lg p-6 space-y-4">
     {% csrf_token %}
 

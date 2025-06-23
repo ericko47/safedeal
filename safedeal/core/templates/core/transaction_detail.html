@@ -6,9 +6,11 @@
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 py-8">
   <h1 class="text-3xl font-bold text-blue-600 mb-6">Transaction {{ transaction.item.title}}</h1>
-  <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+  
+  <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
     &larr; Go Back
   </a>
+  
   <p class="text-gray-600 mb-4">
     Transaction ID: <strong>{{ transaction.transaction_reference }}</strong>
   </p>

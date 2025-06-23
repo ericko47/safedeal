@@ -142,18 +142,41 @@
       const toggleBtn = document.getElementById("mobile-menu-toggle");
       const navLinks = document.getElementById("navbar-links");
 
+      // Always hide spinner on page load
       spinner.classList.add("hidden");
-      window.addEventListener("beforeunload", () => spinner.classList.remove("hidden"));
-      document.querySelectorAll("form").forEach(form => {
-        form.addEventListener("submit", () => spinner.classList.remove("hidden"));
+
+      // Reset skip flag
+      if (sessionStorage.getItem("skipSpinner") === "true") {
+        sessionStorage.removeItem("skipSpinner");
+      }
+
+      // Spinner fallback: auto-hide after 5 seconds no matter what
+      setTimeout(() => {
+        spinner.classList.add("hidden");
+      }, 5000); // 5 seconds
+
+      // Show spinner before leaving the page (unless back button was used)
+      window.addEventListener("beforeunload", () => {
+        if (sessionStorage.getItem("skipSpinner") !== "true") {
+          spinner.classList.remove("hidden");
+        }
       });
 
+      // Show spinner when any form is submitted
+      document.querySelectorAll("form").forEach(form => {
+        form.addEventListener("submit", () => {
+          spinner.classList.remove("hidden");
+        });
+      });
+
+      // Mobile nav toggle
       if (toggleBtn && navLinks) {
         toggleBtn.addEventListener("click", () => {
           navLinks.classList.toggle("hidden");
         });
       }
 
+      // Auto-dismiss flash messages
       const msgBox = document.getElementById("messages");
       if (msgBox) {
         setTimeout(() => {
@@ -162,7 +185,17 @@
         }, 5000);
       }
     });
+
+      // Fix for back button spinner issue
+      window.addEventListener("pageshow", (event) => {
+        if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+          sessionStorage.setItem("skipSpinner", "true");
+        }
+      });
+
+
   </script>
+
 
   <!-- Cookie Banner -->
   <div id="cookie-banner" style="position: fixed; bottom: 0; left: 0; width: 100%; background: #1e293b; color: white; padding: 1rem; text-align: center; font-size: 0.9rem; z-index: 9999; display: none;">
@@ -182,6 +215,12 @@
       }
     });
   </script>
-
+  <script>
+    function goBackWithSpinnerFix(event) {
+      event.preventDefault();
+      sessionStorage.setItem("skipSpinner", "true");
+      history.back();
+    }
+  </script>
 </body>
 </html>

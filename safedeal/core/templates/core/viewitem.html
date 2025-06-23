@@ -13,9 +13,13 @@
 <link rel="canonical" href="{% url 'item_shortlink' item_reference=item.item_reference %}">
 
   <h1 class="text-3xl font-bold mb-4">Item Details</h1>
-  <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+  {% comment %} <a href="#" onclick="goBackWithSpinnerFix(event)" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+    &larr; Go Back
+  </a> {% endcomment %}
+  <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
     &larr; Go Back
   </a>
+
 
   <span class="mx-2 text-gray-400">|</span>
   <a href="{% url 'my_items' %}" class="text-sm text-blue-600 hover:underline">My Items</a>
@@ -121,7 +125,6 @@
           }
         });
       </script>
-      
 
     <!-- Extra Buttons -->
     <a href="{% url 'report_item' item.item_reference %}" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded w-full sm:w-auto">Report Item</a>
