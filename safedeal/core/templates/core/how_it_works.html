@@ -1,0 +1,64 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}How SafeDeal Works - Learn in Minutes{% endblock %}
+
+{% block content %}
+<section class="bg-light py-5">
+  <div class="container">
+    <h2 class="text-center mb-4 text-success fw-bold">How SafeDeal Works</h2>
+    <p class="lead text-center mb-5">
+      SafeDeal makes online buying and selling safe through M-PESA-powered escrow. Watch the videos below to learn how to use SafeDeal effectively.
+    </p>
+
+    <div class="row g-5">
+      <div class="col-md-6">
+        <h4>1. How to Register on SafeDeal</h4>
+        <div class="ratio ratio-16x9">
+          <iframe src="https://www.youtube.com/embed/VIDEO_ID_1" title="How to Register" allowfullscreen></iframe>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h4>2. How to Post and Sell an Item</h4>
+        <div class="ratio ratio-16x9">
+          <iframe src="https://www.youtube.com/embed/VIDEO_ID_2" title="How to Sell" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <h4>3. How to Create a Secure Transaction</h4>
+        <div class="ratio ratio-16x9">
+          <iframe src="https://www.youtube.com/embed/VIDEO_ID_3" title="Create Transaction" allowfullscreen></iframe>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h4>4. How the Escrow Process Works</h4>
+        <div class="ratio ratio-16x9">
+          <iframe src="https://www.youtube.com/embed/VIDEO_ID_4" title="Escrow Process" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <h4>5. How to Resolve Disputes</h4>
+        <div class="ratio ratio-16x9">
+          <iframe src="https://www.youtube.com/embed/VIDEO_ID_5" title="Resolve Disputes" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-5">
+      <h5>FAQs:</h5>
+      <ul>
+        <li>✅ <strong>When are funds released?</strong> After the buyer confirms delivery or automatically after 48 hours of arrival.</li>
+        <li>✅ <strong>Can I use SafeDeal for Instagram or WhatsApp buyers?</strong> Yes. Use the secure transaction link feature.</li>
+        <li>✅ <strong>What happens if there's a dispute?</strong> SafeDeal provides a clear dispute resolution process and admin support.</li>
+      </ul>
+    </div>
+
+    <div class="text-center mt-5">
+      <a href="{% url 'register' %}" class="btn btn-success btn-lg px-4">Register Now</a>
+      <a href="{% url 'contact_us' %}" class="btn btn-outline-success btn-lg px-4 ms-2">Contact Support</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
