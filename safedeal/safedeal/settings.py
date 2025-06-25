@@ -17,6 +17,34 @@ import os
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+from decouple import config
+
+MPESA_CONSUMER_KEY = config("MPESA_CONSUMER_KEY")
+MPESA_CONSUMER_SECRET = config("MPESA_CONSUMER_SECRET")
+MPESA_SHORTCODE = config("MPESA_SHORTCODE")
+MPESA_PASSKEY = config("MPESA_PASSKEY")
+MPESA_CALLBACK_URL = config("MPESA_CALLBACK_URL")
+MPESA_RESULT_CALLBACK = config("MPESA_RESULT_CALLBACK")
+MPESA_TIMEOUT_CALLBACK = config("MPESA_TIMEOUT_CALLBACK")
+MPESA_INITIATOR_NAME = config("MPESA_INITIATOR_NAME")
+MPESA_SECURITY_CREDENTIAL = config("MPESA_SECURITY_CREDENTIAL")
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'mail.safedeal.co.ke'
+EMAIL_PORT = 465
+EMAIL_USE_TLS=False
+EMAIL_USE_SSL=True
+EMAIL_HOST_USER = 'noreply@safedeal.co.ke'
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = "SafeDeal <noreply@safedeal.co.ke>"
+
+
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config("CLOUDINARY_CLOUD_NAME"),
+    'API_KEY': config("CLOUDINARY_API_KEY"),
+    'API_SECRET': config("CLOUDINARY_API_SECRET"),
+}
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,8 +54,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-=80&rtwkul0-i*_dj6k466*u3-8hfkd(=8bobokiqyu20ta=7g'
-
+SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -99,26 +126,7 @@ WSGI_APPLICATION = 'safedeal.wsgi.application'
 DATABASES = {
     'default': {'ENGINE': 'django.db.backends.sqlite3','NAME': BASE_DIR / 'db.sqlite3',}
 }
-# DATABASES = {
-#     'default': dj_database_url.config(conn_max_age=600)
-# }KPWQPn8qqRko
 
-# Email settings
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'mail.safedeal.co.ke'  # or your provider's SMTP
-EMAIL_PORT = 465
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = True
-EMAIL_HOST_USER = 'noreply@safedeal.co.ke'
-EMAIL_HOST_PASSWORD = 'By4~00QW.&2Y'
-
-DEFAULT_FROM_EMAIL = "SafeDeal <noreply@safedeal.co.ke>"
-# https://docs.djangoproject.com/en/5.2/topics/email/#email-backends
-ADMINS = [
-    ("Erick Omondi", "erickogutu47@gmail.com"),
-    ("SafeDeal Admin", "admin@safedeal.co.ke"),
-    ("SafeDeal Support", "support@safedeal.co.ke"),
-]
 
 
 # Password validation
@@ -146,13 +154,9 @@ REST_FRAMEWORK = {
     ],
 }
 
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'dvsqbpgjs',
-    'API_KEY': '494462387153273',
-    'API_SECRET': 'iVnkekZTvvGISPt_Rct5PW7-Vy4',
-}
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+DEFAULT_FILE_STORAGE = config("DEFAULT_FILE_STORAGE", default='cloudinary_storage.storage.MediaCloudinaryStorage')
 
 # Simple JWT settings
 from datetime import timedelta
@@ -179,15 +183,7 @@ ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
 LOGIN_REDIRECT_URL = '/dashboard/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/login/'
 
-# ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
-# LOGIN_REDIRECT_URL = '/dashboard/'
-# ACCOUNT_LOGOUT_REDIRECT_URL = '/login/'
-# ACCOUNT_LOGIN_METHOD = 'username'
-# ACCOUNT_SIGNUP_FIELDS = ['email', 'username', 'password1', 'password2']
-# ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
@@ -199,13 +195,6 @@ USE_TZ = True
 
 # Mpesa settings
 # https://developer.safaricom.co.ke/daraja/apis/postman
-MPESA_CONSUMER_KEY = 'ysp5vtmDJCZp0HptHJyUz3wPmDjcYzsqiFWQvGfmxutEqMAW'
-MPESA_CONSUMER_SECRET = 'xEu7OmeyzZ5z7NJwraGUctUask2lmpVCLpxIqUBrFZp8ilcxPMv1RFQjXPoSXAz1'
-MPESA_SHORTCODE = '174379'  
-MPESA_PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
-MPESA_CALLBACK_URL = 'https://safedeal.co.ke/mpesa/callback/'  # Will define this later
-MPESA_RESULT_CALLBACK = "https://safedeal.co.ke/mpesa/b2c/result/"
-MPESA_TIMEOUT_CALLBACK = "https://safedeal.co.ke/mpesa/b2c/timeout/"
 
 
 log_dir = os.path.join(BASE_DIR, 'logs')

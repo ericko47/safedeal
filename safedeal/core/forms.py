@@ -176,7 +176,7 @@ from .models import SecureTransaction
 class SecureTransactionForm(forms.ModelForm):
     class Meta:
         model = SecureTransaction
-        exclude = ['seller', 'transaction_status', 'created_at', 'updated_at', 'mpesa_reference']
+        exclude = ['seller', 'transaction_status', 'created_at', 'updated_at','shipped_at', 'mpesa_reference']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
         }
@@ -198,3 +198,29 @@ class SecureTransactionForm(forms.ModelForm):
 
 class ItemReportForm(forms.Form):
     reason = forms.CharField(widget=forms.Textarea(attrs={'rows': 4}), label="Reason for Reporting")
+
+# forms.py
+
+from .models import DeliveryOrganization, DeliveryAgent
+
+class DeliveryOrganizationForm(forms.ModelForm):
+    class Meta:
+        model = DeliveryOrganization
+        fields = [
+            'name', 'registration_number','contact_person', 'contact_email',
+            'contact_phone', 'headquarters_location', 'logo'
+        ]
+
+class DeliveryAgentForm(forms.ModelForm):
+    registering_as = forms.ChoiceField(
+        choices=[('individual', 'Individual'), ('organization', 'Organization')],
+        widget=forms.RadioSelect,
+        label="Registering As"
+    )
+
+    class Meta:
+        model = DeliveryAgent
+        fields = [
+            'vehicle_type', 'vehicle_plate_number', 'license_document', 'police_clearance_certificate', 'region_of_operation','mpesa_phone_number',
+            'license_number', 'license_document'
+        ]

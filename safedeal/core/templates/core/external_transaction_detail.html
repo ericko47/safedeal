@@ -9,10 +9,6 @@
   </h2>
   <p><strong>Hi, {{transaction.buyer_name}}</strong></p>
   <br>
-  <a href="javascript:history.back()"
-     class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
-    &larr; Go Back
-  </a>
   <p>This link was created by <strong>{{transaction.seller}}</strong>, on your agreement to the Purchase of <strong>{{ transaction.item_name }}</strong>.</p>
   <p class="text-center text-gray-600 mb-6">
     Review the details below. Your money is held safely until delivery is confirmed.
@@ -48,7 +44,7 @@
     <form method="post" action="{% url 'initiate_payment' transaction.id %}">
       {% csrf_token %}
       <button type="submit"
-              class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl shadow">
+        class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl shadow">
         Buy Now
       </button>
     </form>

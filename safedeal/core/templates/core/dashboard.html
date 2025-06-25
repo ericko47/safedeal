@@ -7,11 +7,11 @@
   <!-- Greeting -->
    <div>
     <h2 class="text-2xl font-bold text-gray-800">Welcome, <span class="text-blue-600">{{ user.first_name }} {{user.last_name}}</span></h2>
-    <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+    <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
       &larr; Go Back
     </a>
+    
     <p class="text-gray-600">You're logged in as a <strong>{{ user.account_type|capfirst }}</strong>.</p>
-    <p class="text-gray-600">Your account was created on <strong>{{ user.date_joined|date:"F j, Y" }}</strong> .</p>
     <p class="text-gray-600">Your account is currently <strong>{{ user.is_active|yesno:"active,inactive" }}</strong> .</p>
     {% if user.is_verified %}
     <p class="text-green-600">Your account is verified.</p>
@@ -31,7 +31,10 @@
       {% if user.is_superuser %}<a href="{% url 'admin:index' %}" class="text-blue-600 hover:underline">Senior Admin</a>{% endif %}
       {% if user.is_staff %}<a href="{% url 'admindashboard' %}" class="text-blue-600 hover:underline">Admin Dashboard</a>{% endif %}
       <a href="{% url 'view_wishlist' %}" class="text-blue-600 hover:underline">Wishlist</a>
+      <a href="{% url 'register_delivery_agent' %}" class="text-blue-600 hover:underline font-semibold">Register as delivery agent</a>
       <a href="{% url 'support' %}" class="text-blue-600 hover:underline font-semibold">Support</a>
+      {% if agent_transactions %}<a href="{% url 'my_delivery_jobs' %}" class="text-blue-600 underline">Go to My Delivery Jobs</a> {% endif %}
+
     </nav>
   </div>
 
@@ -67,6 +70,7 @@
         {% if buyer_transactions %}
         <ul class="space-y-4">
           {% for txn in buyer_transactions %}
+          {% if txn.status != 'cancelled'%}
           <li class="border rounded-md p-4">
             <p class="text-gray-700"><strong>Item:</strong> {{ txn.item.title }}</p>
             <p><strong>Item ID:</strong> {{ txn.item.item_reference }}</p>
@@ -104,6 +108,7 @@
             </div>
             
           </li>
+          {% endif %}
           {% endfor %}
         </ul>
         {% else %}
@@ -120,6 +125,7 @@
         {% if seller_transactions %}
         <ul class="space-y-4">
           {% for txn in seller_transactions %}
+          {% if txn.status != 'cancelled'%}
           <li class="border rounded-md p-4">
             <p class="text-gray-700"><strong>Item:</strong> {{ txn.item.title }}</p>
             <p><strong>Item ID:</strong> {{ txn.item.item_reference }}</p>
@@ -155,6 +161,7 @@
               <a href="{% url 'transaction_detail' txn.transaction_reference %}" class="text-sm text-blue-600 hover:underline mt-2 inline-block">View Details</a>
             </div>
           </li>
+          {% endif %}
           {% endfor %}
         </ul>
         {% else %}
@@ -170,6 +177,7 @@
         {% if seller_securetransactions %}
         <ul class="space-y-4">
           {% for txn in seller_securetransactions %}
+          {% if txn.status != 'cancelled'%}
           <li class="border rounded-md p-4">
             <p class="text-gray-700"><strong>Item:</strong> {{ txn.item_name }}</p>
             <p><strong>Item ID:</strong> {{ txn.item_reference }}</p>
@@ -199,13 +207,14 @@
               <a href="{% url 'mark_securearrived' txn.mpesa_reference %}" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Mark_arrived</a>
               {% endif %}
               {% if txn.transaction_status == "arrived" %}
-              <form method="post" action="{% url 'confirm_delivery' txn.mpesa_reference %}">
+              <form method="post" action="{% url 'mark_securedelivered' txn.mpesa_reference %}">
                 {% csrf_token %}
                 <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Request Payment</button>
               </form>
               {% endif %}              
             </div>
           </li>
+          {% endif %}
           {% endfor %}
         </ul>
         {% else %}
@@ -214,7 +223,6 @@
       </div>
     </div>
   </div>
-  
 
   <!-- Seller Section -->
   {% if user.account_type == 'seller' or user.account_type == 'both' %}
@@ -229,6 +237,5 @@
     </div>
   </div>
   {% endif %}
-
 </div>
 {% endblock %}

@@ -6,9 +6,11 @@
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 py-8">
   <h1 class="text-3xl font-bold text-blue-600 mb-6">Transaction {{ transaction.item.title}}</h1>
-  <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+  
+  <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
     &larr; Go Back
   </a>
+  
   <p class="text-gray-600 mb-4">
     Transaction ID: <strong>{{ transaction.transaction_reference }}</strong>
   </p>
@@ -50,7 +52,7 @@
     <div>
       <h3 class="text-lg font-semibold text-gray-700 mb-2">Delivery Details</h3>
       <p><strong>Address:</strong> {{ transaction.delivery_address }}</p>
-      <p><strong>Method:</strong> {{ transaction.delivery_method|default:"To be updated" }}</p>
+      <p><strong>Method:</strong> {{ transaction.delivery_mode|default:"To be updated" }}</p>
     </div>
 
     <!-- Proof of Delivery -->
@@ -65,15 +67,30 @@
     {% if transaction.status == 'shipped' and request.user == transaction.buyer %}
       <form method="post" action="{% url 'confirm_delivery' transaction.transaction_reference %}">
         {% csrf_token %}
-        <button class="btn btn-primary">Confirm Delivery</button>
+        <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-green-700">Confirm Delivery</button>
       </form>
     {% endif %}
 
     {% if transaction.status == 'pending' and request.user == transaction.buyer %}
-      <form method="post" action="{% url 'cancel_transaction' transaction.transaction_reference %}">
+      <form id= "place-order-form" method="post" action="{% url 'cancel_transaction' transaction.transaction_reference %}">
         {% csrf_token %}
-        <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Cancel Order</button>
+        <button id="cancell-btn" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Cancel Order</button>
       </form>
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          const form = document.getElementById("place-order-form");
+          const button = document.getElementById("cancell-btn");
+      
+          if (form && button) {
+            form.addEventListener("submit", function (e) {
+              const confirmed = confirm("Are you sure you want to cancell this order?");
+              if (!confirmed) {
+                e.preventDefault();
+              }
+            });
+          }
+        });
+      </script>
     {% endif %}
     {% if transaction.status in "paid shipped" and request.user == transaction.buyer %}
       <form method="post" action="{% url 'raise_dispute' transaction.transaction_reference %}">
@@ -155,15 +172,6 @@
       </div>
     {% endif %}
   </div>
-  {% comment %} <div id="payment-overlay" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50 hidden">
-    <div class="text-center">
-      <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-      </svg>
-      <p class="text-gray-800 font-medium">Processing payment, please wait...</p>
-    </div>
-  </div> {% endcomment %}
 
 
   <script>

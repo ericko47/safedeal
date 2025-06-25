@@ -13,9 +13,13 @@
 <link rel="canonical" href="{% url 'item_shortlink' item_reference=item.item_reference %}">
 
   <h1 class="text-3xl font-bold mb-4">Item Details</h1>
-  <a href="javascript:history.back()" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+  {% comment %} <a href="#" onclick="goBackWithSpinnerFix(event)" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
+    &larr; Go Back
+  </a> {% endcomment %}
+  <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
     &larr; Go Back
   </a>
+
 
   <span class="mx-2 text-gray-400">|</span>
   <a href="{% url 'my_items' %}" class="text-sm text-blue-600 hover:underline">My Items</a>
@@ -89,22 +93,38 @@
       {% endif %}
 
 
-    <form method="post" action="{% url 'place_order' item.item_reference %}" class="flex flex-col sm:flex-row gap-4 items-center w-full">
-      {% csrf_token %}
-      <input type="text" name="delivery_address"
-             placeholder="Your delivery address"
-             class="flex-grow border border-gray-300 rounded px-4 py-2"
-             required />
-      {% if user == item.seller %}
-        <button class="bg-blue-500 text-white px-4 py-2 rounded opacity-60 cursor-not-allowed" disabled>
-          You cannot buy your own item
-        </button>
-      {% else %}
-        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-          Buy Now
-        </button>
-      {% endif %}
-    </form>
+      <form id="place-order-form" method="post" action="{% url 'place_order' item.item_reference %}" class="flex flex-col sm:flex-row gap-4 items-center w-full">
+        {% csrf_token %}
+        <input type="text" name="delivery_address"
+               placeholder="Your delivery address"
+               class="flex-grow border border-gray-300 rounded px-4 py-2"
+               required />
+        {% if user == item.seller %}
+          <button class="bg-blue-500 text-white px-4 py-2 rounded opacity-60 cursor-not-allowed" disabled>
+            You cannot buy your own item
+          </button>
+        {% else %}
+          <button type="submit" id="buy-now-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+            Buy Now
+          </button>
+        {% endif %}
+      </form>
+      
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          const form = document.getElementById("place-order-form");
+          const button = document.getElementById("buy-now-btn");
+      
+          if (form && button) {
+            form.addEventListener("submit", function (e) {
+              const confirmed = confirm("Are you sure you want to pay for this item? You will recieve MPESA prompt on your phone.");
+              if (!confirmed) {
+                e.preventDefault();
+              }
+            });
+          }
+        });
+      </script>
 
     <!-- Extra Buttons -->
     <a href="{% url 'report_item' item.item_reference %}" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded w-full sm:w-auto">Report Item</a>

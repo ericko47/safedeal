@@ -184,15 +184,74 @@ class DisputeEvidence(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
 
-# Delivery Agent model to handle delivery agents
-class DeliveryAgent(models.Model):
-    name = models.CharField(max_length=100)
-    contact_number = models.CharField(max_length=20)
-    email = models.EmailField()
-    is_active = models.BooleanField(default=True)
+from django.conf import settings
+from django.core.validators import RegexValidator
+
+class DeliveryOrganization(models.Model):
+    name = models.CharField(max_length=255)
+    registration_number = models.CharField(max_length=100, unique=True)
+    contact_person = models.CharField(max_length=100)
+    contact_email = models.EmailField()
+    contact_phone = models.CharField(
+        max_length=15,
+        validators=[RegexValidator(regex=r'^\+?1?\d{9,15}$', message='Invalid phone number')]
+    )
+    headquarters_location = models.CharField(max_length=255)
+    website = models.URLField(blank=True, null=True)
+    logo = models.ImageField(upload_to='delivery_org_logo/', null=True, blank=True)
+    is_approved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.registration_number})"
+
+class DeliveryAgent(models.Model):
+    USER_TYPE_CHOICES = [
+        ('individual', 'Individual'),
+        ('organization', 'Organization Agent'),
+    ]
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
+    agent_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES, default='individual')
+    organization = models.ForeignKey(
+        DeliveryOrganization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Required if registering as organization agent"
+    )
+    license_number = models.CharField(max_length=100, blank=True, null=True, unique=True)
+    license_document = models.FileField(upload_to='delivery_agent_license/', null=True)
+    police_clearance_certificate = models.FileField(upload_to='agent_police_clearances/', blank=True, null=True)
+    vehicle_type = models.CharField(max_length=50, choices=[('bike', 'Bike'), ('car', 'Car'), ('van', 'Van'), ('foot', 'On Foot'), ('truck', 'Truck')], null=True)
+    vehicle_plate_number = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    region_of_operation = models.CharField(max_length=100)
+    mpesa_phone_number = models.CharField(max_length=15, validators=[RegexValidator(regex=r'^\+?1?\d{9,15}$', message='Invalid phone number')], blank=True, null=True)    
+    is_verified = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+
+  
+
+    def __str__(self):
+        return f"{self.user.username} ({self.get_agent_type_display()})"
+
+    def clean(self):
+        # SAFECHECK: If agent is registering as organization agent → org is required and must be approved
+        from django.core.exceptions import ValidationError
+
+        if self.agent_type == 'organization':
+            if not self.organization:
+                raise ValidationError("Organization field is required for organization agents.")
+            if not self.organization.is_approved:
+                raise ValidationError("Selected organization is not approved yet.")
+
+        if self.agent_type == 'individual' and self.organization:
+            raise ValidationError("Individual agents should not be linked to an organization.")
+        
+        
+
 
 
 # All users database model 
@@ -280,6 +339,9 @@ class SecureTransaction(models.Model):
     item_name = models.CharField(max_length=255, null=True, blank=True)
     description = models.TextField(blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    platform_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    seller_payout = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    funded_at = models.DateTimeField(null=True, blank=True)  
 
     # Link to internal item (optional)
     item_reference = models.CharField(max_length=20, null=True, blank=True)
@@ -289,6 +351,8 @@ class SecureTransaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
+    is_funded = models.BooleanField(default=False)    
+    hold_payout = models.BooleanField(default=True)  
     mpesa_reference = models.CharField(max_length=100, blank=True, null=True, unique=True)
 
     def get_secure_link(self):

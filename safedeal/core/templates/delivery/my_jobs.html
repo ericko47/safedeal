@@ -1,0 +1,42 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto py-6">
+    <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
+      &larr; Go Back
+    </a>
+    <h2 class="text-2xl font-bold mb-4">My Delivery Jobs</h2>
+
+    <form method="get" class="mb-4">
+        <label>Status:
+            <select name="status" class="border p-2 rounded">
+                <option value="">-- All --</option>
+                <option value="shipped" {% if status_filter == "shipped" %}selected{% endif %}>Shipped</option>
+                <option value="arrived" {% if status_filter == "arrived" %}selected{% endif %}>Arrived</option>
+                <option value="delivered" {% if status_filter == "delivered" %}selected{% endif %}>Delivered</option>
+            </select>
+        </label>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded ml-2">Filter</button>
+    </form>
+
+    <div class="bg-white shadow rounded p-4">
+        {% if transactions %}
+            <ul>
+                {% for tx in transactions %}
+                    <li class="border-b py-2">
+                        <strong>Item:</strong> {{ tx.item.title }}<br>
+                        <strong>Status:</strong> {{ tx.get_status_display }}<br>
+                        <strong>Seller:</strong> {{ tx.seller.username }}<br>
+                        <strong>Seller Phone_number:</strong> {{ tx.seller.phone_number }}<br>
+                        <strong>Buyer:</strong> {{ tx.buyer.username }}<br>
+                        <strong>Destination:</strong> {{ tx.delivery_address }}
+                        <a href="{% url 'transaction_detail' tx.transaction_reference %}" class="text-blue-600 underline ml-2">View</a>
+                        <a href="{% url 'mark_arrived' tx.transaction_reference %}" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Mark_arrived</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No jobs found.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
