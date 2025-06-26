@@ -1167,6 +1167,9 @@ def terms_view(request):
 def about_view(request):
     return render(request, 'core/about.html')
 
+def how(request):
+    return render(request, 'core/how_it_works.html')
+
 
 #hanling guest transaction
 @login_required
@@ -1965,7 +1968,7 @@ def admin_dashboard(request):
         national_id__isnull=False,
         national_id_picture__isnull=False,
         profile_picture__isnull=False,
-        is_verified=False  # You might need to add this field
+        is_verified=False 
     ).order_by('-date_joined')
 
     query = request.GET.get('q')
