@@ -1,0 +1,66 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}How SafeDeal Works - Learn in Minutes{% endblock %}
+
+{% block content %}
+<section class="bg-gray-100 py-12">
+  <div class="max-w-6xl mx-auto px-4">
+    <h2 class="text-3xl md:text-4xl font-bold text-green-600 text-center mb-6">How SafeDeal Works</h2>
+    <p class="text-center text-lg md:text-xl text-gray-700 mb-10">
+      SafeDeal makes online buying and selling safe through M-PESA-powered escrow. Watch the videos below to learn how to use SafeDeal effectively.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div>
+        <h4 class="text-lg font-semibold text-gray-800 mb-2">1. How to Register on SafeDeal</h4>
+        <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow-md">
+          <iframe src="https://www.youtube.com/embed/5mpPIDrC34o" class="w-full h-full" title="How to Register" allowfullscreen></iframe>
+        </div>
+      </div>
+        {% comment %} <iframe width="1266" height="712" src="https://www.youtube.com/embed/5mpPIDrC34o" title="How to Create an Account on SafeDeal | Secure Your Sales with M-PESA Escrow" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe> {% endcomment %}
+      <div>
+        <h4 class="text-lg font-semibold text-gray-800 mb-2">2. How to Post and Sell an Item</h4>
+        <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow-md">
+          <iframe src="https://www.youtube.com/embed/VIDEO_ID_2" class="w-full h-full" title="How to Sell" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <div>
+        <h4 class="text-lg font-semibold text-gray-800 mb-2">3. How to Create a Secure Transaction</h4>
+        <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow-md">
+          <iframe src="https://www.youtube.com/embed/VIDEO_ID_3" class="w-full h-full" title="Create Transaction" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <div>
+        <h4 class="text-lg font-semibold text-gray-800 mb-2">4. How the Escrow Process Works</h4>
+        <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow-md">
+          <iframe src="https://www.youtube.com/embed/VIDEO_ID_4" class="w-full h-full" title="Escrow Process" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <div>
+        <h4 class="text-lg font-semibold text-gray-800 mb-2">5. How to Resolve Disputes</h4>
+        <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden shadow-md">
+          <iframe src="https://www.youtube.com/embed/VIDEO_ID_5" class="w-full h-full" title="Resolve Disputes" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-12 bg-white p-6 rounded-lg shadow-md">
+      <h5 class="text-xl font-semibold text-green-600 mb-4">Frequently Asked Questions</h5>
+      <ul class="space-y-3 text-gray-700 list-disc pl-5">
+        <li><strong>When are funds released?</strong> After the buyer confirms delivery or automatically after 48 hours of arrival.</li>
+        <li><strong>Can I use SafeDeal for Instagram or WhatsApp buyers?</strong> Yes. Use the secure transaction link feature.</li>
+        <li><strong>What happens if there's a dispute?</strong> SafeDeal provides a clear dispute resolution process and admin support.</li>
+      </ul>
+    </div>
+
+    <div class="mt-10 flex flex-col md:flex-row items-center justify-center gap-4">
+      <a href="{% url 'register' %}" class="bg-green-600 hover:bg-green-700 text-white text-lg px-6 py-3 rounded-full shadow">Register Now</a>
+      <a href="{% url 'contact_us' %}" class="border border-green-600 hover:bg-green-50 text-green-700 text-lg px-6 py-3 rounded-full shadow">Contact Support</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
-from .forms import CustomUserCreationForm, UserProfileForm, ItemForm, DisputeForm, TransactionOutForm, ItemReportForm, ShippingForm
+from .forms import CustomUserCreationForm, UserProfileForm, ItemForm, DisputeForm, TransactionOutForm, ItemReportForm, ShippingForm, SecureTransactionForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.contrib import messages
@@ -741,6 +741,9 @@ def logout_view(request):
     # Redirect the user to the homepage or login page
     return redirect('index') 
 
+def how_it_works(request):
+    return render(request, 'core/how_it_works.html')
+
 def index(request):
     return render(request, 'core/index.html')
 
@@ -1165,11 +1168,6 @@ def about_view(request):
     return render(request, 'core/about.html')
 
 
-
-
-
-
-
 #hanling guest transaction
 @login_required
 def generate_transaction_out(request):
@@ -1185,59 +1183,74 @@ def generate_transaction_out(request):
 
     return render(request, 'core/generate_transaction_out.html', {'form': form})
      
-
 def external_transaction_detail(request, transaction_id):
     tx = get_object_or_404(SecureTransaction, id=transaction_id)
+
+    # Prevent seller from accessing their own link (whether logged in or not)
+    if request.user.is_authenticated and request.user == tx.seller:
+        messages.error(request, "Sellers cannot access their own transaction links.")
+        return redirect("dashboard")
+
+    # Step 1: Store one-time token in session if not already set
+    session_key = f"transaction_token_{transaction_id}"
+    if session_key not in request.session:
+        request.session[session_key] = uuid.uuid4().hex
+
     timeline = [
         ("Paid",      tx.transaction_status in ["paid", "shipped", "delivered", "arrived"]),
         ("Shipped",   tx.transaction_status in ["shipped", "delivered", "arrived"]),
-        ("Arrived", tx.transaction_status in ["delivered", "arrived"]),
+        ("Arrived",   tx.transaction_status in ["delivered", "arrived"]),
         ("Delivered", tx.transaction_status == "delivered"),
     ]
+
     return render(request, 'core/external_transaction_detail.html', {
         'transaction': tx,
-        "timeline": timeline
+        'timeline': timeline,
+        'session_token': request.session[session_key],  # pass to template
     })
 
 
 def initiate_payment(request, transaction_id):
     transaction = get_object_or_404(SecureTransaction, id=transaction_id)
 
+    # Step 2: Block seller from submitting payment
+    if request.user.is_authenticated and request.user == transaction.seller:
+        messages.error(request, "Sellers cannot initiate payment for their own item.")
+        return redirect("dashboard")
+
+    # Step 3: Validate session token
+    session_key = f"transaction_token_{transaction_id}"
+    token_from_session = request.session.get(session_key)
+    token_from_form = request.POST.get("session_token")
+
+    if not token_from_session or token_from_session != token_from_form:
+        return HttpResponseForbidden("Invalid or expired session token.")
+
     if request.method == "POST":
-        # Generate a unique reference
         if not transaction.mpesa_reference:
             transaction.mpesa_reference = f"SD-{uuid.uuid4().hex[:10]}"
             transaction.save()
-        
-        phone = transaction.buyer_phone
-        amount = transaction.amount
 
-        # Send to M-PESA with this reference
         response = lipa_na_mpesa(
-            phone_number=phone,
-            amount=amount,
-            account_reference=transaction.mpesa_reference,  # Pass here
+            phone_number=transaction.buyer_phone,
+            amount=transaction.amount,
+            account_reference=transaction.mpesa_reference,
             transaction_desc=f"Payment for {transaction.mpesa_reference}"
         )
 
-        print("STK Push Response:", response)  # Optional debug
-
-        # Optionally set status here
         transaction.transaction_status = 'pending'
         transaction.save()
 
+        # Step 4: Expire session token after success
+        if session_key in request.session:
+            del request.session[session_key]
+
         messages.success(request, 'Payment initiated. You will receive an M-PESA prompt shortly.')
-
         return render(request, 'core/payment_initiated.html', {'transaction': transaction})
-    
 
-from .forms import SecureTransactionForm
 
-active_tx = Transaction.objects.filter(
-        item_id=OuterRef("pk"),
-        status__in=["paid", "shipped", "arrived", "delivered"]
-)
 
+from django.http import HttpResponseForbidden
 @login_required
 def create_secure_transaction(request):
     user = request.user
@@ -1257,8 +1270,9 @@ def create_secure_transaction(request):
             tx.seller = user
 
             item_ref = form.cleaned_data.get("item_reference")
+            active_tx = SecureTransaction.objects.filter(item_reference=OuterRef('item_reference'),transaction_status__in=['pending', 'paid', 'shipped', 'arrived'])
+
             if item_ref:
-                # fetch the seller’s item and annotate whether it’s ‘locked’
                 try:
                     item_qs = Item.objects.filter(
                         item_reference=item_ref,
@@ -1266,37 +1280,40 @@ def create_secure_transaction(request):
                     ).annotate(has_active_tx=Exists(active_tx))
 
                     item = item_qs.get()
-                    if (not item.is_available) or item.has_active_tx:
-                        form.add_error(
-                            "item_reference",
-                            "This item is currently not eligible for a new transaction."
-                        )
-                        raise ValueError  # jump to re-render form
 
-                    tx.item_name   = item.title
-                    tx.amount      = item.price
+                    # Ensure it's available and has no active transaction
+                    if not item.is_available or item.has_active_tx:
+                        form.add_error("item_reference", "This item is currently not eligible for a new transaction.")
+                        raise ValueError
+
+                    # Block creating transaction for other's items
+                    if item.seller != user:
+                        form.add_error("item_reference", "You can only create transactions for your own items.")
+                        raise ValueError
+
+                    tx.item_name = item.title
+                    tx.amount = item.price
                     tx.description = item.description
 
                 except Item.DoesNotExist:
-                    form.add_error(
-                        "item_reference",
-                        "Invalid reference — item not found in your inventory."
-                    )
+                    form.add_error("item_reference", "Invalid reference — item not found in your inventory.")
                 except ValueError:
-                    pass  # form already has an error, just re-render
+                    pass  # form has errors
 
-            # If no errors were injected, go ahead and save
+            else:
+                form.add_error("item_reference", "An item reference is required to create a transaction.")
+
             if not form.errors:
                 tx.save()
                 messages.success(request, "Transaction link created successfully!")
                 return redirect("transaction_success", transaction_id=tx.id)
 
     else:
-        # GET – pre-fill ref if it came via query-string
         ref = request.GET.get("item_reference")
         form = SecureTransactionForm(initial={"item_reference": ref} if ref else None)
 
     return render(request, "core/create_transaction.html", {"form": form})
+
 
 # core/views.py  (or wherever your view lives)
 import io, base64, qrcode

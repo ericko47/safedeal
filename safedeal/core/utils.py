@@ -61,15 +61,27 @@ def deactivate_expired_subscriptions():
         sub.user.save()
 
     
+# def send_custom_email(subject, template_name, context, recipient_list):
+#     message = render_to_string(template_name, context)
+#     send_mail(
+#         subject,
+#         '',
+#         settings.DEFAULT_FROM_EMAIL,
+#         recipient_list,
+#         html_message=message,
+#     )
+
 def send_custom_email(subject, template_name, context, recipient_list):
-    message = render_to_string(template_name, context)
-    send_mail(
-        subject,
-        '',
-        settings.DEFAULT_FROM_EMAIL,
-        recipient_list,
-        html_message=message,
+    html_content = render_to_string(template_name, context)
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body='This is an HTML email. Please view it in a client that supports HTML.',
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=recipient_list,
     )
+    msg.attach_alternative(html_content, "text/html")
+    msg.send()
+
 from .models import TransactionStatusLog
 
 def log_transaction_status_change(transaction, new_status, user=None, reason=""):

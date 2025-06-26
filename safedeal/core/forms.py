@@ -176,10 +176,8 @@ from .models import SecureTransaction
 class SecureTransactionForm(forms.ModelForm):
     class Meta:
         model = SecureTransaction
-        exclude = ['seller', 'transaction_status', 'created_at', 'updated_at','shipped_at', 'mpesa_reference']
-        widgets = {
-            'description': forms.Textarea(attrs={'rows': 3}),
-        }
+        exclude = ['seller', 'transaction_status', 'created_at', 'updated_at','shipped_at', 'mpesa_reference', 'description', 'amount','platform_fee', 'seller_payout', 'funded_at','is_funded','hold_payout','item_name']
+ 
         labels = {
             'item_reference': 'Item ID',
         }

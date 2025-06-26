@@ -15,7 +15,9 @@
   </p>
   <p class="text-center text-gray-600 mb-6">
     You will be using this page to track the status of your transaction. Keep it safe and always check your email for updates.
-
+  </p>
+  <p class="text-center text-gray-600 mb-6">
+    <strong>NOTE: This link has been Created with your phone Number that you shared with the seller. It is through this number that you will make MPESA payment to the item</strong>
   </p>
     <p><strong>Warning!</strong> Do not share this link with anyone else. It is meant for {{transaction.buyer_name}} only.</p>
     <br><br>
@@ -43,6 +45,7 @@
   {% if transaction.transaction_status == 'pending' %}
     <form method="post" action="{% url 'initiate_payment' transaction.id %}">
       {% csrf_token %}
+      <input type="hidden" name="session_token" value="{{ session_token }}">
       <button type="submit"
         class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl shadow">
         Buy Now

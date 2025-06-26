@@ -53,19 +53,49 @@
       background-color: #f8f9fa;
       font-size: 0.9rem;
     }
+    .floating-contact-bar {
+      position: absolute;
+      top: 10px;
+      left: 0;
+      width: 100%;
+      z-index: 1050;
+      padding: 3px 0;
+    }
+
   </style>
 </head>
 <body>
 <body>
-  <header class="bg-success text-white py-5">
-    <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between gap-4">
+    <!-- Floating Contact Bar -->
+  <div class="floating-contact-bar text-white medium px-3">
+    <div class="container d-flex justify-content-between align-items-center">
+      <div>
+        📞 <strong>Official Line:</strong> <a href="tel:+254117276004" class="text-white text-decoration-underline">0117 276 004</a> &nbsp;&nbsp;
+        📧 <strong>Email:</strong> <a href="mailto:info@safedeal.co.ke" style="color: #f8f9fa;">info@safedeal.co.ke</a>
+      </div>
+      <div>
+        <a href="{% url 'how_it_works' %}" class="btn text-white text-decoration-underline">How It Works</a>
+      </div>
+      <div>
+        <a href="https://www.facebook.com/profile.php?id=61577633855708" target="_blank" class="text-white me-2"><i class="bi bi-facebook"></i></a>
+        <a href="https://wa.me/254117276004" target="_blank" class="text-white me-2"><i class="bi bi-whatsapp"></i></a>
+        <a href="https://x.com/SEscrow82325" target="_blank" class="text-white me-2"><i class="bi bi-twitter"></i></a>
+        <a href="https://www.instagram.com/safedeal_ke/" target="_blank" class="text-white"><i class="bi bi-instagram"></i></a>&nbsp;&nbsp;
+        <a href="https://www.youtube.com/@safedeal-escrow/" target="_blank" class="text-white"><i class="bi bi-youtube"></i></a>
+      </div>
+    </div>
+  </div>
+
+  <header class="bg-success text-white py-5">  
+
+    <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between gap-4">      
       <div class="flex-shrink-0">
         <img src="{% static 'core/logos/slogorect.png' %}" alt="SafeDeal Logo" class="img-fluid" style="max-height: 140px;">
       </div>
       <div class="text-md-end text-center">
         <h1 class="display-5 fw-bold mb-2">Welcome to SafeDeal</h1>
         <p class="lead mb-3">Empowering Safe Online Transactions for Small Businesses and Everyday Users</p>
-        <a href="{% url 'register' %}" class="btn btn-light btn-lg px-4 py-2 shadow">Register</a>
+        <a href="{% url 'register' %}" class="btn btn-light btn-lg px-4 py-2 shadow">Register</a>        
       </div>
     </div>
   </header>
@@ -110,7 +140,7 @@
       <h2 class="mb-4 fw-bold text-success">What is SafeDeal?</h2>
       <p class="lead mb-4">SafeDeal is a secure online marketplace that connects buyers and sellers, ensuring safe transactions through an escrow system.</p>
       <p class="mb-4">We provide a platform for local transactions, allowing users to buy and sell items with confidence.</p>
-      <a href="{% url 'register' %}" class="btn btn-outline-success btn-lg px-4 py-2 shadow">Get Started</a>
+      <a href="{% url 'register' %}" class="btn btn-outline-success btn-lg px-4 py-2 shadow">Get started</a>
     </div> <br><br><br>
   </section><br><br>
   
@@ -215,6 +245,11 @@
       <a href="{% url 'privacy' %}" class="text-gray-700 hover:text-blue-600">Privacy</a>
       <a href="{% url 'about' %}" class="text-gray-700 hover:text-blue-600">About</a>
     </div>
+    <p class="mt-1">
+      <a href="https://wa.me/254117276004" class="text-success text-decoration-none">
+        <i class="bi bi-whatsapp"></i> Chat on WhatsApp
+      </a>
+    </p>
     <p class="mt-4">&copy; 2025 SafeDeal™. All rights reserved.</p>
     <small><em>"SafeDeal Escrow" is a trademark pending registration at the Kenya Industrial Property Institute (KIPI).</em></small><br>
     <small><em>SafeDeal Escrow is a registered business in Kenya under Business Name No. BN-B8SOZ3AO, owned and operated by Erick Omondi. Based in Mombasa, we provide escrow-powered digital payments to protect buyers and sellers across Kenya.</em></small>
