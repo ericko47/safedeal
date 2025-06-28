@@ -23,12 +23,35 @@ class CustomUserCreationForm(UserCreationForm):
         fields = ('first_name','last_name','username', 'email','phone_number', 'password1', 'password2')
 
 # For users to update their profile after registration
-# This form can be used to update the user's profile after registration.
+from django import forms
+
 class UserProfileForm(forms.ModelForm):
+    date_of_birth = forms.DateField(
+        input_formats=[
+            '%d/%m/%Y',   # 25/06/2025
+            '%Y-%m-%d',   # 2025-06-25 (ISO, for compatibility)
+        ],
+        widget=forms.TextInput(attrs={
+            'placeholder': 'DD/MM/YYYY',
+            'class': 'form-control'
+        })
+    )
+
     class Meta:
         model = CustomUser
-        fields = ['national_id', 'profile_picture', 'national_id_picture', 'current_location', 'phone_number', 'date_of_birth', 'permanent_address', 'business_name', 'business_address', 'business_license_number', 'account_type']
-
+        fields = [
+            'national_id',
+            'profile_picture',
+            'national_id_picture',
+            'current_location',
+            'phone_number',
+            'date_of_birth',
+            'permanent_address',
+            'business_name',
+            'business_address',
+            'business_license_number',
+            'account_type'
+        ]
 
 
 
@@ -170,7 +193,6 @@ class TransactionOutForm(forms.ModelForm):
     
 from .models import SecureTransaction
 
-from django import forms
 from .models import SecureTransaction
 
 class SecureTransactionForm(forms.ModelForm):

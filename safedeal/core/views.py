@@ -388,26 +388,34 @@ def fund_seller_external(request, transaction_id):
 @login_required
 def request_funding(request, transaction_reference):
     tx = get_object_or_404(Transaction, transaction_reference=transaction_reference, seller=request.user)
-  
+
     if not tx.can_seller_request_funding():
         messages.error(request, "You’re not yet eligible to request payout.")
         return redirect('transaction_detail', transaction_reference=transaction_reference)
 
-    # initiate B2C to seller
+    platform_fee, fine, payout = calculate_fees(tx)
+    # Update amounts
+    tx.platform_fee = platform_fee
+    tx.seller_payout = payout
+    tx.save(update_fields=["platform_fee", "seller_payout"])
+
+    # Initiate B2C to seller
     response = initiate_b2c_payment(
         phone_number=tx.seller.phone_number,
-        amount=tx.seller_payout,
+        amount=payout,
         transaction_id=tx.id
     )
     if response["ResponseCode"] == "0":
         tx.is_funded = True
         tx.funded_at = timezone.now()
-        tx.save()
+        tx.save(update_fields=["is_funded", "funded_at"])
         messages.success(request, "Payout requested. Funds will reach your M-PESA shortly.")
     else:
         messages.error(request, "Failed to initiate payout. Please contact support.")
 
     return redirect('transaction_detail', transaction_reference=transaction_reference)
+
+
 
 
 @login_required

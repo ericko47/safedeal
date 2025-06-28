@@ -153,7 +153,7 @@
               <a href="{% url 'mark_arrived' txn.transaction_reference %}" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Mark_arrived</a>
               {% endif %}
               {% if txn.status == "arrived" %}
-              <form method="post" action="{% url 'confirm_delivery' txn.transaction_reference %}">
+              <form method="post" action="{% url 'request_funding' txn.transaction_reference %}">
                 {% csrf_token %}
                 <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Request Payment</button>
               </form>
@@ -171,7 +171,7 @@
       <div>
         <div class="flex justify-between items-center mb-4">
           <h4 class="text-md font-bold text-green-700">Your Social Media Sales</h4>
-          <a href="{% url 'all_sales' %}" class="text-sm text-green-600 hover:underline">View All</a>
+          {% comment %} <a href="{% url 'all_sales' %}" class="text-sm text-green-600 hover:underline">View All</a> {% endcomment %}
         </div>
         
         {% if seller_securetransactions %}
@@ -209,7 +209,7 @@
               {% if txn.transaction_status == "arrived" %}
               <form method="post" action="{% url 'mark_securedelivered' txn.mpesa_reference %}">
                 {% csrf_token %}
-                <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Request Payment</button>
+                <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Mark Securely Delivered</button>
               </form>
               {% endif %}              
             </div>

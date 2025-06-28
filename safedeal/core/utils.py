@@ -96,23 +96,29 @@ def log_transaction_status_change(transaction, new_status, user=None, reason="")
         transaction.status = new_status
         transaction.save()
         
-
-def calculate_fees(amount, fee_percent=5, fine_percent=0, apply_fine=False):
- 
-    amount = Decimal(amount)
+def calculate_fees(tx, fee_percent=5, fine_percent=2):
+    amount = Decimal(tx.amount)
 
     fee = (Decimal(fee_percent) / 100) * amount
+
+    # Determine fine automatically
+    apply_fine = False
+    if tx.status == "paid" and tx.paid_at:
+        if timezone.now() - tx.paid_at > timezone.timedelta(hours=24):
+            apply_fine = True
+
     fine = (Decimal(fine_percent) / 100) * amount if apply_fine else Decimal('0.00')
 
     platform_fee = fee + fine
     payout = amount - platform_fee
 
-    # Round all to 2 decimal places
+    # Round
     platform_fee = platform_fee.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     fine = fine.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     payout = payout.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     return platform_fee, fine, payout
+
 
 def notify_funding(transaction):
     send_custom_email(
