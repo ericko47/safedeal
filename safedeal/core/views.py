@@ -103,32 +103,31 @@ def register_delivery_agent(request):
 @login_required
 def upgrade_to_premium(request):
     user = request.user
-    
+
     required_fields = [
-    user.national_id,
-    user.phone_number,
-    user.current_location,
-    user.permanent_address,
-    user.account_type,
-    user.profile_picture,
-    user.national_id_picture,
+        user.national_id,
+        user.phone_number,
+        user.current_location,
+        user.permanent_address,
+        user.account_type,
+        user.profile_picture,
+        user.national_id_picture,
     ]
 
     if not all(required_fields):
-        messages.warning(request, "Please complete your profile before uprading.")
-        return redirect('update_profile') 
+        messages.warning(request, "Please complete your profile before upgrading.")
+        return redirect('update_profile')
+
     eligibility = check_premium_eligibility(user)
     status = PremiumSubscription.objects.filter(user=user).first()
-    if request.method == 'POST':
-        if not user.national_id:
-            messages.error(request, "You must update your national ID before upgrading.")
-            return redirect('update_profile')
 
+    if request.method == 'POST':
         phone = user.phone_number
         amount = 499
         account_reference = user.national_id
         transaction_desc = f"Premium Upgrade for {user.get_full_name()}"
 
+        # Initiate payment
         response = lipa_na_mpesa(
             phone_number=phone,
             amount=amount,
@@ -137,16 +136,28 @@ def upgrade_to_premium(request):
         )
 
         if response.get('ResponseCode') == "0":
-            messages.success(request, "STK Push sent. Complete the payment on your phone.")
-        else:
-            messages.error(request, "Failed to initiate payment. Try again later.")
+            # Save or update subscription in pending status
+            sub, created = PremiumSubscription.objects.get_or_create(user=user)
+            sub.status = "pending"
+            sub.checkout_request_id = response.get("CheckoutRequestID")
+            sub.paid_date = None  # We will set it when the callback arrives
+            sub.save()
 
-        return redirect('upgrade_to_premium')
+            messages.success(request, "STK Push sent. Please complete the payment on your phone.")
+            return redirect('upgrade_to_premium')
+
+        else:
+            messages.error(
+                request,
+                f"Failed to initiate payment. Safaricom response: {response.get('errorMessage') or response}"
+            )
+            return redirect('upgrade_to_premium')
 
     return render(request, 'core/upgrade_to_premium.html', {
         "eligibility": eligibility,
         "status": status,
     })
+
 
 @login_required
 def support(request):
@@ -1224,12 +1235,12 @@ def external_transaction_detail(request, transaction_id):
 def initiate_payment(request, transaction_id):
     transaction = get_object_or_404(SecureTransaction, id=transaction_id)
 
-    # Step 2: Block seller from submitting payment
+    # Block seller from paying
     if request.user.is_authenticated and request.user == transaction.seller:
         messages.error(request, "Sellers cannot initiate payment for their own item.")
         return redirect("dashboard")
 
-    # Step 3: Validate session token
+    # Validate token
     session_key = f"transaction_token_{transaction_id}"
     token_from_session = request.session.get(session_key)
     token_from_form = request.POST.get("session_token")
@@ -1238,10 +1249,12 @@ def initiate_payment(request, transaction_id):
         return HttpResponseForbidden("Invalid or expired session token.")
 
     if request.method == "POST":
+        # Create mpesa_reference if missing
         if not transaction.mpesa_reference:
             transaction.mpesa_reference = f"SD-{uuid.uuid4().hex[:10]}"
-            transaction.save()
+            transaction.save(update_fields=["mpesa_reference"])
 
+        # Initiate M-PESA payment
         response = lipa_na_mpesa(
             phone_number=transaction.buyer_phone,
             amount=transaction.amount,
@@ -1249,15 +1262,30 @@ def initiate_payment(request, transaction_id):
             transaction_desc=f"Payment for {transaction.mpesa_reference}"
         )
 
-        transaction.transaction_status = 'pending'
-        transaction.save()
+        if response.get("ResponseCode") == "0":
+            # Save checkout_request_id and mark as pending
+            transaction.checkout_request_id = response.get("CheckoutRequestID")
+            transaction.transaction_status = "pending"
+            transaction.save(update_fields=["checkout_request_id", "transaction_status"])
 
-        # Step 4: Expire session token after success
-        if session_key in request.session:
-            del request.session[session_key]
+            # Expire token
+            if session_key in request.session:
+                del request.session[session_key]
 
-        messages.success(request, 'Payment initiated. You will receive an M-PESA prompt shortly.')
-        return render(request, 'core/payment_initiated.html', {'transaction': transaction})
+            messages.success(request, "Payment request sent. Check your phone to complete the payment.")
+            return redirect('transaction_detail', transaction.transaction_reference)
+
+        else:
+            # Failure
+            messages.error(
+                request,
+                f"Failed to initiate payment: {response.get('errorMessage') or response}"
+            )
+            return redirect('transaction_detail', transaction.transaction_reference)
+
+    # If GET (not POST), forbid
+    return HttpResponseForbidden("Invalid request method.")
+
 
 
 
@@ -1438,8 +1466,6 @@ def place_order(request, item_reference):
             return redirect('transaction_detail', transaction.transaction_reference)
 
         else:
-            #messages.error(request, "Failed to initiate payment. Try again.")
-            # Add this debug print or message
             messages.error(request, f"Failed to initiate payment: {response}")
             # Optional: print to console or log
             print("STK Push response:", response)
@@ -1510,26 +1536,27 @@ def buy_bulk_view(request, item_id):
             is_bulk=True,  # Add this if your Transaction model has it
             quantity=quantity  # Same here
         )
-
-        phone = request.user.phone_number
+        
+        phone = request.user.phone_number  # Ensure this exists
         response = lipa_na_mpesa(
             phone_number=phone,
             amount=total_price,
             account_reference=transaction_ref,
             transaction_desc=f"Bulk Purchase {item.item_reference}"
         )
-
         if response.get("ResponseCode") == "0":
+            transaction.checkout_request_id = response.get("CheckoutRequestID")
+            transaction.save()
             messages.success(request, "Payment request sent. Check your phone.")
-        else:
-            messages.error(request, "Failed to initiate payment. Try again.")
+            
+            return redirect('transaction_detail', transaction.transaction_reference)
 
-        return redirect('transaction_detail', transaction.id)
+        else:
+            messages.error(request, f"Failed to initiate payment: {response}")
+            # Optional: print to console or log
+            print("STK Push response:", response)    
 
     return render(request, 'core/buy_bulk.html', {'item': item})
-
-
-
 
 
 from django.views.decorators.csrf import csrf_exempt
@@ -1541,6 +1568,8 @@ from django.core.mail import send_mail
 mpesa_logger = logging.getLogger('mpesa')
 @csrf_exempt
 def mpesa_callback(request):
+    mpesa_logger.info("RAW BODY: %s", request.body)
+    from django.utils import timezone  # Ensure timezone is imported
     if request.method != 'POST':
         return JsonResponse({"message": "Only POST requests are allowed"}, status=405)
 
@@ -1552,7 +1581,7 @@ def mpesa_callback(request):
     stk_callback = data.get("Body", {}).get("stkCallback", {})
     merchant_request_id = stk_callback.get("MerchantRequestID")
     checkout_request_id = stk_callback.get("CheckoutRequestID")
-    result_code = stk_callback.get("ResultCode")
+    result_code = int(stk_callback.get("ResultCode", 1))
     result_desc = stk_callback.get("ResultDesc")
 
     amount = phone = mpesa_receipt = account_reference = None
@@ -1567,75 +1596,108 @@ def mpesa_callback(request):
         phone = metadata_dict.get("PhoneNumber")
         account_reference = metadata_dict.get("AccountReference")
 
-        # === 1. Match SecureTransaction ===
-        try:
-            st = SecureTransaction.objects.get(mpesa_reference=account_reference)
-            st.transaction_status = 'paid'
-            st.save()
-            transaction_found = True
-            mpesa_logger.info(f"[SECURE] Payment matched via reference {account_reference}")
-        except SecureTransaction.DoesNotExist:
-            pass
+        # === 1. Match SecureTransaction ==
+        if account_reference:
+            try:
+                st = SecureTransaction.objects.get(mpesa_reference=account_reference)
+                st.transaction_status = 'paid'
+                st.save()
+                transaction_found = True
+                mpesa_logger.info(f"[SECURE] Payment matched via reference {account_reference}")
+            except SecureTransaction.DoesNotExist:
+                pass       
 
+        # === 1b. Fallback to CheckoutRequestID
+        if not transaction_found and checkout_request_id:
+            try:
+                st = SecureTransaction.objects.get(checkout_request_id=checkout_request_id)
+                st.transaction_status = 'paid'
+                st.save()
+                transaction_found = True
+                mpesa_logger.info(f"[SECURE] Payment matched via CheckoutRequestID {account_reference}")
+            except SecureTransaction.DoesNotExist:
+                pass
         # === 2. Match Transaction ===
         if not transaction_found:
+            # Try matching by AccountReference
+            if account_reference:
+                try:
+                    t = Transaction.objects.get(transaction_reference=account_reference)
+                    t.status = 'paid'                
+                    t.paid_at = timezone.now()
+                    t.save()
+                    transaction_found = True
+                    mpesa_logger.info(f"[INTERNAL] Payment matched via AccountReference {account_reference}")
+                except Transaction.DoesNotExist:
+                    pass
+
+        # === 2b. Fallback matching by CheckoutRequestID
+        if not transaction_found and checkout_request_id:
             try:
-                t = Transaction.objects.get(transaction_reference=account_reference)
+                t = Transaction.objects.get(checkout_request_id=checkout_request_id)
                 t.status = 'paid'                
                 t.paid_at = timezone.now()
                 t.save()
                 transaction_found = True
-                mpesa_logger.info(f"[INTERNAL] Payment matched via reference {account_reference}")
+                mpesa_logger.info(f"[INTERNAL] Payment matched via CheckoutRequestID {checkout_request_id}")
             except Transaction.DoesNotExist:
                 pass
 
-        # === 3. Notify for unmatched payments ===
+        # === 3. Match Premium Subscription by National ID
         if not transaction_found and account_reference:
             try:
-                    user = CustomUser.objects.get(national_id=account_reference)
-
-                    start_date = timezone.now()
-                    # expiry_date = start_date + timedelta(days=30)
-
-                    sub, created = PremiumSubscription.objects.get_or_create(user=user)
-                    sub.paid_date = start_date
-                    # sub.expiry_date = expiry_date
-                    sub.status = 'pending'  # Awaiting admin approval
-                    sub.save()
-
-                    # Email the admin team for manual review
-                    message = (
-                        f"PREMIUM APPLICATION RECEIVED:\n"
-                        f"User: {user.get_full_name()} ({user.email})\n"
-                        f"National ID: {account_reference}\n"
-                        f"Phone: {phone}\n"
-                        f"Amount: {amount}\n"
-                        f"Receipt: {mpesa_receipt}"
-                    )
-                    send_mail(
-                        subject=f"{account_reference} Premium Application via M-PESA",
-                        message=message,
-                        from_email=None,
-                        recipient_list=['mpesa@safedeal.co.ke'],
-                    )
-                    mpesa_logger.info(message)
-
-                    transaction_found = True
+                user = CustomUser.objects.get(national_id=account_reference)
+                sub, created = PremiumSubscription.objects.get_or_create(user=user)
+                sub.paid_date = timezone.now()
+                sub.status = 'pending'
+                sub.save()
+                ...
+                transaction_found = True
             except CustomUser.DoesNotExist:
-                mpesa_logger.warning(f"National ID {account_reference} not found for premium activation.")
-        else:
+                pass
+        # === 3b. Fallback to CheckoutRequestID
+        if not transaction_found and checkout_request_id:
+            try:
+                sub = PremiumSubscription.objects.get(checkout_request_id=checkout_request_id)
+                user = sub.user
+                sub.paid_date = timezone.now()
+                sub.status = 'pending'
+                sub.save()
+
+                message = (
+                    f"PREMIUM APPLICATION RECEIVED:\n"
+                    f"User: {user.get_full_name()} ({user.email})\n"
+                    f"National ID: {user.national_id}\n"
+                    f"Phone: {phone}\n"
+                    f"Amount: {amount}\n"
+                    f"Receipt: {mpesa_receipt}"
+                )
+                send_mail(
+                    subject=f"{user.national_id} Premium Application via M-PESA",
+                    message=message,
+                    from_email=None,
+                    recipient_list=['mpesa@safedeal.co.ke'],
+                )
+                mpesa_logger.info(message)
+                transaction_found = True
+            except PremiumSubscription.DoesNotExist:
+                mpesa_logger.warning(f"CheckoutRequestID {checkout_request_id} not found for premium activation.")
+
+        # === 4. If still not found, just log and email
+        if not transaction_found:
             message = (
-                f"✅ M-PESA PAYMENT RECEIVED\n\n"
+                f"✅ UNMATCHED M-PESA PAYMENT RECEIVED\n\n"
                 f"Phone Number: {phone}\n"
                 f"Amount: KES {amount}\n"
                 f"Account Reference: {account_reference}\n"
                 f"M-PESA Receipt: {mpesa_receipt}\n"
-                f"Date: {now().strftime('%Y-%m-%d %H:%M:%S')}"
+                f"Date: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
             subject = f"✅ Payment Received | Ref: {account_reference}"
             send_mail(subject, message, from_email=None, recipient_list=['mpesa@safedeal.co.ke'])
+            mpesa_logger.warning(message)
 
-    # === 4. Always log callback ===
+    # === 5. Always log the callback
     MpesaPaymentLog.objects.create(
         merchant_request_id=merchant_request_id,
         checkout_request_id=checkout_request_id,
@@ -1644,11 +1706,10 @@ def mpesa_callback(request):
         amount=amount,
         phone=phone,
         mpesa_receipt=mpesa_receipt,
-        transaction_reference=account_reference  # Add this field in your model if not present
+        transaction_reference=account_reference
     )
 
     return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
-
 
 from .models import MpesaB2CResult
 

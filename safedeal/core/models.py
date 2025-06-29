@@ -282,7 +282,8 @@ class CustomUser(AbstractUser):
     # Business license number
     business_license_number = models.CharField(max_length=50, null=True, blank=True) 
     is_verified = models.BooleanField(default=False)
-    is_premium = models.BooleanField(default=False)
+    is_premium = models.BooleanField(default=False)    
+    checkout_request_id = models.CharField(max_length=100, null=True, blank=True)
     # Account type: Buyer, Seller, or Both
     ACCOUNT_TYPE_CHOICES = [
         ('buyer', 'Buyer'),
@@ -305,6 +306,7 @@ class PremiumSubscription(models.Model):
     premium_start_date = models.DateTimeField(null=True, blank=True)
     expiry_date = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=[('active', 'Active'), ('pending', 'Pending'), ('expired', 'Expired')], default='pending')
+    checkout_request_id = models.CharField(max_length=100, null=True, blank=True)
 
 
 # Transaction model to handle the transactions between buyers and sellers
@@ -354,6 +356,7 @@ class SecureTransaction(models.Model):
     is_funded = models.BooleanField(default=False)    
     hold_payout = models.BooleanField(default=True)  
     mpesa_reference = models.CharField(max_length=100, blank=True, null=True, unique=True)
+    checkout_request_id = models.CharField(max_length=100, null=True, blank=True)
 
     def get_secure_link(self):
         from django.urls import reverse
