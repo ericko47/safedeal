@@ -427,8 +427,6 @@ def request_funding(request, transaction_reference):
     return redirect('transaction_detail', transaction_reference=transaction_reference)
 
 
-
-
 @login_required
 def mark_arrived(request, transaction_reference):
     transaction = get_object_or_404(Transaction, transaction_reference=transaction_reference)
@@ -1715,31 +1713,40 @@ from .models import MpesaB2CResult
 
 @csrf_exempt
 def mpesa_result_callback(request):
-    data = json.loads(request.body)
+    mpesa_logger.info("B2C CALLBACK RAW BODY: %s", request.body)
+    if request.method != 'POST':
+        return JsonResponse({"message": "Only POST requests are allowed"}, status=405)
 
-    result = data.get('Result', {})
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid JSON"}, status=400)
 
-    # Extract useful fields
+    if "Result" not in data:
+        return JsonResponse({"ResultCode": 1, "ResultDesc": "Missing Result"}, status=400)
+
+    result = data["Result"]
+
     result_code = result.get("ResultCode")
     result_desc = result.get("ResultDesc")
     conv_id = result.get("ConversationID")
     orig_conv_id = result.get("OriginatorConversationID")
     transaction_id = result.get("TransactionID")
+
     amount = 0
     phone_number = ""
     reference = ""
 
-    # Pull transaction reference from ResultParameters if available
     parameters = result.get("ResultParameters", {}).get("ResultParameter", [])
     for param in parameters:
-        if param["Key"] == "TransactionAmount":
-            amount = float(param["Value"])
-        if param["Key"] == "ReceiverPartyPublicName":
-            phone_number = param["Value"].split("-")[0].strip()
-        if param["Key"] == "InitiatedTime":
-            pass
-        if param["Key"] == "Occasion":
-            reference = param["Value"]
+        key = param["Key"]
+        value = param["Value"]
+        if key == "TransactionAmount":
+            amount = float(value)
+        elif key == "ReceiverPartyPublicName":
+            phone_number = value.split("-")[0].strip()
+        elif key == "Occasion":
+            reference = value
 
     MpesaB2CResult.objects.create(
         transaction_reference=reference,
@@ -1754,18 +1761,21 @@ def mpesa_result_callback(request):
         raw_response=data
     )
 
-    # Optionally update the transaction if needed
     if reference:
         try:
             transaction = Transaction.objects.get(transaction_reference=reference)
             if result_code == 0:
-                transaction.is_funded = True
-                transaction.funded_at = timezone.now()
-                transaction.save()
+                if not transaction.is_funded:
+                    transaction.is_funded = True
+                    transaction.funded_at = timezone.now()
+                    transaction.save()
+            else:
+                mpesa_logger.warning(f"B2C payout failed for {reference}: {result_desc}")
         except Transaction.DoesNotExist:
-            pass
+            mpesa_logger.error(f"Transaction not found for reference: {reference}")
 
     return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+
 
 @csrf_exempt
 def mpesa_timeout_callback(request):

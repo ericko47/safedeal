@@ -58,7 +58,8 @@ def lipa_na_mpesa(phone_number, amount, account_reference="SafeDeal", transactio
 
 def initiate_b2c_payment(phone_number, amount, transaction_reference):
     access_token = get_access_token()
-    b2c_url = " https://api.safaricom.co.ke/mpesa/b2c/v3/paymentrequest" #"https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest"
+    formatted_phone = format_phone(phone_number)
+    b2c_url = "https://api.safaricom.co.ke/mpesa/b2c/v3/paymentrequest"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
@@ -70,7 +71,7 @@ def initiate_b2c_payment(phone_number, amount, transaction_reference):
         "CommandID": "BusinessPayment",
         "Amount": int(amount),
         "PartyA": settings.MPESA_SHORTCODE,
-        "PartyB": phone_number,
+        "PartyB": formatted_phone,
         "Remarks": "Seller Payout",
         "QueueTimeOutURL": settings.MPESA_TIMEOUT_CALLBACK,
         "ResultURL": settings.MPESA_RESULT_CALLBACK,
