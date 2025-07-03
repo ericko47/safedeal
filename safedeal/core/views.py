@@ -369,7 +369,7 @@ def fund_seller(request, transaction_id):
 def fund_seller_external(request, transaction_id):
     tx = get_object_or_404(SecureTransaction, id=transaction_id)
 
-    if not tx.status == "delivered" or tx.is_funded or tx.hold_payout:
+    if not tx.transaction_status == "delivered" or tx.is_funded or tx.hold_payout:
         messages.warning(request, "This transaction is not eligible for funding.")
         return redirect("fundable_transactions")
 
@@ -383,7 +383,7 @@ def fund_seller_external(request, transaction_id):
     response = initiate_b2c_payment(
         phone_number=tx.seller.phone_number,
         amount=tx.seller_payout,
-        mpesa_reference=tx.mpesa_reference
+        transaction_reference=tx.mpesa_reference
     )
 
     if response.get("ResultCode") == 0:
@@ -1760,8 +1760,8 @@ def mpesa_result_callback(request):
         transaction_id=transaction_id,
         raw_response=data
     )
-
     if reference:
+        # Try Transaction model first
         try:
             transaction = Transaction.objects.get(transaction_reference=reference)
             if result_code == 0:
@@ -1769,23 +1769,53 @@ def mpesa_result_callback(request):
                     transaction.is_funded = True
                     transaction.funded_at = timezone.now()
                     transaction.save()
+                    updated = True
             else:
-                mpesa_logger.warning(f"B2C payout failed for {reference}: {result_desc}")
+                mpesa_logger.warning(f"B2C payout failed for Transaction {reference}: {result_desc}")
         except Transaction.DoesNotExist:
-            mpesa_logger.error(f"Transaction not found for reference: {reference}")
+            pass  # Try SecureTransaction next
+
+        # If not found in Transaction, try SecureTransaction
+        if not updated:
+            try:
+                secure_tx = SecureTransaction.objects.get(mpesa_reference=reference)
+                if result_code == 0:
+                    if not secure_tx.is_funded:
+                        secure_tx.is_funded = True
+                        secure_tx.funded_at = timezone.now()
+                        secure_tx.save()
+                else:
+                    mpesa_logger.warning(f"B2C payout failed for SecureTransaction {reference}: {result_desc}")
+            except SecureTransaction.DoesNotExist:
+                mpesa_logger.error(f"No transaction found for B2C reference: {reference}")
 
     return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
 
-
 @csrf_exempt
 def mpesa_timeout_callback(request):
-    data = json.loads(request.body)
+    mpesa_logger.info("B2C TIMEOUT CALLBACK RAW BODY: %s", request.body)
+
+    if request.method != 'POST':
+        return JsonResponse({"message": "Only POST requests are allowed"}, status=405)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid JSON"}, status=400)
 
     conversation_id = data.get("ConversationID", "N/A")
     originator_id = data.get("OriginatorConversationID", "N/A")
 
+    # Try to associate with known transaction reference
+    reference = "TIMEOUT"
+    try:
+        result = MpesaB2CResult.objects.get(originator_conversation_id=originator_id)
+        reference = result.transaction_reference
+    except MpesaB2CResult.DoesNotExist:
+        pass
+
     MpesaB2CResult.objects.create(
-        transaction_reference="TIMEOUT",
+        transaction_reference=reference,
         phone_number="N/A",
         amount=0,
         result_type=-1,
@@ -1796,6 +1826,20 @@ def mpesa_timeout_callback(request):
         transaction_id=None,
         raw_response=data
     )
+
+    # Optionally flag transaction as not funded
+    if reference and reference != "TIMEOUT":
+        try:
+            tx = Transaction.objects.get(transaction_reference=reference)
+            tx.is_funded = False
+            tx.save()
+        except Transaction.DoesNotExist:
+            try:
+                stx = SecureTransaction.objects.get(mpesa_reference=reference)
+                stx.is_funded = False
+                stx.save()
+            except SecureTransaction.DoesNotExist:
+                mpesa_logger.warning(f"No transaction found for timeout reference: {reference}")
 
     return JsonResponse({"ResultCode": 0, "ResultDesc": "Timeout logged"})
 

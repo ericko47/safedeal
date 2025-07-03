@@ -103,7 +103,7 @@ def calculate_fees(tx, fee_percent=5, fine_percent=2):
 
     # Determine fine automatically
     apply_fine = False
-    if tx.status == "paid" and tx.paid_at:
+    if tx.status == "paid" and tx.paid_at or tx.transaction_status == "paid":
         if timezone.now() - tx.paid_at > timezone.timedelta(hours=24):
             apply_fine = True
 
