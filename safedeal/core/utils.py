@@ -103,7 +103,7 @@ def calculate_fees(tx, fee_percent=5, fine_percent=2):
 
     # Determine fine automatically
     apply_fine = False
-    if tx.status == "paid" and tx.paid_at or tx.transaction_status == "paid":
+    if tx.status == "paid" and tx.paid_at:
         if timezone.now() - tx.paid_at > timezone.timedelta(hours=24):
             apply_fine = True
 
@@ -119,6 +119,33 @@ def calculate_fees(tx, fee_percent=5, fine_percent=2):
 
     return platform_fee, fine, payout
 
+# def calculate_fees(tx, fee_percent=5, fine_percent=2):
+#     amount = Decimal(tx.amount)
+
+#     fee = (Decimal(fee_percent) / 100) * amount
+
+#     # Determine fine automatically
+#     apply_fine = False
+
+#     # Try to get status from either field
+#     status = getattr(tx, "status", None) or getattr(tx, "transaction_status", None)
+#     paid_at = getattr(tx, "paid_at", None)
+
+#     if status == "paid" and paid_at:
+#         if timezone.now() - paid_at > timezone.timedelta(hours=24):
+#             apply_fine = True
+
+#     fine = (Decimal(fine_percent) / 100) * amount if apply_fine else Decimal('0.00')
+
+#     platform_fee = fee + fine
+#     payout = amount - platform_fee
+
+#     # Round
+#     platform_fee = platform_fee.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+#     fine = fine.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+#     payout = payout.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+#     return platform_fee, fine, payout
 
 def notify_funding(transaction):
     send_custom_email(

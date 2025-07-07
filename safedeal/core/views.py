@@ -409,22 +409,31 @@ def request_funding(request, transaction_reference):
     tx.platform_fee = platform_fee
     tx.seller_payout = payout
     tx.save(update_fields=["platform_fee", "seller_payout"])
-
-    # Initiate B2C to seller
+ 
     response = initiate_b2c_payment(
         phone_number=tx.seller.phone_number,
         amount=payout,
-        transaction_id=tx.id
+        transaction_reference=tx.transaction_reference
     )
-    if response["ResponseCode"] == "0":
-        tx.is_funded = True
-        tx.funded_at = timezone.now()
-        tx.save(update_fields=["is_funded", "funded_at"])
-        messages.success(request, "Payout requested. Funds will reach your M-PESA shortly.")
+    
+    # Check if the request failed at the API level
+    if "errorCode" in response:
+        error_message = response.get("errorMessage", "Unknown error")
+        mpesa_logger.error(f"B2C payout failed API-level: {error_message}")
+        messages.error(request, f"Failed to initiate payout: {error_message}")
+        return redirect('transaction_detail', transaction_reference=transaction_reference)
+    
+    # Check if the request was accepted
+    if response.get("ResponseCode") == "0":
+        # Mark as payout initiated (but NOT funded yet—wait for callback)
+        messages.success(request, "Payout request accepted by M-PESA. You will be notified once it is completed.")
     else:
-        messages.error(request, "Failed to initiate payout. Please contact support.")
-
+        error_desc = response.get("ResponseDescription", "Unknown error")
+        mpesa_logger.error(f"B2C payout rejected: {error_desc}")
+        messages.error(request, f"Payout request rejected: {error_desc}")
+    
     return redirect('transaction_detail', transaction_reference=transaction_reference)
+
 
 
 @login_required

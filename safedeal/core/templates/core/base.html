@@ -196,11 +196,10 @@
 
   </script>
 
-
-  <!-- Cookie Banner -->
   <div id="cookie-banner" style="position: fixed; bottom: 0; left: 0; width: 100%; background: #1e293b; color: white; padding: 1rem; text-align: center; font-size: 0.9rem; z-index: 9999; display: none;">
     This site uses cookies to enhance your experience. By continuing to use SafeDeal, you accept our use of cookies.
     <button onclick="acceptCookies()" style="margin-left: 1rem; background: #10b981; color: white; border: none; padding: 0.4rem 1rem; border-radius: 5px;">Accept</button>
+    <button onclick="declineCookies()" style="margin-left: 0.5rem; background: #ef4444; color: white; border: none; padding: 0.4rem 1rem; border-radius: 5px;">Decline</button>
   </div>
 
   <script>
@@ -209,18 +208,16 @@
       document.getElementById('cookie-banner').style.display = 'none';
     }
 
+    function declineCookies() {
+      localStorage.setItem('cookiesDeclined', 'true');
+      document.getElementById('cookie-banner').style.display = 'none';
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
-      if (!localStorage.getItem('cookiesAccepted')) {
+      if (!localStorage.getItem('cookiesAccepted') && !localStorage.getItem('cookiesDeclined')) {
         document.getElementById('cookie-banner').style.display = 'block';
       }
     });
-  </script>
-  <script>
-    function goBackWithSpinnerFix(event) {
-      event.preventDefault();
-      sessionStorage.setItem("skipSpinner", "true");
-      history.back();
-    }
   </script>
 </body>
 </html>
