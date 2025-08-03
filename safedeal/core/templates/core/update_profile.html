@@ -51,19 +51,39 @@
         {{ form.phone_number.label_tag }} 
         {{ form.phone_number|add_class:"w-full border-b border-gray-300 focus:outline-none focus:border-gray-600 placeholder-gray-400 py-2 bg-transparent transition-all duration-200" }}
       </div>
-
       <div>
         {{ form.national_id.label_tag }} 
         {{ form.national_id|add_class:"w-full border-b border-gray-300 focus:outline-none focus:border-gray-600 placeholder-gray-400 py-2 bg-transparent transition-all duration-200" }}
       </div>
 
+      <div class="text-sm text-gray-600 mb-3">
+        <p class="mb-1">
+          <strong>Why do we need your ID?</strong>
+        </p>
+        <p class="mb-1">
+          To verify your identity and protect all users from fraud. Your documents are securely stored and never shared.
+          SafeDeal complies with Kenyan data protection regulations.
+        </p>
+        <p>
+          <strong>Tip:</strong> Upload a clear photo of your ID (max 5MB) in good lighting.
+        </p>
+      </div>
+
       <div>
         {{ form.profile_picture.label_tag }} 
         {{ form.profile_picture|add_class:"w-full border-b border-gray-300 focus:outline-none focus:border-gray-600 placeholder-gray-400 py-2 bg-transparent transition-all duration-200" }}
-
+      </div>
+      <div class="text-sm mt-2">
+        <p class="mb-1">You can add it latter</p> 
+        Need help? <a href="https://wa.me/254117276004" class="underline text-blue-600">Chat with support on WhatsApp</a>
+      </div>
       <div>
         {{ form.national_id_picture.label_tag }} 
         {{ form.national_id_picture|add_class:"w-full border-b border-gray-300 focus:outline-none focus:border-gray-600 placeholder-gray-400 py-2 bg-transparent transition-all duration-200" }}
+      </div>
+      <div class="text-sm text-gray-500 mt-1">
+        <p>Example of a clear ID photo:</p>
+        <img src="/static/core/images/sample-image.png" alt="Sample ID Example" class="border border-gray-300 rounded mt-1 w-64">
       </div>
 
       <div>
@@ -107,6 +127,14 @@
     </form>
   </div>
 </div>
+<script>
+  const form = document.querySelector("form");
+  form.addEventListener("submit", () => {
+    const btn = form.querySelector("button[type='submit']");
+    btn.disabled = true;
+    btn.innerHTML = "Uploading...";
+  });
+</script>
 
 <script>
   const accountTypeField = document.getElementById("id_account_type");

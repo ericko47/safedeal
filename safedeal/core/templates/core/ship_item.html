@@ -13,6 +13,9 @@
         
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Shipping Evidence</label>
+            <p>Attach a clear receipt, waybill, or photo showing proof of shipment. This can include a courier receipt, a tracking screenshot, a photo of the packaged item with label, or a signed delivery agent form. Make sure the evidence clearly shows the shipment date, destination, or tracking details.</p>
+
+            <p>Accepted formats: JPG, PNG, PDF</p>
             {{ form.shipping_evidence }}
             {% if form.shipping_evidence.errors %}
                 <p class="text-red-500 text-sm">{{ form.shipping_evidence.errors.0 }}</p>

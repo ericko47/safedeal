@@ -3,6 +3,7 @@ from django.conf import settings
 from requests.auth import HTTPBasicAuth
 import base64
 from datetime import datetime
+import uuid
 
 def get_access_token():
     consumer_key = settings.MPESA_CONSUMER_KEY
@@ -64,6 +65,7 @@ def initiate_b2c_payment(phone_number, amount, transaction_reference):
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
     }
+    originator_id = str(uuid.uuid4())
 
     payload = {
         "InitiatorName": settings.MPESA_INITIATOR_NAME,
@@ -76,6 +78,7 @@ def initiate_b2c_payment(phone_number, amount, transaction_reference):
         "QueueTimeOutURL": settings.MPESA_TIMEOUT_CALLBACK,
         "ResultURL": settings.MPESA_RESULT_CALLBACK,
         "Occasion": transaction_reference,
+        "OriginatorConversationID" : originator_id,
     }
 
     response = requests.post(b2c_url, json=payload, headers=headers)

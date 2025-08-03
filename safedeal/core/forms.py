@@ -37,6 +37,21 @@ class UserProfileForm(forms.ModelForm):
         })
     )
 
+    national_id_picture = forms.ImageField(
+        widget=forms.ClearableFileInput(attrs={
+            "accept": "image/*",
+            "capture": "environment"
+        }),
+        required=False
+    )
+    profile_picture = forms.ImageField(
+        widget=forms.ClearableFileInput(attrs={
+            "accept": "image/*",
+            "capture": "environment"
+        }),
+        required=False
+    )
+
     class Meta:
         model = CustomUser
         fields = [

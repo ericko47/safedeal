@@ -192,6 +192,23 @@
           sessionStorage.setItem("skipSpinner", "true");
         }
       });
+  </script>
+  <script>
+
+
+    function goBackWithSpinnerFix(event) {
+
+
+      event.preventDefault();
+
+
+      sessionStorage.setItem("skipSpinner", "true");
+
+
+      history.back();
+
+
+    }
 
 
   </script>

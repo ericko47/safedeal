@@ -47,7 +47,7 @@ def register_delivery_agent(request):
                 request,
                 "You already have a delivery agent profile. If you'd like to register as an organization instead, please contact support for assistance."
             )
-            return redirect('dashboard')  # or stay on the same page
+            return redirect('dashboard') 
 
         if registering_as == "individual" and agent_form.is_valid():
             # Save individual agent
@@ -337,6 +337,10 @@ def request_refund(request, transaction_id):
 @staff_member_required
 def fund_seller(request, transaction_id):
     tx = get_object_or_404(Transaction, id=transaction_id)
+    
+    if not tx.seller.national_id_picture:
+        messages.error(request, "You must upload your ID before requesting payout.")
+        return redirect("update_profile")
 
     if not tx.status == "delivered" or tx.is_funded or tx.hold_payout:
         messages.warning(request, "This transaction is not eligible for funding.")
@@ -368,6 +372,10 @@ def fund_seller(request, transaction_id):
 @staff_member_required
 def fund_seller_external(request, transaction_id):
     tx = get_object_or_404(SecureTransaction, id=transaction_id)
+    
+    if not tx.seller.national_id_picture:
+        messages.error(request, "You must upload your ID before requesting payout.")
+        return redirect("update_profile")
 
     if not tx.transaction_status == "delivered" or tx.is_funded or tx.hold_payout:
         messages.warning(request, "This transaction is not eligible for funding.")
@@ -399,6 +407,11 @@ def fund_seller_external(request, transaction_id):
 @login_required
 def request_funding(request, transaction_reference):
     tx = get_object_or_404(Transaction, transaction_reference=transaction_reference, seller=request.user)
+    
+    if not tx.seller.national_id_picture:
+        messages.error(request, "You must upload your ID before requesting payout.")
+        return redirect("update_profile")
+
 
     if not tx.can_seller_request_funding():
         messages.error(request, "You’re not yet eligible to request payout.")
@@ -539,7 +552,11 @@ def mark_securedelivered(request, mpesa_reference):
 @login_required
 def cancel_transaction(request, transaction_reference):
     transaction = get_object_or_404(Transaction, transaction_reference=transaction_reference)
-
+    
+    if not request.user.national_id_picture:
+        messages.error(request, "You must upload a clear photo of your National ID before you can cancell the order")
+        return redirect("update_profile")
+    
     if request.user != transaction.buyer:
         return HttpResponseForbidden("You are not authorized to cancel this transaction.")
 
@@ -640,6 +657,10 @@ def ship_item(request, transaction_reference):
     if transaction.status != 'paid':
         messages.error(request, "Item cannot be shipped in its current state.")
         return redirect('dashboard')
+    
+    if not request.user.national_id_picture:
+        messages.error(request, "You must upload a clear photo of your National ID before you can ship items or receive funds.")
+        return redirect("update_profile")
 
     if request.method == 'POST':
         form = ShippingForm(request.POST, request.FILES, instance=transaction)
@@ -1042,7 +1063,6 @@ def post_item_view(request):
         user.permanent_address,
         user.account_type,
         user.profile_picture,
-        user.national_id_picture,
     ]
 
     if not all(required_fields):
@@ -1050,8 +1070,8 @@ def post_item_view(request):
         return redirect('update_profile') 
 
     if not user.is_verified:
-        messages.warning(request, "Please wait for admin to verify your details or check your email for admin comments on your account.")
-        return redirect('dashboard')
+        messages.warning(request, " You are uploading your items with minimal verifications. You will need to be verified before your first transaction.")
+        # return redirect('dashboard')Please wait for admin to verify your details or check your email for admin comments on your account
 
     # Check current item count
     active_count = Item.objects.filter(seller=user, is_available=True).count()
@@ -1246,7 +1266,23 @@ def initiate_payment(request, transaction_id):
     if request.user.is_authenticated and request.user == transaction.seller:
         messages.error(request, "Sellers cannot initiate payment for their own item.")
         return redirect("dashboard")
-
+    seller = transaction.seller
+    if not seller.national_id_picture:
+        messages.warning(request, "This seller has not completed ID verification. They will be required to upload their ID before this transaction can proceed.")
+ 
+    seller = transaction.seller
+    if not seller.national_id_picture:
+        messages.warning(request, "This seller has not completed ID verification. They will be required to upload their ID before this transaction can proceed.")
+        
+        send_custom_email(
+            subject='Verification Required',
+            template_name='emails/verification.html',
+            context={
+                'transaction': transaction,
+                'sellers': seller,
+            },
+            recipient_list=[seller.email],
+        )
     # Validate token
     session_key = f"transaction_token_{transaction_id}"
     token_from_session = request.session.get(session_key)
@@ -1280,7 +1316,7 @@ def initiate_payment(request, transaction_id):
                 del request.session[session_key]
 
             messages.success(request, "Payment request sent. Check your phone to complete the payment.")
-            return redirect('transaction_detail', transaction.transaction_reference)
+            return redirect('external_transaction_detail', transaction.id)
 
         else:
             # Failure
@@ -1288,7 +1324,7 @@ def initiate_payment(request, transaction_id):
                 request,
                 f"Failed to initiate payment: {response.get('errorMessage') or response}"
             )
-            return redirect('transaction_detail', transaction.transaction_reference)
+            return redirect('external_transaction_detail', transaction.id)
 
     # If GET (not POST), forbid
     return HttpResponseForbidden("Invalid request method.")
@@ -1435,10 +1471,26 @@ def place_order(request, item_reference):
     ]
 
     if not all(required_fields):
-        messages.warning(request, "Please complete your profile before you can place an order.")
-        return redirect('update_profile')
+        messages.warning(request, "You are advised to complete your profile for safer transactions.")
+        #return redirect('update_profile')
     item = get_object_or_404(Item, item_reference=item_reference)
-    if item.seller == request.user:
+    
+    seller = item.seller
+    if not seller.national_id_picture:
+        messages.warning(request, "This seller has not completed ID verification. They will be required to upload their ID before this transaction can proceed.")
+        
+        send_custom_email(
+            subject='Verification Required',
+            template_name='emails/verification.html',
+            context={
+                'buyer': user,
+                'item': item,
+                'seller': seller,
+            },
+            recipient_list=[seller.email],
+        )
+
+    if seller == request.user:
         messages.error(request, "You cannot buy your own item.")
         return redirect('item_detail', item_reference=item.item_reference)
 
@@ -1474,7 +1526,6 @@ def place_order(request, item_reference):
 
         else:
             messages.error(request, f"Failed to initiate payment: {response}")
-            # Optional: print to console or log
             print("STK Push response:", response)
 
 
@@ -1506,7 +1557,7 @@ def buy_bulk_view(request, item_id):
     ]
 
     if not all(required_fields):
-        messages.warning(request, "Please complete your profile before posting an item.")
+        messages.warning(request, "You cannot buy in bulk until you complete your profile.")
         return redirect('update_profile')
     item = get_object_or_404(Item, id=item_id)
 
