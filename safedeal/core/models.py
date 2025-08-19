@@ -4,6 +4,8 @@ from django.core.validators import RegexValidator
 from django.conf import settings
 from datetime import timedelta
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+import os
 
 
 
@@ -63,6 +65,27 @@ class ItemImage(models.Model):
 
 
 
+class Service(models.Model):
+    
+    
+    def validate_cv_file(value):
+        ext = os.path.splitext(value.name)[1]
+        valid_extensions = ['.pdf', '.doc', '.docx']
+        if not ext.lower() in valid_extensions:
+            raise ValidationError('Only PDF, DOC, or DOCX files are allowed.')
+        
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)            
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    category = models.CharField(max_length=100)
+    cv = models.FileField(upload_to='cvs/',null=True,blank=True,validators=[validate_cv_file],help_text="Upload your CV (PDF or DOC)")
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    delivery_duration = models.PositiveIntegerField(help_text="Time in days")    
+    evidence = models.ImageField(upload_to='service_evidence/', help_text="Upload evidence of service delivery (e.g.certificates, or any supporting documents)", null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
 # Transaction model to handle the transactions between buyers and sellers
 # This model will include fields for the buyer, seller, item, amount, status, and other relevant details.
 class Transaction(models.Model):
@@ -86,7 +109,8 @@ class Transaction(models.Model):
         related_name='sales',
         on_delete=models.CASCADE
     )
-    item = models.ForeignKey('core.Item', on_delete=models.CASCADE)
+    item = models.ForeignKey('core.Item',null=True, blank=True, on_delete=models.CASCADE)    
+    service = models.ForeignKey('core.Service', null=True, blank=True, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(default=timezone.now)
@@ -146,7 +170,12 @@ class Transaction(models.Model):
             return timezone.now() - self.arrived_at > timezone.timedelta(hours=48)
 
         return False
-
+    
+    def clean(self):
+        if not self.item and not self.service:
+            raise ValidationError("Transaction must be linked to either an item or a service.")
+        if self.item and self.service:
+            raise ValidationError("Transaction cannot be linked to both.")
 
 
     def __str__(self):
@@ -182,6 +211,7 @@ class DisputeEvidence(models.Model):
     dispute = models.ForeignKey(TransactionDispute, on_delete=models.CASCADE, related_name='evidences')
     file = models.FileField(upload_to='dispute_evidence/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
 
 
 from django.conf import settings
@@ -298,6 +328,8 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
 
 
 class PremiumSubscription(models.Model):

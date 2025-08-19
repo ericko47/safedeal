@@ -1,4 +1,17 @@
 {% load static %}
+{% load breadcrumb_tags %}
+{% load i18n %}
+{% load humanize %}
+{% load tz %}
+
+{% get_current_language as LANGUAGE_CODE %}
+{% get_current_language_bidi as LANGUAGE_BIDI %}
+
+{% if LANGUAGE_BIDI %}
+  <html lang="{{ LANGUAGE_CODE }}" dir="rtl">
+{% else %}
+  <html lang="{{ LANGUAGE_CODE }}" dir="ltr">
+{% endif %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,7 +27,7 @@
       margin: 2px;
       height: 8px;
       width: 100%;
-      background-color: royalblue;
+      background-color: #1D3557; /* Updated color */
     }
     #messages {
       transition: opacity 1s ease-in-out;
@@ -31,7 +44,7 @@
         <a href="{% url 'index' %}">
           <img src="{% static 'core/logos/slogobox.png' %}" alt="SafeDeal Logo" class="h-10">
         </a>
-        <form action="{% url 'search_items' %}" method="get" class="flex space-x-2 items-center">
+        {% comment %} <form action="{% url 'search_items' %}" method="get" class="flex space-x-2 items-center">
           <select name="category" class="text-sm border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300">
             <option value="">All Categories</option>
             {% for category in categories %}
@@ -44,7 +57,7 @@
               <i data-feather="search" class="w-4 h-4"></i>
             </button>
           </div>
-        </form>
+        </form> {% endcomment %}
       </div>
 
       <div class="md:hidden flex justify-end">
@@ -83,6 +96,13 @@
         {% endif %}
       </nav>
     </div>
+    {% comment %} <br>
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center space-y-3 md:space-y-0" style="font-weight: bold;">
+      <div>
+        {% render_breadcrumbs %}
+      </div>
+       {% endcomment %}
+    </div>
   </header>
 
   <div id="loading-spinner" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-70">
@@ -107,6 +127,7 @@
       {% endfor %}
     </div>
   {% endif %}
+
 
   <main>
     {% block content %}{% endblock %}
@@ -134,7 +155,7 @@
   </footer>
 
   <script src="https://unpkg.com/feather-icons"></script>
-  <script>
+  {% comment %} <script>
     feather.replace();
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -211,7 +232,68 @@
     }
 
 
+  </script> {% endcomment %}
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Feather icons
+      if (window.feather) {
+        feather.replace();
+      }
+
+      const spinner = document.getElementById("loading-spinner");
+      const toggleBtn = document.getElementById("mobile-menu-toggle");
+      const navLinks = document.getElementById("navbar-links");
+
+      // Always hide spinner on page load
+      if (spinner) {
+        spinner.classList.add("hidden");
+
+        // Reset skip flag
+        if (sessionStorage.getItem("skipSpinner") === "true") {
+          sessionStorage.removeItem("skipSpinner");
+        }
+
+        // Spinner fallback: auto-hide after 5 seconds
+        setTimeout(() => spinner.classList.add("hidden"), 5000);
+
+        // Show spinner before leaving the page (unless back button used)
+        window.addEventListener("beforeunload", () => {
+          if (sessionStorage.getItem("skipSpinner") !== "true") {
+            spinner.classList.remove("hidden");
+          }
+        });
+
+        // Show spinner on form submit
+        document.querySelectorAll("form").forEach(form => {
+          form.addEventListener("submit", () => {
+            spinner.classList.remove("hidden");
+          });
+        });
+      }
+
+      // Mobile nav toggle
+      if (toggleBtn && navLinks) {
+        toggleBtn.addEventListener("click", () => {
+          navLinks.classList.toggle("hidden");
+        });
+      }
+
+      // Back button spinner fix (modern)
+      window.addEventListener("pageshow", (event) => {
+        if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
+          sessionStorage.setItem("skipSpinner", "true");
+        }
+      });
+    });
+
+    // Back button helper
+    function goBackWithSpinnerFix(event) {
+      event.preventDefault();
+      sessionStorage.setItem("skipSpinner", "true");
+      history.back();
+    }
   </script>
+
 
   <div id="cookie-banner" style="position: fixed; bottom: 0; left: 0; width: 100%; background: #1e293b; color: white; padding: 1rem; text-align: center; font-size: 0.9rem; z-index: 9999; display: none;">
     This site uses cookies to enhance your experience. By continuing to use SafeDeal, you accept our use of cookies.

@@ -1,27 +1,51 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser, Item, Transaction, TransactionOut, TransactionDispute
+from .models import CustomUser, Item, Transaction, TransactionOut, TransactionDispute, Service
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
+
+class ServiceForm(forms.ModelForm):
+    class Meta:
+        model = Service
+        fields = [
+            'title', 'description', 'category', 'cv', 'evidence',
+            'price', 'delivery_duration'
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}),
+        }
 
 class CustomLoginForm(AuthenticationForm):
     def confirm_login_allowed(self, user):
         if not user.is_active:
             raise forms.ValidationError(
-                _("Your account has been deactivated due to a pending issue. Please contact support."),
+                _("Your account is not verified yet. Please check your email and click the activation link we sent you."),
                 code='inactive',
             )
 
 
 
 class CustomUserCreationForm(UserCreationForm):
-    phone_number = forms.CharField(max_length=15)
+    phone_number = forms.CharField(
+        max_length=15,
+        help_text="Enter your M-PESA registered phone number."
+    )
+    email = forms.EmailField(
+        help_text="Enter an active email address you can access (for account activation)."
+    )
 
     class Meta:
         model = CustomUser
-        fields = ('first_name','last_name','username', 'email','phone_number', 'password1', 'password2')
-
+        fields = (
+            'first_name',
+            'last_name',
+            'username',
+            'email',
+            'phone_number',
+            'password1',
+            'password2'
+        )
 # For users to update their profile after registration
 from django import forms
 

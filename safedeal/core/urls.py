@@ -103,5 +103,13 @@ urlpatterns = [
    
     path("secure-tx/<str:mpesa_reference>/ship/", views.ship_item_by_mpesa, name="ship_item_mpesa"),
     path('items/', views.all_items_view, name='all_items'),
+    
+    
+    path('services/', views.service_list, name='service_list'),
+    path('services/new/', views.create_service, name='create_service'),
+    path('services/<uuid:uid>/', views.service_detail, name='service_detail'),
+    path('services/hire/<uuid:uuid>/', views.hire_service, name='hire_service'),
+    path('services/<uuid:uuid>/arrived/', views.mark_service_arrived, name='mark_service_arrived'),
+    path('services/<uuid:uuid>/delivered/', views.confirm_service_delivery, name='confirm_service_delivery'),
 
 ]

@@ -98,6 +98,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'core.middleware.BreadcrumbMiddleware',
 ]
 
 ROOT_URLCONF = 'safedeal.urls'

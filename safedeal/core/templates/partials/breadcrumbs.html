@@ -1,0 +1,8 @@
+{% if breadcrumbs %}
+<nav class="text-sm text-gray-600 mb-4">
+    {% for crumb in breadcrumbs %}
+        <a href="{{ crumb.url }}" class="hover:text-blue-600 text-green">{{ crumb.name }}</a>
+        {% if not forloop.last %} &rarr; {% endif %}
+    {% endfor %}
+</nav>
+{% endif %}

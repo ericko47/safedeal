@@ -1,0 +1,50 @@
+{% extends "core/base.html" %}
+{% block content %}
+
+{% load widget_tweaks %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+  <h2 class="text-2xl font-semibold mb-6">Post a New Service</h2>
+    <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
+      &larr; Go Back
+    </a>
+      {% if messages %}
+      <ul class="mb-4">
+        {% for message in messages %}
+          <li class="text-sm text-{{ message.tags }}-600">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="space-y-6 bg-white shadow-md rounded-lg p-6">
+    {% csrf_token %}
+        {% if form.errors %}
+      <ul class="mb-4 text-red-600 text-sm">
+        {% for field in form %}
+          {% for error in field.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% for field in form %}
+      <div>
+        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+        {{ field|add_class:"w-full border-b border-gray-300 focus:outline-none focus:border-gray-600 placeholder-gray-400 py-2 bg-transparent transition-all duration-200" }}
+        
+        {% if field.help_text %}
+          <p class="text-xs text-gray-500">{{ field.help_text }}</p>
+        {% endif %}
+        {% for error in field.errors %}
+          <p class="text-red-500 text-sm">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endfor %}
+
+    <div class="text-right">
+      <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+        Submit Service
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

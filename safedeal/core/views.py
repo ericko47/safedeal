@@ -29,10 +29,139 @@ from .models import PremiumSubscription
 
 from django.contrib.admin.views.decorators import staff_member_required
 from .utils import check_premium_eligibility 
-from .forms import DeliveryAgentForm, DeliveryOrganizationForm
-from .models import DeliveryOrganization, DeliveryAgent
+from .forms import DeliveryAgentForm, DeliveryOrganizationForm, ServiceForm
+from .models import DeliveryOrganization, DeliveryAgent, Service
 
 from django.db import IntegrityError
+from django.utils.crypto import get_random_string
+
+
+@login_required
+def create_service(request):
+    if request.method == 'POST':
+        form = ServiceForm(request.POST, request.FILES)
+        if form.is_valid():
+            service = form.save(commit=False)
+            service.seller = request.user
+            service.save()
+            messages.success(request, "Your service has been created successfully!")    
+            return redirect('dashboard')
+        else:
+            messages.error(request, "There was an error creating your service. Please check the form and try again.")
+    else:
+        form = ServiceForm()
+    return render(request, 'services/service_form.html', {'form': form})
+
+def service_list(request):
+    services = Service.objects.filter(is_active=True)
+    return render(request, 'services/service_list.html', {'services': services})
+
+def service_detail(request, uid):
+    service = get_object_or_404(Service, uuid=uid)
+    return render(request, 'services/service_detail.html', {'service': service})
+
+    
+@login_required
+def hire_service(request, uuid):
+    service = get_object_or_404(Service, uuid=uuid)
+
+    if request.method == 'POST':
+        # Generate unique reference
+        reference = f"SV-{get_random_string(10).upper()}"
+
+        # Call MPESA STK Push
+        response = lipa_na_mpesa(
+            phone_number=request.user.phone_number,
+            amount=service.price,
+            account_reference=reference,
+            transaction_desc=f"Hiring service: {service.title}"
+        )
+
+        # Handle MPESA API response
+        if response.get('ResponseCode') == '0':
+            # Create transaction
+            Transaction.objects.create(
+                buyer=request.user,
+                seller=service.seller,
+                service=service,
+                amount=service.price,
+                status='pending',
+                transaction_reference=reference,
+                delivery_address='Online Service',
+                payment_method='M-PESA',
+                checkout_request_id=response.get('CheckoutRequestID'),
+            )
+            messages.success(request, "STK Push sent to your phone. Please complete the payment.")
+            return redirect('dashboard')
+
+        else:
+            messages.error(request, f"STK Push failed: {response.get('errorMessage', 'Unknown error')}")
+            return redirect('service_detail', uuid=uuid)
+
+    # If GET (someone visited directly), redirect back
+    return redirect('service_detail', uuid=uuid)
+
+
+@login_required
+def mark_service_arrived(request, uuid):
+    """Provider marks a service transaction as 'Arrived'."""
+    transaction = get_object_or_404(Transaction, transaction_reference=uuid, seller=request.user, service__isnull=False)
+
+    if transaction.status != 'paid':
+        messages.error(request, "This service cannot be marked as arrived.")
+        return redirect('dashboard')
+
+    transaction.status = 'arrived'
+    transaction.arrived_at = timezone.now()
+    transaction.save()
+
+    messages.success(request, "Service marked as arrived. Buyer now has 48 hours to confirm delivery.")
+    return redirect('dashboard')
+
+
+@login_required
+def confirm_service_delivery(request, uuid):
+    """Buyer confirms a service delivery as 'Delivered', calculates fees, updates DB, and triggers seller payout."""
+    transaction = get_object_or_404(
+        Transaction,
+        transaction_reference=uuid,
+        buyer=request.user,
+        service__isnull=False
+    )
+
+    if transaction.status != 'arrived':
+        messages.error(request, "You can only confirm delivery for services that have arrived.")
+        return redirect('dashboard')
+
+    # Calculate platform fees & payout
+    platform_fee, fine, payout = calculate_fees(transaction)
+
+    # Update transaction details
+    transaction.status = 'delivered'
+    transaction.funded_at = timezone.now()
+    transaction.is_funded = True
+    transaction.platform_fee = platform_fee
+    transaction.seller_payout = payout
+    transaction.save()
+
+    # Trigger M-PESA B2C payout
+    try:
+        response = initiate_b2c_payment(
+            phone_number=transaction.seller.phone_number,  # Ensure your User model has phone_number
+            amount=payout,
+            transaction_reference=transaction.transaction_reference
+        )
+
+        if response.get("ResponseCode") == "0":
+            messages.success(request, "Service marked as delivered. Payment to provider is being processed.")
+        else:
+            messages.warning(request, "Service marked as delivered, but payout failed. Please contact support.")
+            print("B2C Error:", response)  # Debugging
+
+    except Exception as e:
+        messages.error(request, f"Service marked as delivered, but payout could not be initiated: {str(e)}")
+
+    return redirect('dashboard')
 
 def register_delivery_agent(request):
     if request.method == "POST":
@@ -704,6 +833,9 @@ def ship_item_by_mpesa(request, mpesa_reference):
         )
         return redirect("dashboard")
 
+    if not request.user.national_id_picture:
+        messages.error(request, "You must upload a clear photo of your National ID before you can ship items or receive funds.")
+        return redirect("update_profile")
     # POST  -------------------------------------------------------------------------
     if request.method == "POST":
         # update
@@ -810,9 +942,25 @@ def dashboard_view(request):
     user = request.user
 
     # Standard buyer/seller context
-    buyer_transactions = Transaction.objects.filter(buyer=user).order_by('-created_at')[:10]
-    seller_transactions = Transaction.objects.filter(seller=user).order_by('-created_at')[:10]
+    buyer_transactions = Transaction.objects.filter(
+        buyer=user, item__isnull=False
+    ).order_by('-created_at')[:10]
+
+    seller_transactions = Transaction.objects.filter(
+        seller=user, item__isnull=False
+    ).order_by('-created_at')[:10]
+
+    # Service transactions
+    buyer_service_transactions = Transaction.objects.filter(
+        buyer=user, service__isnull=False
+    ).order_by('-created_at')[:10]
+
+    seller_service_transactions = Transaction.objects.filter(
+        seller=user, service__isnull=False
+    ).order_by('-created_at')[:10]
+
     seller_securetransactions = SecureTransaction.objects.filter(seller=user).order_by('-created_at')[:10]
+    my_services = Service.objects.filter(seller=user).order_by('-created_at')[:10]
 
     # Delivery agent logic (individual or org-affiliated)
     agent_transactions = []
@@ -828,17 +976,21 @@ def dashboard_view(request):
         managed_agents = DeliveryAgent.objects.filter(organization=organization)
         company_transactions = Transaction.objects.filter(delivery_agent__in=managed_agents).order_by('-created_at')[:10]
     except DeliveryOrganization.DoesNotExist:
-        organization = None  # Not an organization admin
+        organization = None
 
     return render(request, 'core/dashboard.html', {
         'buyer_transactions': buyer_transactions,
         'seller_transactions': seller_transactions,
+        'buyer_service_transactions': buyer_service_transactions,
+        'seller_service_transactions': seller_service_transactions,
         'seller_securetransactions': seller_securetransactions,
         'agent_transactions': agent_transactions,
         'company_transactions': company_transactions,
         'managed_agents': managed_agents,
         'delivery_org': organization,
+        'my_services': my_services,
     })
+
 
 @login_required
 def my_delivery_jobs(request):
@@ -1057,16 +1209,11 @@ def post_item_view(request):
     user = request.user
 
     required_fields = [
-        user.national_id,
         user.phone_number,
-        user.current_location,
-        user.permanent_address,
-        user.account_type,
-        user.profile_picture,
     ]
 
     if not all(required_fields):
-        messages.warning(request, "Please complete your profile before posting an item.")
+        messages.warning(request, "Please add your profile picture and MPESA phone number before you can post your items.")
         return redirect('update_profile') 
 
     if not user.is_verified:
@@ -1074,19 +1221,19 @@ def post_item_view(request):
         # return redirect('dashboard')Please wait for admin to verify your details or check your email for admin comments on your account
 
     # Check current item count
-    active_count = Item.objects.filter(seller=user, is_available=True).count()
-    can_post = True
-    remaining_slots = None
+    # active_count = Item.objects.filter(seller=user, is_available=True).count()
+    # can_post = True
+    # remaining_slots = None
 
-    if not user.is_premium:
-        remaining_slots = 5 - active_count
-        if active_count >= 5:
-            can_post = False
+    # if not user.is_premium:
+    #     remaining_slots = 5 - active_count
+    #     if active_count >= 5:
+    #         can_post = False
 
     if request.method == 'POST':
-        if not can_post:
-            messages.error(request, "Free users can only list up to 5 items. Upgrade to Premium to list more.")
-            return redirect('upgrade_to_premium')
+        # if not can_post:
+        #     messages.error(request, "Free users can only list up to 5 items. Upgrade to Premium to list more.")
+        #     return redirect('upgrade_to_premium')
 
         form = ItemForm(request.POST, request.FILES)
         files = request.FILES.getlist('images')
@@ -1097,15 +1244,15 @@ def post_item_view(request):
 
             if item.is_bulk and not user.is_premium:
                 messages.error(request, "Bulk listings are only available to Premium sellers. Please uncheck 'bulk' or upgrade your account.")
-                return render(request, 'core/post-item.html', {'form': form, 'can_post': can_post, 'remaining_slots': remaining_slots})
+                # return render(request, 'core/post-item.html', {'form': form, 'can_post': can_post, 'remaining_slots': remaining_slots})
 
             for f in files:
                 if f.size > 5 * 1024 * 1024:
                     messages.error(request, f"{f.name} is too large (max 5MB).")
-                    return render(request, 'core/post-item.html', {'form': form, 'can_post': can_post, 'remaining_slots': remaining_slots})
+                    # return render(request, 'core/post-item.html', {'form': form, 'can_post': can_post, 'remaining_slots': remaining_slots})
                 if not f.content_type.startswith('image/'):
                     messages.error(request, f"{f.name} is not a valid image.")
-                    return render(request, 'core/post-item.html', {'form': form, 'can_post': can_post, 'remaining_slots': remaining_slots})
+                    # return render(request, 'core/post-item.html', {'form': form, 'can_post': can_post, 'remaining_slots': remaining_slots})
 
             item.save()
             for f in files:
@@ -1120,8 +1267,8 @@ def post_item_view(request):
 
     return render(request, 'core/post-item.html', {
         'form': form,
-        'can_post': can_post,
-        'remaining_slots': remaining_slots,
+        # 'can_post': can_post,
+        # 'remaining_slots': remaining_slots,
     })
 
 
