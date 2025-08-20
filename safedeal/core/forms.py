@@ -190,7 +190,6 @@ class DisputeForm(forms.Form):
 
         return cleaned_data
 
-    
 class ShippingForm(forms.ModelForm):
     class Meta:
         model = Transaction
@@ -200,16 +199,26 @@ class ShippingForm(forms.ModelForm):
             'delivery_agent': forms.Select(attrs={'class': 'form-select'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make delivery_agent optional by default
+        self.fields['delivery_agent'].required = False
+
     def clean(self):
         cleaned_data = super().clean()
         mode = cleaned_data.get('delivery_mode')
         agent = cleaned_data.get('delivery_agent')
 
+        # Require agent only if delivery_mode is "agent"
         if mode == 'agent' and not agent:
             raise forms.ValidationError("Please select a delivery agent.")
+
+        # Auto-clear delivery_agent if not using "agent" mode
+        if mode in ('self_delivery', 'courier'):
+            cleaned_data['delivery_agent'] = None
+
         return cleaned_data
 
-    
     
     
     

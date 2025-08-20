@@ -501,46 +501,61 @@ def fund_seller(request, transaction_id):
 @staff_member_required
 def fund_seller_external(request, transaction_id):
     tx = get_object_or_404(SecureTransaction, id=transaction_id)
-    
+
+    # Prevent double or ineligible funding
+    if tx.is_funded:
+        messages.warning(request, "This transaction has already been funded.")
+        return redirect("fundable_transactions")
+
     if not tx.seller.national_id_picture:
         messages.error(request, "You must upload your ID before requesting payout.")
         return redirect("update_profile")
 
-    if not tx.transaction_status == "delivered" or tx.is_funded or tx.hold_payout:
+    if tx.transaction_status != "delivered" or tx.hold_payout:
         messages.warning(request, "This transaction is not eligible for funding.")
         return redirect("fundable_transactions")
 
+    # Calculate fees + payout
     platform_fee, fine, payout = calculate_fees(tx.amount)
-    
-    # Save these before sending payment
-    
     tx.platform_fee = platform_fee
     tx.seller_payout = payout
-    
+    tx.save(update_fields=["platform_fee", "seller_payout"])
+
+    # Initiate payout
     response = initiate_b2c_payment(
         phone_number=tx.seller.phone_number,
         amount=tx.seller_payout,
         transaction_reference=tx.mpesa_reference
     )
 
-    if response.get("ResultCode") == 0:
-        tx.is_funded = True
-        tx.funded_at = timezone.now()
-        tx.save(update_fields=["is_funded", "funded_at","platform_fee", "seller_payout"])
-        messages.success(request, f"Successfully funded seller for TX #{tx.mpesa_reference}.")
+    if "errorCode" in response:
+        error_message = response.get("errorMessage", "Unknown error")
+        mpesa_logger.error(f"B2C payout failed API-level: {error_message}")
+        messages.error(request, f"Failed to initiate payout: {error_message}")
+        return redirect('transaction_detail', transaction_reference=tx.mpesa_reference)
+
+    if response.get("ResponseCode") == "0":
+        # ✅ Mark as payout initiated (but don’t set funded yet)
+        messages.success(request, f"Payout request accepted by M-PESA for TX #{tx.mpesa_reference}. Awaiting confirmation.")
     else:
-        messages.error(request, f"Failed to fund: {response.get('ResultDesc')}")
+        error_desc = response.get("ResponseDescription", "Unknown error")
+        mpesa_logger.error(f"B2C payout rejected: {error_desc}")
+        messages.error(request, f"Payout request rejected: {error_desc}")
 
     return redirect("fundable_transactions")
 
 @login_required
 def request_funding(request, transaction_reference):
     tx = get_object_or_404(Transaction, transaction_reference=transaction_reference, seller=request.user)
-    
+
+    # Prevent double funding
+    if tx.is_funded:
+        messages.error(request, "This transaction has already been funded.")
+        return redirect('transaction_detail', transaction_reference=transaction_reference)
+
     if not tx.seller.national_id_picture:
         messages.error(request, "You must upload your ID before requesting payout.")
         return redirect("update_profile")
-
 
     if not tx.can_seller_request_funding():
         messages.error(request, "You’re not yet eligible to request payout.")
@@ -565,9 +580,8 @@ def request_funding(request, transaction_reference):
         messages.error(request, f"Failed to initiate payout: {error_message}")
         return redirect('transaction_detail', transaction_reference=transaction_reference)
     
-    # Check if the request was accepted
     if response.get("ResponseCode") == "0":
-        # Mark as payout initiated (but NOT funded yet—wait for callback)
+        # Mark as payout initiated (funding will be finalized by callback)
         messages.success(request, "Payout request accepted by M-PESA. You will be notified once it is completed.")
     else:
         error_desc = response.get("ResponseDescription", "Unknown error")
@@ -575,8 +589,6 @@ def request_funding(request, transaction_reference):
         messages.error(request, f"Payout request rejected: {error_desc}")
     
     return redirect('transaction_detail', transaction_reference=transaction_reference)
-
-
 
 @login_required
 def mark_arrived(request, transaction_reference):
@@ -1660,7 +1672,7 @@ def place_order(request, item_reference):
         phone = request.user.phone_number  # Ensure this exists
         response = lipa_na_mpesa(
             phone_number=phone,
-            amount=10, #item.price,
+            amount= item.price,
             account_reference=transaction_ref,
             transaction_desc=f"Purchase {item.item_reference}"
         )

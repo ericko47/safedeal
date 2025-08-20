@@ -158,7 +158,12 @@
                 {% csrf_token %}
                 <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Request Payment</button>
               </form>
-              {% endif %}              
+              {% endif %}
+              {% if not txn.is_funded and txn.status == "delivered" %}
+                  <a href="{% url 'request_funding' txn.transaction_reference %}" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+                      Request Funding
+                  </a>
+              {% endif %}            
               <a href="{% url 'transaction_detail' txn.transaction_reference %}" class="text-sm text-blue-600 hover:underline mt-2 inline-block">View Details</a>
             </div>
           </li>
