@@ -4,12 +4,17 @@
 {% block title %}Transaction #{{ transaction.transaction_reference }} - SafeDeal{% endblock %}
 
 {% block content %}
+
+<section class="max-w-4xl mx-auto py-10 px-4 bg-light">
+  <div class="container">
+    <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
+      &larr; Go Back
+    </a>
+  </div>
+</section>
 <div class="max-w-5xl mx-auto px-4 py-8">
   <h1 class="text-3xl font-bold text-blue-600 mb-6">Transaction {{ transaction.item.title}}</h1>
   
-  <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
-    &larr; Go Back
-  </a>
   
   <p class="text-gray-600 mb-4">
     Transaction ID: <strong>{{ transaction.transaction_reference }}</strong>
@@ -36,14 +41,12 @@
     <div class="grid md:grid-cols-2 gap-6">
       <div>
         <h3 class="text-lg font-semibold text-gray-700 mb-2">Buyer Info</h3>
-        <p>{{ transaction.buyer.username }}</p>
-        <p>Email: {{ transaction.buyer.email }}</p>
+        <p>Username: {{ transaction.buyer.username }}</p>
         <p>Phone: {{ transaction.buyer.phone_number|default:"Not provided" }}</p>
       </div>
       <div>
         <h3 class="text-lg font-semibold text-gray-700 mb-2">Seller Info</h3>
-        <p>{{ transaction.seller.username }}</p>
-        <p>Email: {{ transaction.seller.email }}</p>
+        <p>Username: {{ transaction.seller.username }}</p>
         <p>Phone: {{ transaction.seller.phone_number|default:"Not provided" }}</p>
       </div>
     </div>
@@ -53,6 +56,9 @@
       <h3 class="text-lg font-semibold text-gray-700 mb-2">Delivery Details</h3>
       <p><strong>Address:</strong> {{ transaction.delivery_address }}</p>
       <p><strong>Method:</strong> {{ transaction.delivery_mode|default:"To be updated" }}</p>
+      <a href="{% url 'start_conversation' transaction.item.item_reference %}" class="inline-block mt-4 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded">
+        Send Message
+      </a>
     </div>
 
     <!-- Proof of Delivery -->
@@ -60,6 +66,7 @@
       <div>
         <h3 class="text-lg font-semibold text-gray-700 mb-2">Proof of Delivery</h3>
         <img src="{{ transaction.proof_of_delivery.url }}" alt="Proof of Delivery" class="max-w-md rounded shadow">
+
       </div>
     {% endif %}
 
@@ -67,7 +74,7 @@
     {% if transaction.status == 'shipped' and request.user == transaction.buyer %}
       <form method="post" action="{% url 'confirm_delivery' transaction.transaction_reference %}">
         {% csrf_token %}
-        <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-green-700">Confirm Delivery</button>
+        <button class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Confirm Delivery</button>
       </form>
     {% endif %}
 

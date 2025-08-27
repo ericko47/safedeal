@@ -1,9 +1,18 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser, Item, Transaction, TransactionOut, TransactionDispute, Service
+from .models import CustomUser, Item, Transaction, TransactionOut, TransactionDispute, Service, Rating
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
+
+class RatingForm(forms.ModelForm):
+    class Meta:
+        model = Rating
+        fields = ["score", "comment"]
+        widgets = {
+            "score": forms.NumberInput(attrs={"min": 1, "max": 5, "class": "border p-2"}),
+            "comment": forms.Textarea(attrs={"rows": 3, "class": "border p-2"}),
+        }
 
 class ServiceForm(forms.ModelForm):
     class Meta:

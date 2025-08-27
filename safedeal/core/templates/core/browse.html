@@ -1,18 +1,16 @@
-
 {% extends 'core/base.html' %}
 {% load static %}
  
 {% block content %}
-
+<section class="max-w-4xl mx-auto py-10 px-4 bg-light">
+  <div class="container">
+    <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
+      &larr; Go Back
+    </a>
+  </div>
+</section>
 <div class="max-w-7xl mx-auto px-4 py-10">
   <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Available Items</h2>
-  {% comment %} <a href="#" onclick="goBackWithSpinnerFix(event)" class="inline-block text-sm text-gray-600 hover:text-blue-600 mb-4">
-    &larr; Go Back
-  </a> {% endcomment %}
-  <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
-    &larr; Go Back
-  </a>
-
   <p class="text-center text-gray-600 mb-4">
     Browse through our collection of items available for sale. Use the search bar to find specific items or filter by category.
   </p>
@@ -57,24 +55,60 @@
             {% endif %}
             <h3 class="text-xl font-semibold text-gray-800">{{ item.title }}</h3>
             <p class="text-green-600 font-bold text-lg">Ksh {{ item.price }}</p>
+
+            <!-- Seller name + Premium badge -->
             <p class="text-sm text-gray-500 mt-1 flex items-center gap-2">
               Seller: {{ item.seller.username }}
-              {% if item.seller.is_premium %}
-              <span class="flex items-center gap-1 text-xs bg-yellow-400 text-white px-2 py-1 rounded-full">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                Premium
-              </span>
+              {% if item.seller_is_premium %}
+                <span class="flex items-center gap-1 text-xs bg-yellow-400 text-white px-2 py-1 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Premium
+                </span>
               {% endif %}
             </p>
-            
+
+            <!-- Seller rating -->
+            {% if item.seller_avg_rating %}
+              <div class="flex items-center mt-1">
+                {% for i in "12345" %}
+                  {% if forloop.counter <= item.seller_avg_rating|floatformat:0 %}
+                    <span class="text-yellow-400 text-sm">★</span>
+                  {% else %}
+                    <span class="text-gray-300 text-sm">★</span>
+                  {% endif %}
+                {% endfor %}
+                <span class="ml-1 text-xs text-gray-600">
+                  ({{ item.seller_avg_rating|floatformat:1 }}/5)
+                </span>
+              </div>
+            {% else %}
+              <p class="text-xs text-gray-400 mt-1 italic">No ratings yet</p>
+            {% endif %}
           </a>
         </div>
+
       {% endfor %}
     </div>
   {% else %}
     <p class="text-center text-gray-500 text-lg">No items found at the moment. Please check back later.</p>
   {% endif %}
+    <div class="mt-6 flex justify-center space-x-2">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+          class="px-3 py-1 bg-gray-200 rounded">Previous</a>
+      {% endif %}
+
+      <span class="px-3 py-1 bg-gray-300 rounded">
+        Page {{ page_obj.number }} {% comment %} of {{ page_obj.paginator.num_pages }} {% endcomment %}
+      </span>
+
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+          class="px-3 py-1 bg-gray-200 rounded">Next</a>
+      {% endif %}
+    </div>
+
 </div>
 {% endblock %}

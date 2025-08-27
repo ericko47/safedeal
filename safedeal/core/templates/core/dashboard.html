@@ -6,7 +6,7 @@
 
   <!-- Greeting -->
    <div>
-    <h2 class="text-2xl font-bold text-gray-800">Welcome, <span class="text-blue-600">{{ user.first_name }} {{user.last_name}}</span></h2>
+    <h2 class="text-2xl font-bold text-gray-800">Hello, <span class="text-blue-600">{{ user.first_name }}</span></h2>
     <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
       &larr; Go Back
     </a>
@@ -50,6 +50,26 @@
       <li><strong>Phone:</strong> {{ user.phone_number }}</li>
       <li><strong>Location:</strong> {{ user.current_location }}</li>
       <li><strong>Account Type:</strong> {{ user.account_type|capfirst }}</li>
+      {% if user.account_type == 'seller' or user.account_type == 'both' %}
+        <li><strong>Average Rating:</strong> 
+          {% if user_with_rating.avg_rating %}
+            <div class="flex items-center space-x-1">
+              {% for i in "12345" %}
+                {% if forloop.counter <= user_with_rating.avg_rating|floatformat:0 %}
+                  <span class="text-yellow-400 text-xl">★</span>
+                {% else %}
+                  <span class="text-gray-300 text-xl">★</span>
+                {% endif %}
+              {% endfor %}
+              <span class="ml-2 text-sm text-gray-600">
+                ({{ user_with_rating.avg_rating|floatformat:1 }}/5)
+              </span>
+            </div>
+          {% else %}
+            <p class="text-gray-500 italic">No ratings yet</p>
+          {% endif %}
+        </li>
+      {% endif %}
     </ul>
     <a href="{% url 'update_profile' %}" class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">Update Profile</a>
     <a href="{% url 'profile' %}" class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">My Profile</a>
@@ -104,6 +124,16 @@
                 {% csrf_token %}
                 <button type="submit" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Raise Dispute</button>
               </form>
+              {% endif %}
+              {% if txn.status == "delivered" %}
+                {% if txn.rating_id %}
+                  <span class="text-gray-600 italic">You rated this purchase.</span>
+                {% else %}
+                  <a href="{% url 'leave_rating' txn.transaction_reference %}" 
+                    class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
+                    Leave a Rating
+                  </a>
+                {% endif %}
               {% endif %}
               <a href="{% url 'transaction_detail' txn.transaction_reference %}" class="text-sm text-blue-600 hover:underline mt-2 inline-block">View Details</a>
             </div>
@@ -189,7 +219,6 @@
             <p><strong>Item ID:</strong> {{ txn.item_reference }}</p>
             <p><strong>Buyer:</strong> {{ txn.buyer_name }}</p>
             <p><strong>Buyer Phone:</strong> {{ txn.buyer_phone }}</p>
-            <p><strong>Buyer Email:</strong> {{ txn.buyer_email }}</p>
             <p><strong>Amount:</strong> {{ txn.amount }}</p>
             <p><strong>Status:</strong>
               <span class="inline-block px-2 py-1 rounded-full text-sm font-medium 

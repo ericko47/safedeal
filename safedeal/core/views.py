@@ -25,15 +25,41 @@ from core.utils import send_custom_email, log_transaction_status_change, calcula
 from django.utils.timezone import now
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import PremiumSubscription
 
 from django.contrib.admin.views.decorators import staff_member_required
 from .utils import check_premium_eligibility 
-from .forms import DeliveryAgentForm, DeliveryOrganizationForm, ServiceForm
-from .models import DeliveryOrganization, DeliveryAgent, Service
+from .forms import DeliveryAgentForm, DeliveryOrganizationForm, ServiceForm, RatingForm
+from .models import DeliveryOrganization, DeliveryAgent, Service, Rating, PremiumSubscription
 
 from django.db import IntegrityError
 from django.utils.crypto import get_random_string
+
+    
+from django.db.models import Avg
+
+
+@login_required
+def leave_rating(request, transaction_reference):
+    transaction = get_object_or_404(Transaction, transaction_reference=transaction_reference, buyer=request.user, status="delivered")
+
+    if hasattr(transaction, "rating"):
+        # Already rated
+        return redirect("transaction_detail", transaction_reference=transaction.transaction_reference)
+
+    if request.method == "POST":
+        form = RatingForm(request.POST)
+        if form.is_valid():
+            rating = form.save(commit=False)
+            rating.transaction = transaction
+            rating.seller = transaction.seller
+            rating.buyer = request.user
+            rating.save()
+            return redirect("transaction_detail", transaction_reference=transaction.transaction_reference)
+    else:
+        form = RatingForm()
+
+    return render(request, "core/leave_rating.html", {"form": form, "transaction": transaction})
+
 
 
 @login_required
@@ -837,7 +863,6 @@ def ship_item_by_mpesa(request, mpesa_reference):
         mpesa_reference=mpesa_reference,
         seller=request.user,
     )
-    print("Transaction:", tx.transaction_status)
     if tx.transaction_status != "paid":
         messages.error(
             request,
@@ -935,8 +960,63 @@ def logout_view(request):
 def how_it_works(request):
     return render(request, 'core/how_it_works.html')
 
+
+from django.db.models import Q, Exists, OuterRef, BooleanField, ExpressionWrapper
+
+BLOCKING_STATES = ["paid", "shipped", "arrived", "delivered", "completed"]
+
 def index(request):
-    return render(request, 'core/index.html')
+    category_filter = request.GET.get("category", "")
+    query           = request.GET.get("q", "")
+
+    # ── Sub-query: does this item have a blocking transaction? ────────────────
+    blocking_tx = Transaction.objects.filter(
+        item      = OuterRef("pk"),
+        status__in= BLOCKING_STATES,
+    )
+
+    # Base queryset
+    items = (
+        Item.objects
+            .filter(is_available=True)
+            .annotate(
+                seller_is_premium = ExpressionWrapper(
+                    Q(seller__is_premium=True), output_field=BooleanField()
+                ),
+                has_blocking_tx   = Exists(blocking_tx),
+            )
+            .filter(has_blocking_tx=False)            # 💡 hide blocked ones
+            .order_by("-seller_is_premium", "-created_at")
+    )
+
+    # Optional filters --------------------------------------------------------
+    if category_filter:
+        items = items.filter(category=category_filter)
+
+    if query:
+        items = items.filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
+        )
+
+    # ✅ Show only first 20 items on homepage
+    homepage_items = items[:20]
+
+    return render(
+        request,
+        "core/index.html",
+        {
+            "items"            : homepage_items,
+            "categories"       : Item.CATEGORY_CHOICES,
+            "selected_category": category_filter,
+            "search_query"     : query,
+        },
+    )
+
+# blocking_tx = Transaction.objects.filter(
+#         item_id=OuterRef('pk'),
+#         status__in=['paid', 'shipped', 'arrived', 'delivered']
+#     )
+    
 
 def faq(request):
     return render(request, 'core/faq.html')
@@ -990,6 +1070,11 @@ def dashboard_view(request):
     except DeliveryOrganization.DoesNotExist:
         organization = None
 
+    user_with_rating = CustomUser.objects.annotate(
+    avg_rating=Avg("ratings_received__score")
+    ).get(pk=user.pk)
+
+
     return render(request, 'core/dashboard.html', {
         'buyer_transactions': buyer_transactions,
         'seller_transactions': seller_transactions,
@@ -1001,6 +1086,7 @@ def dashboard_view(request):
         'managed_agents': managed_agents,
         'delivery_org': organization,
         'my_services': my_services,
+        'user_with_rating': user_with_rating,
     })
 
 
@@ -1132,17 +1218,19 @@ def update_profile(request):
     return render(request, 'core/update_profile.html', {'form': form})
 
 
-from django.db.models import Q, Exists, OuterRef, BooleanField, ExpressionWrapper
+from django.core.paginator import Paginator
+
 BLOCKING_STATES = ["paid", "shipped", "arrived", "delivered", "completed"]
+
 def browse_view(request):
-    
     category_filter = request.GET.get("category", "")
     query           = request.GET.get("q", "")
+    page_number     = request.GET.get("page", 1)
 
     # ── Sub-query: does this item have a blocking transaction? ────────────────
     blocking_tx = Transaction.objects.filter(
-        item      = OuterRef("pk"),
-        status__in= BLOCKING_STATES,
+        item=OuterRef("pk"),
+        status__in=BLOCKING_STATES,
     )
 
     # Base queryset
@@ -1150,12 +1238,13 @@ def browse_view(request):
         Item.objects
             .filter(is_available=True)
             .annotate(
-                seller_is_premium = ExpressionWrapper(
+                seller_is_premium=ExpressionWrapper(
                     Q(seller__is_premium=True), output_field=BooleanField()
                 ),
-                has_blocking_tx   = Exists(blocking_tx),
+                has_blocking_tx=Exists(blocking_tx),
+                seller_avg_rating=Avg("seller__ratings_received__score"),
             )
-            .filter(has_blocking_tx=False)            # 💡 hide blocked ones
+            .filter(has_blocking_tx=False)  # hide blocked ones
             .order_by("-seller_is_premium", "-created_at")
     )
 
@@ -1168,21 +1257,22 @@ def browse_view(request):
             Q(title__icontains=query) | Q(description__icontains=query)
         )
 
+    # ── Pagination (20 per page) ─────────────────────────────
+    paginator = Paginator(items, 20)
+    page_obj  = paginator.get_page(page_number)
+
     return render(
         request,
         "core/browse.html",
         {
-            "items"            : items,
+            "page_obj"         : page_obj,
+            "items"            : page_obj.object_list,
             "categories"       : Item.CATEGORY_CHOICES,
             "selected_category": category_filter,
             "search_query"     : query,
         },
     )
 
-blocking_tx = Transaction.objects.filter(
-        item_id=OuterRef('pk'),
-        status__in=['paid', 'shipped', 'arrived', 'delivered']
-    )
 
 def search_items(request):
     query = request.GET.get('q', '').strip()

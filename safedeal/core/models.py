@@ -513,3 +513,24 @@ class SupportTicket(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.issue_type} ({self.created_at.date()})"
+
+class Rating(models.Model):
+    transaction = models.OneToOneField(
+        "Transaction", on_delete=models.CASCADE, related_name="rating"
+    )
+    seller      = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ratings_received"
+    )
+    buyer       = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ratings_given"
+    )
+    score       = models.PositiveSmallIntegerField()  # e.g. 1–5 stars
+    comment     = models.TextField(blank=True)
+
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("transaction", "buyer")
+
+    def __str__(self):
+        return f"{self.seller} rated {self.score} by {self.buyer}"

@@ -40,7 +40,7 @@
 
   <form method="POST" enctype="multipart/form-data" class="space-y-5">
     {% csrf_token %}
-    <div class="mt-4 flex items-center space-x-3">
+    {% comment %} <div class="mt-4 flex items-center space-x-3">
       <label for="id_is_bulk" class="inline-flex items-center space-x-2">
         {% if user.is_premium %}
           {{ form.is_bulk }}
@@ -55,7 +55,7 @@
       {% if not user.is_premium %}
         <span class="text-xs text-red-600 italic">(Premium sellers only)</span>
       {% endif %}
-    </div>
+    </div> {% endcomment %}
  
     
     {% for field in form %}
@@ -98,14 +98,14 @@
     {% endif %}     {% endcomment %}
   
 
-    {% if not user.is_premium %}
+    {% comment %} {% if not user.is_premium %}
       <p class="text-sm text-gray-500 mb-2">You can list up to 5 items as a free user. <a href="{% url 'upgrade_to_premium' %}" class="underline text-blue-600">Upgrade to Premium</a> to unlock unlimited listings.</p>
 
     {% if remaining_slots is not None %}
       <p class="text-sm text-gray-600 text-center mb-4">
         You have <strong>{{ remaining_slots }}</strong> remaining slots of <strong>5</strong> free item listings.
       </p>
-    {% endif %}
+    {% endif %} {% endcomment %}
   {% endif %}
   </form>
   <script>
