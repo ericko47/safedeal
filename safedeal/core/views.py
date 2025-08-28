@@ -1221,6 +1221,7 @@ def update_profile(request):
 from django.core.paginator import Paginator
 
 BLOCKING_STATES = ["paid", "shipped", "arrived", "delivered", "completed"]
+blocking_tx = Transaction.objects.filter(item=OuterRef("pk"),status__in=BLOCKING_STATES,)
 
 def browse_view(request):
     category_filter = request.GET.get("category", "")
@@ -1228,10 +1229,7 @@ def browse_view(request):
     page_number     = request.GET.get("page", 1)
 
     # ── Sub-query: does this item have a blocking transaction? ────────────────
-    blocking_tx = Transaction.objects.filter(
-        item=OuterRef("pk"),
-        status__in=BLOCKING_STATES,
-    )
+
 
     # Base queryset
     items = (
