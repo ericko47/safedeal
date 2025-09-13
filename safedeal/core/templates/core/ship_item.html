@@ -30,8 +30,8 @@
             {% endif %}
         </div>
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Delivery Agent (if applicable)</label>
+        <div id="agentField" class="hidden">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Delivery Agent</label>
             {{ form.delivery_agent }}
             {% if form.delivery_agent.errors %}
                 <p class="text-red-500 text-sm">{{ form.delivery_agent.errors.0 }}</p>
@@ -43,4 +43,22 @@
         </button>
     </form>
 </div>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modeSelect = document.getElementById("id_delivery_mode");
+    const agentField = document.getElementById("agentField");
+
+    function toggleAgentField() {
+      if (modeSelect.value === "agent") {
+        agentField.classList.remove("hidden");
+      } else {
+        agentField.classList.add("hidden");
+      }
+    }
+
+    // Init + change listener
+    toggleAgentField();
+    modeSelect.addEventListener("change", toggleAgentField);
+  });
+</script>
 {% endblock %}

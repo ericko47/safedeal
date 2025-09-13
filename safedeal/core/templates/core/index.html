@@ -28,73 +28,39 @@
 </head>
 <body class="bg-gray-50 text-gray-900">
   <!-- Floating Contact Bar -->
-  <div class="sticky top-0 z-50 w-full bg-gradient-to-r from-blue-600 to-purple-700 text-white">
-    <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
-      
-      <!-- Left side: Contact info -->
-      <div class="flex flex-col text-sm space-y-1 md:flex-row md:items-center md:space-y-0 md:space-x-6">
-        <div>
-          📞 <strong>Official Line:</strong> 
-          <a href="tel:+254117276004" class="underline">0117 276 004</a>
-        </div>
-        <div>
-          📧 <strong>Email:</strong> 
-          <a href="mailto:info@safedeal.co.ke" class="underline">info@safedeal.co.ke</a>
-        </div>
-
-        <!-- Links (hidden on mobile) -->
-        <div class="hidden md:flex items-center space-x-4">
-          <a href="{% url 'how_it_works' %}" class="flex items-center gap-1 underline">
-            <!-- Info icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 18.5a6.5 6.5 0 110-13 6.5 6.5 0 010 13z"/>
-            </svg>
-            How It Works
-          </a>
-
-          <a href="https://www.facebook.com/SafeDealEscrowKe" target="_blank" class="flex items-center gap-1 underline">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M22 12a10 10 0 10-11.5 9.95V15.5H8v-3h2.5V10c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.3c-1.3 0-1.7.8-1.7 1.6v1.9H16l-.5 3h-2.6v6.45A10 10 0 0022 12z"/>
-            </svg>
-            Facebook
-          </a>
-
-          <a href="https://x.com/SEscrow82325" target="_blank" class="flex items-center gap-1 underline">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M18 2.5h3l-7.5 8.6L22 21.5h-6.2l-4.9-6.4-5.6 6.4H2l8.1-9.2L2 2.5h6.3l4.4 5.8 5.3-5.8z"/>
-            </svg>
-            X
-          </a>
-
-          <a href="https://www.instagram.com/safedeal_ke/" target="_blank" class="flex items-center gap-1 underline">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-              <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/>
-              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-            </svg>
-            Instagram
-          </a>
-
-          <a href="https://www.youtube.com/@safedeal-escrow/" target="_blank" class="flex items-center gap-1 underline">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M10 15l5.19-3L10 9v6zm12-3a9 9 0 01-9 9H9a9 9 0 01-9-9V9a9 9 0 019-9h3a9 9 0 019 9v3z"/>
-            </svg>
-            Youtube
-          </a>
-        </div>
-      </div>
-
-      <!-- Right side: Logo (always aligned right) -->
-      <div class="ml-auto">
-        <img src="{% static 'core/logos/slogobox1.png' %}" 
+  <div style="background-color: #13226e;" class="sticky top-0 z-50 w-full text-white">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex w-full max-w-lg items-center gap-3 justify-center md:justify-start">
+        <img src="{% static 'core/logos/whitelogo.png' %}" 
             alt="SafeDeal Logo" 
             class="h-10 md:h-12">
+        <h1><span class="font-semibold text-lg">  SAFEDEAL™ ESCROW</span></h1>
+      </div>
+      <!-- Left side: Contact info -->
+      <div class="flex gap-6 text-sm">
+        <div>
+            <span style="color: #fff;">📞</span> <strong>Official Line:</strong> 
+          <a href="tel:+254117276004" class="underline">0117 276 004</a>
+        </div>
+
+        <div>
+          <span style="color: #fff;">📧 </span><strong>Email:</strong> 
+          <a href="mailto:info@safedeal.co.ke" class="underline">info@safedeal.co.ke</a>
+        </div>
+        <div>
+          {% if user.is_authenticated %}
+            <a href="{% url 'logout' %}" class="hover:text-blue-600">Logout</a>
+          {% else %}
+            <a href="{% url 'login' %}" class="hover:text-blue-600">Login</a>
+          {% endif %}
+        </div>
+
       </div>
     </div>
   </div>
 
   <!-- Hero Section -->
-  <header class="relative bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-600 text-white">
+  {% comment %} <header class="relative bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-600 text-white">
     <div class="max-w-screen-2xl mx-auto px-8 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
       
       <!-- Left Column -->
@@ -134,7 +100,7 @@
         <img src="{% static 'core/logos/barner.png' %}" alt="Safe shopping" class="w-full max-w-md inline-block">
       </div>
     </div>
-  </header>
+  </header> {% endcomment %}
 
   <!-- Navigation (search + links) -->
   <nav class="bg-white shadow-sm sticky top-0 z-40">
@@ -144,20 +110,18 @@
       <form action="{% url 'search_items' %}" method="get" class="flex w-full max-w-lg">
         <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search by SafeDeal SDI"
                class="flex-1 border rounded-l-md px-3 py-2 text-sm focus:ring focus:ring-blue-300 outline-none">
-        <button type="submit" class="bg-blue-500 text-white px-4 rounded-r-md hover:bg-blue-600">
+        <button type="submit" style="background-color: #13226e;" class="text-white px-4 rounded-r-md hover:bg-blue-600">
           🔍
         </button>
       </form>
 
       <!-- Nav links -->
       <div class="flex gap-6 text-sm">
-        <a href="{% url 'browse' %}" class="hover:text-blue-600">Browse Items</a>
+        {% if not user.is_authenticated %}
+        <a href="{% url 'register' %}" class="hover:text-blue-600">Register</a>
+        {% endif%}
         <a href="{% url 'dashboard' %}" class="hover:text-blue-600">Dashboard</a>
-        {% if user.is_authenticated %}
-          <a href="{% url 'logout' %}" class="hover:text-blue-600">Logout</a>
-        {% else %}
-          <a href="{% url 'login' %}" class="hover:text-blue-600">Login</a>
-        {% endif %}
+        <a href="{% url 'post_item' %}" class="hover:text-blue-600">Sell</a>        
         <a href="{% url 'contact_us' %}" class="hover:text-blue-600">Contact Us</a>
         <a href="{% url 'about' %}" class="hover:text-blue-600">About</a>
       </div>
@@ -194,26 +158,8 @@
 
   <!-- Browse Section -->
   <main class="max-w-7xl mx-auto px-4 py-10">
-    {% block content %}
-      <p class="text-center text-gray-600 mb-4">
-        Browse through our item highlights available for sale. Use the search bar to find specific items or filter by category.
-      </p>
-
-      <form method="get" class="flex flex-wrap items-center gap-2 mb-6">
-        <select name="category" class="border px-2 py-2 rounded text-sm">
-          <option value="">All Categories</option>
-          {% for code, label in categories %}
-            <option value="{{ code }}" {% if selected_category == code %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-      
-        <input type="text" name="q" value="{{ search_query }}" placeholder="Search items..." 
-               class="border px-3 py-2 rounded text-sm flex-1">
-      
-        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm">
-          Search
-        </button>
-      </form>
+    <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">Latest Items</h2>
+      <!-- Items Grid -->   
       
       {% if items %}
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -237,6 +183,24 @@
                   </span>
                   {% endif %}
                 </p>
+                <!-- Seller rating -->
+                {% if item.seller_avg_rating %}
+                  <div class="flex items-center mt-1">
+                    {% for i in "12345" %}
+                      {% if forloop.counter <= item.seller_avg_rating|floatformat:0 %}
+                        <span class="text-yellow-400 text-sm">★</span>
+                      {% else %}
+                        <span class="text-gray-300 text-sm">★</span>
+                      {% endif %}
+                    {% endfor %}
+                    <span class="ml-1 text-xs text-gray-600">
+                      ({{ item.seller_avg_rating|floatformat:1 }}/5)
+                    </span>
+                  </div>
+                {% else %}
+                  <p class="text-xs text-gray-400 mt-1 italic">No ratings yet</p>
+                {% endif %}
+
               </a>
             </div>
           {% endfor %}
@@ -244,7 +208,6 @@
       {% else %}
         <p class="text-center text-gray-500 text-lg">No items found at the moment. Please check back later.</p>
       {% endif %}
-    {% endblock %}
     <div class="mt-6 text-center">
       <a href="{% url 'browse' %}" class="text-blue-600 hover:underline">
         Browse more items →
@@ -253,17 +216,17 @@
   </main>
 
   <!-- CTA -->
-  <section class="bg-gray-100 text-center py-16">
+  {% comment %} <section class="bg-gray-100 text-center py-16">
     <h2 class="text-2xl font-bold text-gray-800 mb-4">Start Selling or Buying Securely</h2>
     <p class="mb-6 text-gray-600">SafeDeal protects you from online fraud and builds trust with every transaction.</p>
     <div class="flex justify-center gap-4 flex-wrap">
       <a href="{% url 'browse' %}" class="px-6 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50">Browse Items</a>
       <a href="{% url 'post_item' %}" class="px-6 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50">Start Selling</a>
     </div>
-  </section>
+  </section> {% endcomment %}
 
   <!-- Footer -->
-  <footer class="bg-gray-50 py-10 text-center text-sm text-gray-600">
+  <footer class="bg-light py-10 text-center text-sm text-gray-600">
     <div class="flex flex-wrap justify-center gap-6 mb-4">
       <a href="{% url 'faq' %}" class="hover:text-blue-600">FAQ</a>
       <a href="{% url 'terms' %}" class="hover:text-blue-600">Terms</a>
@@ -273,10 +236,35 @@
     </div>
 
     <div class="flex justify-center gap-4 mb-4">
-      <a href="https://www.facebook.com/SafeDealEscrowKe" target="_blank" class="hover:text-blue-600">Facebook</a>
-      <a href="https://x.com/SEscrow82325" target="_blank" class="hover:text-blue-600">X</a>
-      <a href="https://www.instagram.com/safedeal_ke/" target="_blank" class="hover:text-blue-600">Instagram</a>
-      <a href="https://www.youtube.com/@safedeal-escrow/" target="_blank" class="hover:text-blue-600">Youtube</a>
+      <a href="https://www.facebook.com/SafeDealEscrowKe" target="_blank" class="flex items-center gap-1 underline">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M22 12a10 10 0 10-11.5 9.95V15.5H8v-3h2.5V10c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.3c-1.3 0-1.7.8-1.7 1.6v1.9H16l-.5 3h-2.6v6.45A10 10 0 0022 12z"/>
+        </svg>
+        Facebook
+      </a>
+
+      <a href="https://x.com/SEscrow82325" target="_blank" class="flex items-center gap-1 underline">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M18 2.5h3l-7.5 8.6L22 21.5h-6.2l-4.9-6.4-5.6 6.4H2l8.1-9.2L2 2.5h6.3l4.4 5.8 5.3-5.8z"/>
+        </svg>
+        X
+      </a>
+
+      <a href="https://www.instagram.com/safedeal_ke/" target="_blank" class="flex items-center gap-1 underline">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+          <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/>
+          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+        </svg>
+        Instagram
+      </a>
+
+      <a href="https://www.youtube.com/@safedeal-escrow/" target="_blank" class="flex items-center gap-1 underline">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M10 15l5.19-3L10 9v6zm12-3a9 9 0 01-9 9H9a9 9 0 01-9-9V9a9 9 0 019-9h3a9 9 0 019 9v3z"/>
+        </svg>
+        Youtube
+      </a>
     </div>
 
     <p class="mb-4">

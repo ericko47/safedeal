@@ -23,14 +23,7 @@
     <form method="post" enctype="multipart/form-data" class="space-y-4">
         {% csrf_token %}
 
-        <!-- Registering as -->
-        {% comment %} <div>
-            <label for="{{ agent_form.registering_as.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Registering As:</label>
-            <input type="radio" name="registering_as" value="individual"><br>
-            <input type="radio" name="registering_as" value="organization">
-
-
-        </div> {% endcomment %}
+ 
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-2">Registering As:</label>
         

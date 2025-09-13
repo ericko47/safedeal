@@ -97,7 +97,7 @@
       <form id="place-order-form" method="post" action="{% url 'place_order' item.item_reference %}" class="flex flex-col sm:flex-row gap-4 items-center w-full">
         {% csrf_token %}
         <input type="text" name="delivery_address"
-               placeholder="Your delivery address"
+               placeholder="Your delivery location"
                class="flex-grow border border-gray-300 rounded px-4 py-2"
                required />
         {% if user == item.seller %}

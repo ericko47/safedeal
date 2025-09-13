@@ -5,6 +5,8 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 
+from django.core.exceptions import ValidationError
+
 class RatingForm(forms.ModelForm):
     class Meta:
         model = Rating
@@ -56,13 +58,11 @@ class CustomUserCreationForm(UserCreationForm):
             'password2'
         )
 # For users to update their profile after registration
-from django import forms
-
 class UserProfileForm(forms.ModelForm):
     date_of_birth = forms.DateField(
         input_formats=[
             '%d/%m/%Y',   # 25/06/2025
-            '%Y-%m-%d',   # 2025-06-25 (ISO, for compatibility)
+            '%Y-%m-%d',   # 2025-06-25 (ISO format)
         ],
         widget=forms.TextInput(attrs={
             'placeholder': 'DD/MM/YYYY',
@@ -73,14 +73,14 @@ class UserProfileForm(forms.ModelForm):
     national_id_picture = forms.ImageField(
         widget=forms.ClearableFileInput(attrs={
             "accept": "image/*",
-            "capture": "environment"
+            #"capture": "environment"
         }),
         required=False
     )
     profile_picture = forms.ImageField(
         widget=forms.ClearableFileInput(attrs={
             "accept": "image/*",
-            "capture": "environment"
+            #"capture": "environment"
         }),
         required=False
     )
@@ -101,13 +101,25 @@ class UserProfileForm(forms.ModelForm):
             'account_type'
         ]
 
+    def clean(self):
+        cleaned_data = super().clean()
+
+        max_size = 2 * 1024 * 1024  # 2 MB
+
+        for field_name in ['profile_picture', 'national_id_picture']:
+            file = cleaned_data.get(field_name)
+            if file and file.size > max_size:
+                self.add_error(
+                    field_name,
+                    ValidationError(f"{field_name.replace('_', ' ').title()} must be smaller than 2 MB.")
+                )
+
+        return cleaned_data
 
 
 
 
 class ItemForm(forms.ModelForm):
-    # Additional field for multiple images
-    # images = forms.FileField(widget=forms.ClearableFileInput(attrs={'multiple': True}), required=False)
     class Meta:
         model = Item
         fields = ['title', 'description','location', 'price', 'category', 'condition', 'is_bulk', 'bulk_price']
@@ -209,9 +221,32 @@ class ShippingForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        transaction = kwargs.get('instance')  # The current transaction
         super().__init__(*args, **kwargs)
-        # Make delivery_agent optional by default
-        self.fields['delivery_agent'].required = False
+
+        agents = DeliveryAgent.objects.filter(is_verified=True, is_active=True)
+
+        if transaction:
+            buyer_area = transaction.delivery_address.strip().lower()
+            seller_area = transaction.seller.current_location.strip().lower()
+
+            # Filter manually since region_of_operation is comma-separated
+            filtered_agents = []
+            for agent in agents:
+                coverage = [r.strip().lower() for r in agent.region_of_operation.split(",")]
+                if buyer_area in coverage and seller_area in coverage:
+                    filtered_agents.append(agent)
+
+            self.fields['delivery_agent'].queryset = DeliveryAgent.objects.filter(
+                id__in=[a.id for a in filtered_agents]
+            )
+
+        # Custom labels
+        self.fields['delivery_agent'].label_from_instance = lambda obj: (
+            f"{obj.user.get_full_name() or obj.user.username} "
+            f"({obj.get_agent_type_display()}, {obj.vehicle_type}) "
+            f"– {obj.region_of_operation}"
+        )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -227,7 +262,6 @@ class ShippingForm(forms.ModelForm):
             cleaned_data['delivery_agent'] = None
 
         return cleaned_data
-
     
     
     
@@ -298,6 +332,23 @@ class DeliveryAgentForm(forms.ModelForm):
     class Meta:
         model = DeliveryAgent
         fields = [
-            'vehicle_type', 'vehicle_plate_number', 'license_document', 'police_clearance_certificate', 'region_of_operation','mpesa_phone_number',
-            'license_number', 'license_document'
+            'vehicle_type', 'vehicle_plate_number', 'license_document',
+            'police_clearance_certificate', 'region_of_operation',
+            'mpesa_phone_number', 'license_number'
         ]
+        widgets = {
+            'region_of_operation': forms.TextInput(
+                attrs={
+                    'placeholder': 'Enter comma-separated locations, e.g. Nairobi, Mombasa, Kisumu'
+                }
+            )
+        }
+        help_texts = {
+            'region_of_operation': 'Please list all areas you cover, separated by commas (e.g., Nairobi, Mombasa, Kisumu).'
+        }
+    def clean_region_of_operation(self):
+        region = self.cleaned_data.get('region_of_operation')
+        areas = [r.strip() for r in region.split(",") if r.strip()]
+        if not areas:
+            raise forms.ValidationError("Please enter at least one valid area.")
+        return ", ".join(areas)

@@ -31,6 +31,7 @@
     <thead class="bg-gray-100 text-left">
         <tr>
             <th class="px-4 py-2">Username</th>
+            <th class="px-4 py-2">Name</th>
             <th class="px-4 py-2">Email</th>
             <th class="px-4 py-2">Phone</th>
             <th class="px-4 py-2">Account Type</th>
@@ -43,6 +44,7 @@
       {% for user in users %}
       <tr class="border-b hover:bg-gray-50">
         <td class="px-4 py-2">{{ user.username }}</td>
+        <td class="px-4 py-2">{{ user.first_name }} {{user.last_name}}</td>
         <td class="px-4 py-2">{{ user.email }}</td>
         <td class="px-4 py-2">{{ user.phone_number|default:"-" }}</td>
         <td class="px-4 py-2">{{ user.account_type|default:"-" }}</td>
