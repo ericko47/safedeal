@@ -4,9 +4,9 @@
 {% load widget_tweaks %}
 <div class="max-w-3xl mx-auto px-4 py-8">
   <h2 class="text-2xl font-semibold mb-6">Post a New Service</h2>
-    <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
+    {% comment %} <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
       &larr; Go Back
-    </a>
+    </a> {% endcomment %}
       {% if messages %}
       <ul class="mb-4">
         {% for message in messages %}

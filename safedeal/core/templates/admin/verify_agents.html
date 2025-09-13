@@ -1,9 +1,9 @@
 {% extends 'core/base.html' %}
 {% block content %}
 <div class="max-w-4xl mx-auto mt-10 bg-white shadow p-6 rounded">
-    <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
+    {% comment %} <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
       &larr; Go Back
-    </a>
+    </a> {% endcomment %}
     <h2 class="text-xl font-semibold mb-4">Verify Delivery Agents</h2>
     {% for agent in agents %}
         <div class="border-b py-4">

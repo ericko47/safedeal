@@ -2,9 +2,9 @@
 {% block content %}
 <div class="max-w-5xl mx-auto mt-8">
   <h2 class="text-2xl font-semibold mb-4">All Items in System: Total={{ items.count }}</h2>
-    <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
+    {% comment %} <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
       &larr; Go Back
-    </a>
+    </a> {% endcomment %}
   <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
     <thead>
       <tr class="bg-gray-100 text-left text-sm uppercase text-gray-600">

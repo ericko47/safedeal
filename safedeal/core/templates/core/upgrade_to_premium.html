@@ -1,9 +1,9 @@
 {% extends 'core/base.html' %}
 {% block content %}
 <div class="max-w-2xl mx-auto p-6 bg-white rounded-xl shadow">
-   <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
+   {% comment %} <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
       &larr; Go Back
-  </a>
+  </a> {% endcomment %}
   <h2 class="text-xl font-semibold mb-4">Upgrade to Premium</h2>
   {% if not user.national_id %}
     <p class="text-red-500">Please <a href="{% url 'update_profile' %}" class="underline">update your Account</a> before upgrading.</p>

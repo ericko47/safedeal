@@ -6,11 +6,11 @@
 {% block content %}
 
 <section class="max-w-4xl mx-auto py-10 px-4 bg-light">
-  <div class="container">
+  {% comment %} <div class="container">
     <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
       &larr; Go Back
     </a>
-  </div>
+  </div> {% endcomment %}
 </section>
 <div class="max-w-5xl mx-auto px-4 py-8">
   <h1 class="text-3xl font-bold text-blue-600 mb-6">Transaction {{ transaction.item.title}}</h1>

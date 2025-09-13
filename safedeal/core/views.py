@@ -1371,14 +1371,15 @@ def post_item_view(request):
         # 'remaining_slots': remaining_slots,
     })
 
-
+from core.utils import override_last_crumb
 def item_detail(request, item_reference):   
     item = get_object_or_404(Item, item_reference=item_reference)
     in_wishlist = False
 
     if request.user.is_authenticated:
         in_wishlist = Wishlist.objects.filter(user=request.user, item=item).exists()
-
+        
+    override_last_crumb(request, item.title)
     return render(request, 'core/viewitem.html', {
         'item': item,
         'in_wishlist': in_wishlist,

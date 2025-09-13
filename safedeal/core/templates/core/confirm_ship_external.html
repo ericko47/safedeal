@@ -1,9 +1,9 @@
 {% extends "core/base.html" %}
 {% block content %}
 <div class="max-w-lg mx-auto bg-white shadow p-6 mt-10 rounded-xl">
-  <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
+  {% comment %} <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
     &larr; Go Back
-  </a>
+  </a> {% endcomment %}
   <h2 class="text-xl font-semibold mb-4">Confirm Shipment</h2>
   <p>Are you sure you want to mark <strong>{{ transaction.item_name }}</strong> as shipped?</p>
 

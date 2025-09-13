@@ -154,3 +154,10 @@ def notify_funding(transaction):
         context={'transaction': transaction, 'year': timezone.now().year},
         recipient_list=[transaction.seller.email],
     )
+    
+def override_last_crumb(request, name):
+    """Replace the last breadcrumb name with something friendlier."""
+    trail = request.session.get("navigation_trail", [])
+    if trail:
+        trail[-1]["name"] = name
+        request.session["navigation_trail"] = trail

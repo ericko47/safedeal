@@ -1,9 +1,9 @@
 {% extends 'core/base.html' %}
 {% block content %}
 <section class="max-w-7xl mx-auto p-6 bg-white shadow rounded-xl mt-6">
-    <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
+    {% comment %} <a href="#" onclick="goBackWithSpinnerFix(event)" class="text-sm text-gray-600 hover:text-blue-600 mb-4">
       &larr; Go Back
-    </a>
+    </a> {% endcomment %}
 
   <h2 class="text-2xl font-semibold mb-4">All Transactions: Total = {{ trans.count }} + {{ secure.count }}</h2>
 
